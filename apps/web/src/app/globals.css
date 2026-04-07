@@ -1,0 +1,275 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   VARIABLES CSS - THÈME VHS 80s
+   ============================================ */
+
+@layer base {
+  :root {
+    /* Background CRT noir profond */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+
+    /* Card */
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+
+    /* Popover */
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Primary - Magenta VHS */
+    --primary: 300 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    /* Secondary - Cyan */
+    --secondary: 180 100% 50%;
+    --secondary-foreground: 0 0% 0%;
+
+    /* Accent - Jaune VHS */
+    --accent: 60 100% 50%;
+    --accent-foreground: 0 0% 0%;
+
+    /* Muted */
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
+
+    /* Destructive */
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Border */
+    --border: 180 100% 50% / 30%;
+    --input: 0 0% 15%;
+    --ring: 300 100% 50%;
+
+    /* Radius */
+    --radius: 0.25rem;
+
+    /* Chart colors */
+    --chart-1: 300 100% 50%;
+    --chart-2: 180 100% 50%;
+    --chart-3: 60 100% 50%;
+    --chart-4: 120 100% 40%;
+    --chart-5: 280 100% 60%;
+  }
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Selection VHS */
+  ::selection {
+    background: hsl(var(--primary));
+    color: hsl(var(--foreground));
+  }
+
+  /* Scrollbar retro */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+    border-left: 1px solid hsl(var(--border));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 50%);
+    border-radius: 0;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+}
+
+/* ============================================
+   VHS EFFECTS
+   ============================================ */
+
+/* Scanlines overlay */
+.vhs-scanlines {
+  position: relative;
+}
+
+.vhs-scanlines::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* CRT glow effect */
+.vhs-glow {
+  box-shadow:
+    0 0 5px hsl(var(--primary)),
+    0 0 10px hsl(var(--primary) / 50%),
+    0 0 20px hsl(var(--primary) / 30%);
+}
+
+.vhs-glow-cyan {
+  box-shadow:
+    0 0 5px hsl(var(--secondary)),
+    0 0 10px hsl(var(--secondary) / 50%),
+    0 0 20px hsl(var(--secondary) / 30%);
+}
+
+/* Text glow */
+.vhs-text-glow {
+  text-shadow:
+    0 0 5px hsl(var(--primary)),
+    0 0 10px hsl(var(--primary) / 70%),
+    0 0 20px hsl(var(--primary) / 50%);
+}
+
+.vhs-text-glow-cyan {
+  text-shadow:
+    0 0 5px hsl(var(--secondary)),
+    0 0 10px hsl(var(--secondary) / 70%),
+    0 0 20px hsl(var(--secondary) / 50%);
+}
+
+/* CRT curvature effect */
+.vhs-curved {
+  border-radius: 5% / 3%;
+}
+
+/* Noise texture */
+.vhs-noise {
+  position: relative;
+  overflow: hidden;
+}
+
+.vhs-noise::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  animation: noise 0.5s steps(10) infinite;
+}
+
+/* Flicker effect */
+.vhs-flicker {
+  animation: flicker 0.15s infinite;
+}
+
+/* Border pixelized */
+.vhs-border {
+  border-style: solid;
+  border-width: 2px;
+  border-color: hsl(var(--border));
+}
+
+/* ============================================
+   COMPONENTS
+   ============================================ */
+
+/* Button VHS style */
+.btn-vhs {
+  @apply relative overflow-hidden px-6 py-2 font-mono uppercase tracking-wider;
+  @apply bg-transparent border-2 border-primary text-primary;
+  @apply transition-all duration-150;
+}
+
+.btn-vhs:hover {
+  @apply bg-primary text-primary-foreground vhs-glow;
+}
+
+.btn-vhs:active {
+  @apply scale-95;
+}
+
+/* Button cyan */
+.btn-cyan {
+  @apply border-secondary text-secondary;
+}
+
+.btn-cyan:hover {
+  @apply bg-secondary text-secondary-foreground vhs-glow-cyan;
+}
+
+/* Input VHS style */
+.input-vhs {
+  @apply bg-input border-2 border-border px-4 py-2 font-mono text-foreground;
+  @apply placeholder:text-muted-foreground;
+  @apply focus:outline-none focus:border-primary;
+  box-shadow: 0 0 5px hsl(var(--primary)), 0 0 10px hsl(var(--primary) / 50%);
+  @apply transition-all duration-150;
+}
+
+/* Card VHS style */
+.card-vhs {
+  @apply bg-card border-2 border-border rounded-sm overflow-hidden;
+  @apply transition-all duration-200;
+}
+
+.card-vhs:hover {
+  @apply border-primary/50;
+}
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+
+/* Typewriter cursor */
+.cursor-blink::after {
+  content: "_";
+  @apply animate-blink text-primary;
+}
+
+/* Gradient overlay */
+.vhs-gradient-overlay {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 255, 255, 0.03) 50%,
+    transparent 100%
+  );
+}
+
+/* Grid background */
+.vhs-grid {
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Loading spinner */
+.spinner-vhs {
+  border: 2px solid hsl(var(--muted));
+  border-top-color: hsl(var(--primary));
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

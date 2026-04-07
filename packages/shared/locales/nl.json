@@ -1,0 +1,53 @@
+{
+  "common": {
+    "submit": "Verzenden",
+    "cancel": "Annuleren",
+    "save": "Opslaan",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "create": "Maken",
+    "scan": "Scannen",
+    "search": "Zoeken",
+    "loading": "Laden..."
+  },
+  "nav": {
+    "home": "Start",
+    "collections": "Collecties",
+    "objects": "Objecten",
+    "loans": "Leningen",
+    "contacts": "Contacten"
+  },
+  "auth": {
+    "signIn": "Aanmelden",
+    "signOut": "Afmelden",
+    "email": "E-mail",
+    "password": "Wachtwoord"
+  },
+  "collections": {
+    "title": "Mijn collecties",
+    "create": "Maak een collectie",
+    "empty": "Geen collecties",
+    "emptyDescription": "Maak je eerste collectie"
+  },
+  "objects": {
+    "title": "Mijn objecten",
+    "add": "Voeg een object toe",
+    "empty": "Geen objecten"
+  },
+  "loans": {
+    "title": "Mijn leningen",
+    "lend": "Uitlenen",
+    "return": "Terugbrengen",
+    "empty": "Geen leningen"
+  },
+  "contacts": {
+    "title": "Mijn contacten",
+    "add": "Contact toevoegen",
+    "empty": "Geen contacten"
+  },
+  "qrCodes": {
+    "title": "Mijn QR codes",
+    "generate": "Genereren",
+    "print": "Afdrukken"
+  }
+}

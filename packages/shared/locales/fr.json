@@ -1,0 +1,53 @@
+{
+  "common": {
+    "submit": "Envoyer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Creer",
+    "scan": "Scanner",
+    "search": "Rechercher",
+    "loading": "Chargement..."
+  },
+  "nav": {
+    "home": "Accueil",
+    "collections": "Collections",
+    "objects": "Objets",
+    "loans": "Prets",
+    "contacts": "Contacts"
+  },
+  "auth": {
+    "signIn": "Connexion",
+    "signOut": "Deconnexion",
+    "email": "Email",
+    "password": "Mot de passe"
+  },
+  "collections": {
+    "title": "Mes collections",
+    "create": "Creer une collection",
+    "empty": "Aucune collection",
+    "emptyDescription": "Creez votre premiere collection"
+  },
+  "objects": {
+    "title": "Mes objets",
+    "add": "Ajouter un objet",
+    "empty": "Aucun objet"
+  },
+  "loans": {
+    "title": "Mes prets",
+    "lend": "Preter",
+    "return": "Retour",
+    "empty": "Aucun pret"
+  },
+  "contacts": {
+    "title": "Mes contacts",
+    "add": "Ajouter un contact",
+    "empty": "Aucun contact"
+  },
+  "qrCodes": {
+    "title": "Mes QR codes",
+    "generate": "Generer",
+    "print": "Imprimer"
+  }
+}
