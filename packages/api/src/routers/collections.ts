@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { router, publicProcedure, dbProcedure } from "../trpc";
 import {
   createCollectionSchema,
   updateCollectionSchema,
@@ -19,11 +19,11 @@ export const collectionsRouter = router({
   /**
    * Liste les collections de l'utilisateur.
    */
-  list: protectedProcedure
+  list: dbProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
+      // TODO: Filtrer par userId quand auth sera implémenté
       const collections = await ctx.prisma.collection.findMany({
-        where: { userId: ctx.userId },
         include: {
           _count: {
             select: { objects: true },
@@ -49,13 +49,12 @@ export const collectionsRouter = router({
   /**
    * Récupère une collection par son ID.
    */
-  get: protectedProcedure
+  get: dbProcedure
     .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const collection = await ctx.prisma.collection.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
         },
         include: {
           objects: {
@@ -84,13 +83,14 @@ export const collectionsRouter = router({
   /**
    * Crée une nouvelle collection.
    */
-  create: protectedProcedure
+  create: dbProcedure
     .input(createCollectionSchema)
     .mutation(async ({ ctx, input }) => {
+      // TODO: Utiliser ctx.userId quand auth sera implémenté
       return ctx.prisma.collection.create({
         data: {
           ...input,
-          userId: ctx.userId,
+          userId: "demo-user", // Placeholder jusqu'à auth
         },
       });
     }),
@@ -98,11 +98,11 @@ export const collectionsRouter = router({
   /**
    * Met à jour une collection existante.
    */
-  update: protectedProcedure
+  update: dbProcedure
     .input(z.object({ id: z.string().cuid(), data: updateCollectionSchema }))
     .mutation(async ({ ctx, input }) => {
       const collection = await ctx.prisma.collection.findFirst({
-        where: { id: input.id, userId: ctx.userId },
+        where: { id: input.id },
       });
 
       if (!collection) {
@@ -118,11 +118,11 @@ export const collectionsRouter = router({
   /**
    * Supprime une collection.
    */
-  delete: protectedProcedure
+  delete: dbProcedure
     .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       const collection = await ctx.prisma.collection.findFirst({
-        where: { id: input.id, userId: ctx.userId },
+        where: { id: input.id },
       });
 
       if (!collection) {

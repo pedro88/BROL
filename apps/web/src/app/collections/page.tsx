@@ -17,11 +17,11 @@ export default function CollectionsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const utils = trpc.useUtils();
 
-  // Fetch collections (mocked for now since auth isn't implemented)
+  // Fetch collections
   const { data: collectionsData, isLoading } = trpc.collections.list.useQuery(
     undefined,
     {
-      enabled: false, // Disabled until auth is ready
+      enabled: true,
     }
   );
 

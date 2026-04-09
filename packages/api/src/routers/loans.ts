@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { router, dbProcedure } from "../trpc";
 import {
   createLoanSchema,
   returnLoanSchema,
@@ -19,12 +19,12 @@ export const loansRouter = router({
   /**
    * Liste les objets prêtés par l'utilisateur (pool "objets sortis").
    */
-  lentOut: protectedProcedure
+  lentOut: dbProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
+      // TODO: Filtrer par ownerId quand auth sera implémenté
       const loans = await ctx.prisma.loan.findMany({
         where: {
-          ownerId: ctx.userId,
           status: { in: ["ACTIVE", "OVERDUE"] },
         },
         include: {
@@ -62,12 +62,12 @@ export const loansRouter = router({
   /**
    * Liste les objets empruntés par l'utilisateur.
    */
-  borrowed: protectedProcedure
+  borrowed: dbProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
+      // TODO: Filtrer par borrowerId quand auth sera implémenté
       const loans = await ctx.prisma.loan.findMany({
         where: {
-          borrowerId: ctx.userId,
           status: { in: ["ACTIVE", "OVERDUE"] },
         },
         include: {
@@ -107,16 +107,11 @@ export const loansRouter = router({
   /**
    * Historique complet des prêts (tous statuts).
    */
-  history: protectedProcedure
+  history: dbProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
+      // TODO: Filtrer par userId quand auth sera implémenté
       const loans = await ctx.prisma.loan.findMany({
-        where: {
-          OR: [
-            { ownerId: ctx.userId },
-            { borrowerId: ctx.userId },
-          ],
-        },
         include: {
           object: {
             select: {
@@ -156,16 +151,15 @@ export const loansRouter = router({
   /**
    * Crée un nouveau prêt.
    */
-  create: protectedProcedure
+  create: dbProcedure
     .input(createLoanSchema)
     .mutation(async ({ ctx, input }) => {
-      // Vérifier que l'objet appartient à l'utilisateur
+      // TODO: Vérifier que l'objet appartient à l'utilisateur quand auth sera implémenté
+
+      // Vérifier que l'objet existe
       const object = await ctx.prisma.object.findFirst({
         where: {
           id: input.objectId,
-          collection: {
-            userId: ctx.userId,
-          },
         },
       });
 
@@ -194,10 +188,11 @@ export const loansRouter = router({
         throw new Error("Emprunteur non trouvé");
       }
 
+      // TODO: Utiliser le vrai ownerId quand auth sera implémenté
       return ctx.prisma.loan.create({
         data: {
           objectId: input.objectId,
-          ownerId: ctx.userId,
+          ownerId: "demo-owner", // Placeholder
           borrowerId: input.borrowerId,
           returnDueDate: input.returnDueDate,
           notes: input.notes,
@@ -215,13 +210,13 @@ export const loansRouter = router({
   /**
    * Marque un prêt comme retourné.
    */
-  return: protectedProcedure
+  return: dbProcedure
     .input(returnLoanSchema)
     .mutation(async ({ ctx, input }) => {
+      // TODO: Vérifier que l'utilisateur est le owner quand auth sera implémenté
       const loan = await ctx.prisma.loan.findFirst({
         where: {
           id: input.loanId,
-          ownerId: ctx.userId,
           status: { in: ["ACTIVE", "OVERDUE"] },
         },
       });
@@ -243,13 +238,13 @@ export const loansRouter = router({
    * Envoie un rappel pour un prêt.
    * @note Pour l'instant, génère juste un log. Intégrer emailing plus tard.
    */
-  remind: protectedProcedure
+  remind: dbProcedure
     .input(z.object({ loanId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
+      // TODO: Vérifier que l'utilisateur est le owner quand auth sera implémenté
       const loan = await ctx.prisma.loan.findFirst({
         where: {
           id: input.loanId,
-          ownerId: ctx.userId,
           status: "ACTIVE",
         },
         include: {
@@ -284,13 +279,13 @@ export const loansRouter = router({
   /**
    * Annule un prêt.
    */
-  cancel: protectedProcedure
+  cancel: dbProcedure
     .input(z.object({ loanId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
+      // TODO: Vérifier que l'utilisateur est le owner quand auth sera implémenté
       const loan = await ctx.prisma.loan.findFirst({
         where: {
           id: input.loanId,
-          ownerId: ctx.userId,
           status: "ACTIVE",
         },
       });

@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { router, protectedProcedure } from "../trpc";
+import { router, dbProcedure } from "../trpc";
 import {
   generateQrStockSchema,
   assignQrStockSchema,
@@ -20,7 +20,7 @@ export const qrRouter = router({
   /**
    * Liste les QR codes de stock disponibles.
    */
-  listStock: protectedProcedure
+  listStock: dbProcedure
     .input(
       z.object({
         used: z.boolean().optional(),
@@ -28,8 +28,8 @@ export const qrRouter = router({
       }).optional()
     )
     .query(async ({ ctx, input }) => {
+      // TODO: Filtrer par userId quand auth sera implémenté
       const where = {
-        userId: ctx.userId,
         ...(input?.used !== undefined && { used: input.used }),
       };
 
@@ -51,11 +51,14 @@ export const qrRouter = router({
   /**
    * Génère de nouveaux QR codes vierges.
    */
-  generateStock: protectedProcedure
+  generateStock: dbProcedure
     .input(generateQrStockSchema)
     .mutation(async ({ ctx, input }) => {
+      // TODO: Utiliser ctx.userId quand auth sera implémenté
+      const userId = "demo-user";
+      
       const codes = Array.from({ length: input.count }, () => ({
-        userId: ctx.userId,
+        userId,
         code: generateScanCode(),
         used: false,
       }));
@@ -67,7 +70,7 @@ export const qrRouter = router({
       // Récupérer les codes générés
       const generated = await ctx.prisma.qrStock.findMany({
         where: {
-          userId: ctx.userId,
+          userId,
           code: { in: codes.map((c) => c.code) },
         },
         orderBy: { createdAt: "desc" },
@@ -83,14 +86,15 @@ export const qrRouter = router({
   /**
    * Assigne un QR code de stock à un objet.
    */
-  assignToObject: protectedProcedure
+  assignToObject: dbProcedure
     .input(assignQrStockSchema)
     .mutation(async ({ ctx, input }) => {
-      // Vérifier que le QR appartient à l'utilisateur et n'est pas utilisé
+      // TODO: Vérifier ownership quand auth sera implémenté
+      
+      // Vérifier que le QR existe et n'est pas utilisé
       const qrStock = await ctx.prisma.qrStock.findFirst({
         where: {
           id: input.qrStockId,
-          userId: ctx.userId,
           used: false,
         },
       });
@@ -99,13 +103,10 @@ export const qrRouter = router({
         throw new Error("QR code non disponible");
       }
 
-      // Vérifier que l'objet appartient à l'utilisateur
+      // Vérifier que l'objet existe
       const object = await ctx.prisma.object.findFirst({
         where: {
           id: input.objectId,
-          collection: {
-            userId: ctx.userId,
-          },
         },
       });
 
@@ -136,13 +137,13 @@ export const qrRouter = router({
   /**
    * Récupère un QR code par son code (pour scan).
    */
-  getByCode: protectedProcedure
+  getByCode: dbProcedure
     .input(z.object({ code: z.string() }))
     .query(async ({ ctx, input }) => {
+      // TODO: Filtrer par userId quand auth sera implémenté
       const qrStock = await ctx.prisma.qrStock.findFirst({
         where: {
           code: input.code,
-          userId: ctx.userId,
         },
         include: {
           objects: {
@@ -164,13 +165,13 @@ export const qrRouter = router({
   /**
    * Supprime un QR code de stock (s'il n'est pas utilisé).
    */
-  deleteStock: protectedProcedure
+  deleteStock: dbProcedure
     .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
+      // TODO: Vérifier ownership quand auth sera implémenté
       const qrStock = await ctx.prisma.qrStock.findFirst({
         where: {
           id: input.id,
-          userId: ctx.userId,
           used: false,
         },
       });

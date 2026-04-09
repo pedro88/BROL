@@ -24,8 +24,12 @@ export default function EditCollectionPage() {
   );
 
   // Update mutation
+  const utils = trpc.useUtils();
+
   const updateMutation = trpc.collections.update.useMutation({
     onSuccess: () => {
+      utils.collections.get.invalidate({ id: collectionId });
+      utils.collections.list.invalidate();
       router.push(`/collections/${collectionId}`);
     },
   });

@@ -6,14 +6,15 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import superjson from "superjson";
-import { prisma } from "@brol/db";
+import { getLazyPrisma, isDbConnected, connectPrisma, getDbStatus } from "@brol/db";
 
 /**
  * Type pour le context de la requête.
  */
 export interface Context {
-  prisma: typeof prisma;
+  prisma: ReturnType<typeof getLazyPrisma>;
   userId: string | null;
+  dbAvailable: boolean;
 }
 
 /**
@@ -22,10 +23,19 @@ export interface Context {
 export async function createContext(opts: FetchCreateContextFnOptions): Promise<Context> {
   // TODO: Intégrer BetterAuth pour récupérer le userId depuis les cookies/session
   // Pour l'instant, on retourne null (non authentifié)
+  
+  // Vérifie si la DB est accessible (sans se connecter)
+  let dbAvailable = false;
+  try {
+    dbAvailable = await isDbConnected();
+  } catch {
+    // Ignore - on vérifiera à la première requête
+  }
 
   return {
-    prisma,
+    prisma: getLazyPrisma(),
     userId: null,
+    dbAvailable,
   };
 }
 
@@ -70,7 +80,22 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 });
 
 /**
+ * Créateur de procédure tRPC nécessitant la DB.
+ * Throw une erreur INTERNAL_SERVER_ERROR si la DB n'est pas disponible.
+ */
+export const dbProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.dbAvailable) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Base de données temporairement indisponible",
+    });
+  }
+  return next({ ctx });
+});
+
+/**
  * Export du router et des types.
  */
 export const router = t.router;
 export type Router = typeof router;
+export { connectPrisma, getDbStatus, isDbConnected };
