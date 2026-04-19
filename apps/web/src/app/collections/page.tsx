@@ -17,40 +17,12 @@ export default function CollectionsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const utils = trpc.useUtils();
 
-  // Fetch collections (mocked for now since auth isn't implemented)
+  // Fetch collections (auth is required — middleware redirects here)
   const { data: collectionsData, isLoading } = trpc.collections.list.useQuery(
-    undefined,
-    {
-      enabled: false, // Disabled until auth is ready
-    }
+    undefined
   );
 
-  // Mock data for demo
-  const mockCollections = [
-    {
-      id: "1",
-      name: "Ma Bibliothèque",
-      description: "Romans et BD de ma collection personnelle",
-      coverImage: null,
-      objectCount: 24,
-    },
-    {
-      id: "2",
-      name: "Outils de Bricolage",
-      description: "Tous mes outils pour les travaux",
-      coverImage: null,
-      objectCount: 12,
-    },
-    {
-      id: "3",
-      name: "Jeux de Société",
-      description: "La ludothèque familiale",
-      coverImage: null,
-      objectCount: 8,
-    },
-  ];
-
-  const collections = collectionsData?.items ?? mockCollections;
+  const collections = collectionsData?.items ?? [];
 
   return (
     <div className="min-h-screen pb-20">
