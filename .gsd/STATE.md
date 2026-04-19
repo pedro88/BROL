@@ -1,12 +1,12 @@
 # GSD State
 
-**Active Milestone:** None
+**Active Milestone:** M001: M001: Collections & Objects Management
 **Active Slice:** None
 **Phase:** complete
 **Requirements Status:** 0 active · 0 validated · 0 deferred · 0 out of scope
 
 ## Milestone Registry
-- ✅ **M001:** M001:
+- ✅ **M001:** M001: Collections & Objects Management
 
 ## Recent Decisions
 - None recorded
