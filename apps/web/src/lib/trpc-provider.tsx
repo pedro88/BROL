@@ -10,6 +10,8 @@ import { httpBatchLink } from "@trpc/client";
 import { useState } from "react";
 import superjson from "superjson";
 import { trpc } from "./trpc";
+import { getSessionToken } from "./auth-store";
+import { AuthSessionSyncer } from "./auth-session-syncer";
 
 /**
  * Composant Provider qui enveloppent l'app.
@@ -33,6 +35,11 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         httpBatchLink({
           url: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/trpc",
           transformer: superjson,
+          headers: () => {
+            const token = getSessionToken();
+            if (!token) return {};
+            return { Authorization: `Bearer ${token}` };
+          },
         }),
       ],
     })
@@ -40,7 +47,10 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <AuthSessionSyncer />
+      </QueryClientProvider>
     </trpc.Provider>
   );
 }

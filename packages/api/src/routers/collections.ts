@@ -1,5 +1,5 @@
 /**
- * Router Collections - CRUD complet.
+ * Router Collections - CRUD complet + publiques.
  * @package @brol/api
  */
 
@@ -82,6 +82,92 @@ export const collectionsRouter = router({
     }),
 
   /**
+   * Liste les collections publiques (sans auth requise).
+   * Retourne uniquement les collections où isPublic = true.
+   */
+  listPublic: publicProcedure
+    .input(paginationSchema.optional())
+    .query(async ({ ctx, input }) => {
+      const collections = await ctx.prisma.collection.findMany({
+        where: { isPublic: true },
+        include: {
+          user: {
+            select: { id: true, name: true },
+          },
+          _count: {
+            select: { objects: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: input?.limit ?? 20,
+        cursor: input?.cursor ? { id: input.cursor } : undefined,
+      });
+
+      return {
+        items: collections.map((c: typeof collections[number]) => ({
+          id: c.id,
+          name: c.name,
+          description: c.description,
+          coverImage: c.coverImage,
+          ownerName: c.user.name,
+          objectCount: c._count.objects,
+        })),
+        nextCursor: collections.length === (input?.limit ?? 20)
+          ? collections[collections.length - 1]?.id ?? null
+          : null,
+      };
+    }),
+
+  /**
+   * Récupère une collection publique par son ID (sans auth requise).
+   * Ne retourne que les infos publiques — pas de détails sur le propriétaire.
+   */
+  getPublic: publicProcedure
+    .input(z.object({ id: z.string().cuid() }))
+    .query(async ({ ctx, input }) => {
+      const collection = await ctx.prisma.collection.findFirst({
+        where: {
+          id: input.id,
+          isPublic: true,
+        },
+        include: {
+          user: {
+            select: { id: true, name: true },
+          },
+          objects: {
+            include: {
+              loans: {
+                where: { status: "ACTIVE" },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      });
+
+      if (!collection) {
+        throw new Error("Collection non trouvée");
+      }
+
+      return {
+        id: collection.id,
+        name: collection.name,
+        description: collection.description,
+        coverImage: collection.coverImage,
+        ownerName: collection.user.name,
+        createdAt: collection.createdAt,
+        objects: collection.objects.map((o) => ({
+          id: o.id,
+          name: o.name,
+          author: o.author,
+          edition: o.edition,
+          coverImage: o.coverImage,
+          condition: o.condition,
+        })),
+      };
+    }),
+
+  /**
    * Crée une nouvelle collection.
    */
   create: protectedProcedure
@@ -89,7 +175,10 @@ export const collectionsRouter = router({
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.collection.create({
         data: {
-          ...input,
+          name: input.name,
+          description: input.description,
+          coverImage: input.coverImage,
+          isPublic: input.isPublic ?? false,
           userId: ctx.userId,
         },
       });
@@ -109,9 +198,17 @@ export const collectionsRouter = router({
         throw new Error("Collection non trouvée");
       }
 
+      // Build update data, excluding undefined fields
+      const updateData: Record<string, unknown> = {};
+      if (input.data.name !== undefined) updateData.name = input.data.name;
+      if (input.data.description !== undefined) updateData.description = input.data.description;
+      if (input.data.coverImage !== undefined) updateData.coverImage = input.data.coverImage;
+      if (input.data.isPublic !== undefined) updateData.isPublic = input.data.isPublic;
+
       return ctx.prisma.collection.update({
         where: { id: input.id },
-        data: input.data,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: updateData as any,
       });
     }),
 
