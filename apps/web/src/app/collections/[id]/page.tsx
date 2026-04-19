@@ -58,16 +58,6 @@ function transformPublicObject(obj: {
   };
 }
 
-// Mock data pour les collections publiques (sans auth)
-const mockPublicCollection = {
-  id: "preview",
-  name: "Aperçu collection",
-  description: "Connectez-vous pour voir le contenu complet",
-  coverImage: null as string | null,
-  ownerName: null as string | null,
-  objects: [] as Parameters<typeof transformPrivateObject>[0][],
-};
-
 /**
  * Page de détail d'une collection.
  */
