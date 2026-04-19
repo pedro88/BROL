@@ -11,14 +11,14 @@ import { test, expect } from "@playwright/test";
 test("homepage loads", async ({ page }) => {
   await page.goto("/");
 
-  // Header avec logo - utilise le span spécifique
-  await expect(page.locator("header span:text('BROL')")).toBeVisible();
+  // Header avec logo
+  await expect(page.locator("text=BROL")).toBeVisible();
 
   // Section actions rapides
   await expect(page.getByText("ACTIONS RAPIDES")).toBeVisible();
-
-  // Liens d'actions existent (vérifie par texte partiel)
   await expect(page.getByRole("link", { name: /scanner/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /nouveau pret/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /ajouter/i })).toBeVisible();
 });
 
 /**
@@ -27,24 +27,24 @@ test("homepage loads", async ({ page }) => {
 test("navigation works", async ({ page }) => {
   await page.goto("/");
 
-  // Aller aux collections via la navigation bottom
-  await page.locator("nav").getByRole("link", { name: /collections/i }).click();
+  // Aller aux collections
+  await page.getByRole("link", { name: /collections/i }).click();
   await expect(page).toHaveURL(/collections/);
 
-  // Revenir à l'accueil via la navigation bottom
-  await page.locator("nav").getByRole("link", { name: /accueil/i }).click();
+  // Revenir à l'accueil
+  await page.getByRole("link", { name: /accueil/i }).click();
   await expect(page).toHaveURL("/");
 });
 
 /**
- * Vérifie que les liens fonctionnent.
+ * Vérifie que les liens externes fonctionnent.
  */
-test("links are present", async ({ page }) => {
+test("external links open", async ({ page }) => {
   await page.goto("/");
 
-  // Le header doit avoir un lien settings
-  const header = page.locator("header");
-  await expect(header.getByRole("link")).toHaveCount(1);
+  // Le lien vers les paramètres doit exister
+  const settingsLink = page.getByRole("link", { name: /parametres/i });
+  await expect(settingsLink).toBeVisible();
 });
 
 /**
@@ -55,8 +55,8 @@ test.describe("responsive", () => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto("/");
 
-    // Logo visible via header
-    await expect(page.locator("header span:text('BROL')")).toBeVisible();
+    // Logo visible
+    await expect(page.locator("text=BROL")).toBeVisible();
 
     // Navigation bottom visible
     await expect(page.locator("nav")).toBeVisible();

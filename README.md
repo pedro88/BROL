@@ -64,19 +64,6 @@ pnpm test             # Tests unitaires
 pnpm test:e2e         # Tests E2E (Playwright)
 ```
 
-## Ports & Services
-
-**Avant de lancer un serveur**, vérifier et libérer le port nécessaire :
-
-```bash
-# Vérifier si un service tourne sur le port
-lsof -i :3001  # API
-lsof -i :3000  # Web
-
-# Tuer le processus existant
-kill $(lsof -t -i :3001)
-```
-
 ## Développement
 
 1. Créer une branche: `git checkout -b feature/nom`

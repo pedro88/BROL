@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { router, dbProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure } from "../trpc";
 import {
   createObjectSchema,
   updateObjectSchema,
@@ -19,7 +19,7 @@ export const objectsRouter = router({
   /**
    * Liste les objets d'une collection.
    */
-  list: dbProcedure
+  list: protectedProcedure
     .input(
       z.object({
         collectionId: z.string().cuid(),
@@ -30,6 +30,9 @@ export const objectsRouter = router({
       const objects = await ctx.prisma.object.findMany({
         where: {
           collectionId: input.collectionId,
+          collection: {
+            userId: ctx.userId,
+          },
         },
         include: {
           loans: {
@@ -71,12 +74,15 @@ export const objectsRouter = router({
   /**
    * Récupère un objet par son ID.
    */
-  get: dbProcedure
+  get: protectedProcedure
     .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const object = await ctx.prisma.object.findFirst({
         where: {
           id: input.id,
+          collection: {
+            userId: ctx.userId,
+          },
         },
         include: {
           collection: true,
@@ -102,15 +108,22 @@ export const objectsRouter = router({
   /**
    * Crée un nouvel objet.
    */
-  create: dbProcedure
+  create: protectedProcedure
     .input(createObjectSchema)
     .mutation(async ({ ctx, input }) => {
-      // TODO: Vérifier que la collection appartient à l'utilisateur quand auth sera implémenté
+      // Vérifier que la collection appartient à l'utilisateur
+      const collection = await ctx.prisma.collection.findFirst({
+        where: { id: input.collectionId, userId: ctx.userId },
+      });
 
-      // Si un QR stock est fourni, vérifier qu'il n'est pas déjà utilisé
+      if (!collection) {
+        throw new Error("Collection non trouvée");
+      }
+
+      // Si un QR stock est fourni, vérifier qu'il appartient à l'utilisateur
       if (input.qrStockId) {
         const qrStock = await ctx.prisma.qrStock.findFirst({
-          where: { id: input.qrStockId, used: false },
+          where: { id: input.qrStockId, userId: ctx.userId, used: false },
         });
 
         if (!qrStock) {
@@ -138,12 +151,15 @@ export const objectsRouter = router({
   /**
    * Met à jour un objet existant.
    */
-  update: dbProcedure
+  update: protectedProcedure
     .input(z.object({ id: z.string().cuid(), data: updateObjectSchema }))
     .mutation(async ({ ctx, input }) => {
       const object = await ctx.prisma.object.findFirst({
         where: {
           id: input.id,
+          collection: {
+            userId: ctx.userId,
+          },
         },
       });
 
@@ -160,12 +176,15 @@ export const objectsRouter = router({
   /**
    * Supprime un objet.
    */
-  delete: dbProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       const object = await ctx.prisma.object.findFirst({
         where: {
           id: input.id,
+          collection: {
+            userId: ctx.userId,
+          },
         },
       });
 
@@ -184,7 +203,7 @@ export const objectsRouter = router({
    * Scan un ISBN pour récupérer les métadonnées.
    * @note Pour l'instant, retourne un résultat vide. Intégrer une API ISBN plus tard.
    */
-  lookupIsbn: dbProcedure
+  lookupIsbn: protectedProcedure
     .input(z.object({ isbn: z.string() }))
     .query(async ({ input }) => {
       // TODO: Intégrer une API ISBN (Google Books, Open Library, etc.)

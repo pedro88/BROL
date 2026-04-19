@@ -1,6 +1,6 @@
 /**
  * Point d'entrée du serveur API Brol.
- * Utilise tRPC avec l'adaptateur standalone (HTTP standard Node.js).
+ * Utilise tRPC avec un adaptateur HTTP standard (Node.js).
  *
  * @package @brol/api
  *
@@ -8,10 +8,10 @@
  * En production, l'API sera déployée comme serverless functions (Vercel).
  */
 
-import { createHTTPServer } from "@trpc/server/adapters/standalone";
+import { createServer } from "http";
+import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./router";
 import { createContext } from "./trpc";
-import type { IncomingMessage, ServerResponse } from "http";
 
 /**
  * Configuration du port.
@@ -19,37 +19,48 @@ import type { IncomingMessage, ServerResponse } from "http";
 const PORT = process.env.PORT || 3001;
 
 /**
- * Headers CORS pour permettre les requêtes depuis le frontend.
+ * Créateur du handler HTTP pour tRPC.
  */
-function setCorsHeaders(req: IncomingMessage, res: ServerResponse) {
-  const origin = req.headers.origin;
-  res.setHeader("Access-Control-Allow-Origin", origin || "*");
+const handler = (req: Request, res: { statusCode: number; setHeader: (k: string, v: string) => void; end: (data?: string) => void }) => {
+  // CORS headers basiques
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-}
+
+  if (req.method === "OPTIONS") {
+    res.statusCode = 200;
+    res.end();
+    return;
+  }
+
+  // Delegate à tRPC via le fetch adapter
+  fetchRequestHandler({
+    router: appRouter,
+    createContext,
+    endpoint: "/api/trpc",
+    req,
+    onError:
+      process.env.NODE_ENV === "development"
+        ? ({ path, error }) => {
+            console.error(`tRPC error on ${path ?? "<no-path>"}:`, error);
+          }
+        : undefined,
+  }).then((r) => {
+    res.statusCode = r.status;
+    r.headers.forEach((value: string, key: string) => {
+      res.setHeader(key, value);
+    });
+    r.text().then((body: string) => {
+      res.end(body);
+    });
+  });
+};
 
 /**
- * Création du serveur HTTP avec tRPC.
+ * Création du serveur HTTP.
  */
-const server = createHTTPServer({
-  router: appRouter,
-  createContext,
-  onError:
-    process.env.NODE_ENV === "development"
-      ? ({ path, error }: { path: string | undefined; error: Error }) => {
-          console.error(`tRPC error on ${path ?? "<no-path>"}:`, error.message);
-        }
-      : undefined,
-  middleware: (req, res, next) => {
-    setCorsHeaders(req, res);
-    if (req.method === "OPTIONS") {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
-    next();
-  },
+const server = createServer((req, res) => {
+  handler(req as unknown as Request, res);
 });
 
 /**

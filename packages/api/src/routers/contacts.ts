@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { router, dbProcedure } from "../trpc";
+import { router, protectedProcedure } from "../trpc";
 import {
   createContactSchema,
   updateContactSchema,
@@ -19,11 +19,11 @@ export const contactsRouter = router({
   /**
    * Liste les contacts de l'utilisateur.
    */
-  list: dbProcedure
+  list: protectedProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
-      // TODO: Filtrer par userId quand auth sera implémenté
       const contacts = await ctx.prisma.contact.findMany({
+        where: { userId: ctx.userId },
         orderBy: { name: "asc" },
         take: input?.limit ?? 50,
         cursor: input?.cursor ? { id: input.cursor } : undefined,
@@ -40,12 +40,13 @@ export const contactsRouter = router({
   /**
    * Récupère un contact par son ID.
    */
-  get: dbProcedure
+  get: protectedProcedure
     .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const contact = await ctx.prisma.contact.findFirst({
         where: {
           id: input.id,
+          userId: ctx.userId,
         },
       });
 
@@ -59,14 +60,13 @@ export const contactsRouter = router({
   /**
    * Crée un nouveau contact.
    */
-  create: dbProcedure
+  create: protectedProcedure
     .input(createContactSchema)
     .mutation(async ({ ctx, input }) => {
-      // TODO: Utiliser ctx.userId quand auth sera implémenté
       return ctx.prisma.contact.create({
         data: {
           ...input,
-          userId: "demo-user", // Placeholder jusqu'à auth
+          userId: ctx.userId,
         },
       });
     }),
@@ -74,11 +74,11 @@ export const contactsRouter = router({
   /**
    * Met à jour un contact existant.
    */
-  update: dbProcedure
+  update: protectedProcedure
     .input(z.object({ id: z.string().cuid(), data: updateContactSchema }))
     .mutation(async ({ ctx, input }) => {
       const contact = await ctx.prisma.contact.findFirst({
-        where: { id: input.id },
+        where: { id: input.id, userId: ctx.userId },
       });
 
       if (!contact) {
@@ -94,11 +94,11 @@ export const contactsRouter = router({
   /**
    * Supprime un contact.
    */
-  delete: dbProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       const contact = await ctx.prisma.contact.findFirst({
-        where: { id: input.id },
+        where: { id: input.id, userId: ctx.userId },
       });
 
       if (!contact) {
@@ -116,7 +116,7 @@ export const contactsRouter = router({
    * Ajoute un contact depuis un scan de profil.
    * Le code peut être un userId direct ou un code de scan.
    */
-  addFromScan: dbProcedure
+  addFromScan: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Vérifier que l'utilisateur scanné existe
@@ -128,14 +128,15 @@ export const contactsRouter = router({
         throw new Error("Utilisateur non trouvé");
       }
 
-      // TODO: Ne pas s'ajouter soi-même quand auth sera implémenté
-      // if (scannedUser.id === ctx.userId) {
-      //   throw new Error("Vous ne pouvez pas vous ajouter vous-même");
-      // }
+      // Ne pas s'ajouter soi-même
+      if (scannedUser.id === ctx.userId) {
+        throw new Error("Vous ne pouvez pas vous ajouter vous-même");
+      }
 
       // Vérifier si le contact existe déjà
       const existingContact = await ctx.prisma.contact.findFirst({
         where: {
+          userId: ctx.userId,
           email: scannedUser.email,
         },
       });
@@ -145,10 +146,9 @@ export const contactsRouter = router({
       }
 
       // Créer le contact
-      // TODO: Utiliser ctx.userId quand auth sera implémenté
       return ctx.prisma.contact.create({
         data: {
-          userId: "demo-user",
+          userId: ctx.userId,
           name: scannedUser.name || scannedUser.email,
           email: scannedUser.email,
         },
@@ -158,7 +158,7 @@ export const contactsRouter = router({
   /**
    * Invite un contact par email (créé un contact + envoi d'invitation).
    */
-  invite: dbProcedure
+  invite: protectedProcedure
     .input(z.object({ email: z.string().email(), name: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       // Vérifier si l'email n'est pas déjà un utilisateur
@@ -173,6 +173,7 @@ export const contactsRouter = router({
       // Vérifier si le contact existe déjà
       const existingContact = await ctx.prisma.contact.findFirst({
         where: {
+          userId: ctx.userId,
           email: input.email,
         },
       });
@@ -183,10 +184,9 @@ export const contactsRouter = router({
       }
 
       // Créer le contact
-      // TODO: Utiliser ctx.userId quand auth sera implémenté
       const contact = await ctx.prisma.contact.create({
         data: {
-          userId: "demo-user",
+          userId: ctx.userId,
           name: input.name || input.email,
           email: input.email,
           note: "Invitation en attente",
