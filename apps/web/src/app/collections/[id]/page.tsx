@@ -16,7 +16,7 @@ import { Button } from "../../../components/ui/button";
 import { ObjectCard } from "../../../components/objects/object-card";
 import { trpc } from "../../../lib/trpc";
 import { getSessionToken } from "../../../lib/auth-store";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 // Transform a private collection object (with loans) to ObjectCard format
 function transformPrivateObject(obj: {
@@ -64,12 +64,8 @@ function transformPublicObject(obj: {
 export default function CollectionDetailPage() {
   const params = useParams();
   const collectionId = params.id as string;
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Check auth state on mount
-  useEffect(() => {
-    setIsAuthenticated(!!getSessionToken());
-  }, []);
+  // Check auth state synchronously from stored token to avoid double-query flicker
+  const [isAuthenticated] = useState(() => !!getSessionToken());
 
   // Requête authentifiée (collections privées)
   const { data: collection } = trpc.collections.get.useQuery(

@@ -10,9 +10,15 @@ import { execSync } from "child_process";
 import path from "path";
 import { PrismaClient } from "@prisma/client";
 
-const dbUrl =
-  process.env.DATABASE_URL ??
+const dbUrl = process.env.DATABASE_URL ??
   "postgresql://piet:brolpass@localhost:5432/brol_test?schema=public";
+
+if (!process.env.DATABASE_URL) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    "[test] DATABASE_URL not set — falling back to hardcoded brol_test URL"
+  );
+}
 
 /**
  * Global test DB client (used in tests).

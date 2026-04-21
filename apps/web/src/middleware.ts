@@ -42,8 +42,22 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // /collections is a list page (protected). /collections/[id] is a detail page (public if collection isPublic).
-  // Allow /collections/[id] through — the page handles auth itself
+  // /collections/[id]/edit is protected — require auth
+  if (
+    pathname.startsWith("/collections/") &&
+    pathname.includes("/edit")
+  ) {
+    const sessionCookie = request.cookies.get("better-auth.session_token");
+    if (!sessionCookie) {
+      const loginUrl = new URL("/sign-in", request.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
+  // /collections/[id] is a detail page (public if collection isPublic).
+  // Allow through — the page handles auth itself.
   if (pathname.startsWith("/collections/") && pathname !== "/collections") {
     return NextResponse.next();
   }

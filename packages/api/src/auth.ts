@@ -112,7 +112,8 @@ export async function getSession(request: Request): Promise<BetterAuthSession | 
     }
 
     return null;
-  } catch {
+  } catch (err) {
+    console.error("[getSession] failed:", String(err));
     return null;
   }
 }
