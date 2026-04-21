@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server";
 import {
   createObjectSchema,
   updateObjectSchema,
@@ -18,6 +19,7 @@ import {
 export const objectsRouter = router({
   /**
    * Liste les objets d'une collection.
+   * Throws UNAUTHORIZED if the collection doesn't belong to the user.
    */
   list: protectedProcedure
     .input(
@@ -27,6 +29,16 @@ export const objectsRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
+      // First verify ownership — fail fast with a clear error rather than silent empty list
+      const collection = await ctx.prisma.collection.findFirst({
+        where: { id: input.collectionId, userId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!collection) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Collection non trouvée" });
+      }
+
       const objects = await ctx.prisma.object.findMany({
         where: {
           collectionId: input.collectionId,

@@ -43,9 +43,10 @@ describe("objectsRouter", () => {
       expect(result.items[0].name).toBe("Test Object");
     });
 
-    it("returns empty list for other user's collection", async () => {
-      const result = await callerFor(borrower.id).objects.list({ collectionId: collection.id });
-      expect(result.items).toHaveLength(0);
+    it("throws UNAUTHORIZED for other user's collection", async () => {
+      await expect(
+        callerFor(borrower.id).objects.list({ collectionId: collection.id })
+      ).rejects.toThrow();
     });
   });
 
