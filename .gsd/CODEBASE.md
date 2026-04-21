@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-04-21T05:54:58Z | Files: 109 | Described: 0/109
-<!-- gsd:codebase-meta {"generatedAt":"2026-04-21T05:54:58Z","fingerprint":"616bd796e7659f0dc09b423765ee4c413879f754","fileCount":109,"truncated":false} -->
+Generated: 2026-04-21T05:57:31Z | Files: 110 | Described: 0/110
+<!-- gsd:codebase-meta {"generatedAt":"2026-04-21T05:57:31Z","fingerprint":"b0c571da9bbed459781241643b0e9380b9413c76","fileCount":110,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -12,6 +12,7 @@ Generated: 2026-04-21T05:54:58Z | Files: 109 | Described: 0/109
 - `playwright.config.ts`
 - `pnpm-lock.yaml`
 - `pnpm-workspace.yaml`
+- `RAPPORT.md`
 - `README.md`
 - `tsconfig.json`
 - `tsconfig.tsbuildinfo`
