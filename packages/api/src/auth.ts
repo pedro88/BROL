@@ -1,56 +1,17 @@
 /**
  * BetterAuth instance for the standalone API server.
- * Mounts at /api/auth with Google, GitHub, and Apple OAuth.
+ * Mounts at /api/auth with email + password authentication.
+ *
+ * OAuth providers (Google, GitHub, Apple) are commented out for future use.
  *
  * @package @brol/api
  */
 
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { google, github, apple } from "better-auth/social-providers";
-import { SignJWT, importPKCS8 } from "jose";
+// OAuth providers — commented out for future use
+// import { google, github, apple } from "better-auth/social-providers";
 import { prisma } from "@brol/db";
-
-/**
- * Generate Apple client secret JWT (ES256).
- * The JWT is signed with the PKCS#8 key and cached after first generation.
- */
-async function generateAppleClientSecret(): Promise<string> {
-  const privateKeyPem = process.env.APPLE_PRIVATE_KEY;
-  const teamId = process.env.APPLE_TEAM_ID;
-  const clientId = process.env.APPLE_CLIENT_ID;
-  const keyId = process.env.APPLE_KEY_ID;
-
-  if (!privateKeyPem || !teamId || !clientId || !keyId) {
-    throw new Error(
-      "Missing Apple OAuth env vars: APPLE_PRIVATE_KEY, APPLE_TEAM_ID, APPLE_CLIENT_ID, APPLE_KEY_ID",
-    );
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  const signingKey = await importPKCS8(privateKeyPem, "ES256");
-
-  return new SignJWT({ iss: teamId, iat: now, exp: now + 15777000, aud: "https://appleid.apple.com", sub: clientId })
-    .setProtectedHeader({ alg: "ES256", kid: keyId })
-    .setIssuedAt(now)
-    .setExpirationTime(now + 15777000)
-    .sign(signingKey);
-}
-
-let _appleSecretPromise: Promise<string> | undefined;
-
-function appleClientSecretGetter(): Promise<string> {
-  if (!process.env.APPLE_PRIVATE_KEY || !process.env.APPLE_TEAM_ID) {
-    return Promise.resolve("");
-  }
-  if (!_appleSecretPromise) {
-    _appleSecretPromise = generateAppleClientSecret().catch((e) => {
-      _appleSecretPromise = undefined;
-      throw e;
-    });
-  }
-  return _appleSecretPromise as Promise<string>;
-}
 
 /**
  * BetterAuth auth instance for the API server.
@@ -62,24 +23,42 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001",
   basePath: "/api/auth",
-  socialProviders: {
-    // @ts-ignore - better-auth SocialProviders type mismatch
-    google: google({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-    }),
-    // @ts-ignore
-    github: github({
-      clientId: process.env.GITHUB_CLIENT_ID ?? "",
-      clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
-    }),
-    // @ts-ignore
-    apple: apple({
-      clientId: process.env.APPLE_CLIENT_ID ?? "",
-      // @ts-ignore
-      clientSecret: appleClientSecretGetter,
-    }),
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+    autoSignIn: true,
   },
+  // OAuth providers — commented out for future use
+  // socialProviders: {
+  //   google: google({
+  //     clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+  //     clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+  //   }),
+  //   github: github({
+  //     clientId: process.env.GITHUB_CLIENT_ID ?? "",
+  //     clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
+  //   }),
+  //   apple: apple({
+  //     clientId: process.env.APPLE_CLIENT_ID ?? "",
+  //     clientSecret: async () => {
+  //       const privateKeyPem = process.env.APPLE_PRIVATE_KEY;
+  //       const teamId = process.env.APPLE_TEAM_ID;
+  //       const clientId = process.env.APPLE_CLIENT_ID;
+  //       const keyId = process.env.APPLE_KEY_ID;
+  //       if (!privateKeyPem || !teamId || !clientId || !keyId) {
+  //         throw new Error("Missing Apple OAuth env vars");
+  //       }
+  //       const { SignJWT, importPKCS8 } = await import("jose");
+  //       const now = Math.floor(Date.now() / 1000);
+  //       const signingKey = await importPKCS8(privateKeyPem, "ES256");
+  //       return new SignJWT({ iss: teamId, iat: now, exp: now + 15777000, aud: "https://appleid.apple.com", sub: clientId })
+  //         .setProtectedHeader({ alg: "ES256", kid: keyId })
+  //         .setIssuedAt(now)
+  //         .setExpirationTime(now + 15777000)
+  //         .sign(signingKey);
+  //     },
+  //   }),
+  // },
 });
 
 export default auth;
@@ -151,23 +130,26 @@ export function createAuthWithPlugins(additionalPlugins: any[] = []) {
     secret: process.env.BETTER_AUTH_SECRET,
     baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
     basePath: "/api/auth",
-    socialProviders: {
-      // @ts-ignore
-      google: google({
-        clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-      }),
-      // @ts-ignore
-      github: github({
-        clientId: process.env.GITHUB_CLIENT_ID ?? "",
-        clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
-      }),
-      // @ts-ignore
-      apple: apple({
-        clientId: process.env.APPLE_CLIENT_ID ?? "",
-        clientSecret: process.env.APPLE_CLIENT_SECRET ?? "",
-      }),
+    emailAndPassword: {
+      enabled: true,
+      minPasswordLength: 8,
+      autoSignIn: true,
     },
+    // OAuth providers — commented out for future use
+    // socialProviders: {
+    //   google: google({
+    //     clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+    //     clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+    //   }),
+    //   github: github({
+    //     clientId: process.env.GITHUB_CLIENT_ID ?? "",
+    //     clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
+    //   }),
+    //   apple: apple({
+    //     clientId: process.env.APPLE_CLIENT_ID ?? "",
+    //     clientSecret: process.env.APPLE_CLIENT_SECRET ?? "",
+    //   }),
+    // },
     plugins: additionalPlugins,
   });
 }

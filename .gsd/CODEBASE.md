@@ -1,11 +1,12 @@
 # Codebase Map
 
-Generated: 2026-04-19T06:15:50Z | Files: 91 | Described: 0/91
-<!-- gsd:codebase-meta {"generatedAt":"2026-04-19T06:15:50Z","fingerprint":"4437f784be4d0b8c99a63a9eb1c396a8e8a23997","fileCount":91,"truncated":false} -->
+Generated: 2026-04-21T05:54:58Z | Files: 109 | Described: 0/109
+<!-- gsd:codebase-meta {"generatedAt":"2026-04-21T05:54:58Z","fingerprint":"616bd796e7659f0dc09b423765ee4c413879f754","fileCount":109,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
 - `.gitignore`
+- `.gsd-id`
 - `DECISIONS.md`
 - `package.json`
 - `playwright.config.ts`
@@ -48,14 +49,25 @@ Generated: 2026-04-19T06:15:50Z | Files: 91 | Described: 0/91
 - `apps/web/tsconfig.tsbuildinfo`
 
 ### apps/web/e2e/
+- `apps/web/e2e/auth.spec.ts`
 - `apps/web/e2e/collections.spec.ts`
 - `apps/web/e2e/homepage.spec.ts`
 - `apps/web/e2e/objects.spec.ts`
+- `apps/web/e2e/public-collections.spec.ts`
+
+### apps/web/src/
+- `apps/web/src/middleware.ts`
 
 ### apps/web/src/app/
 - `apps/web/src/app/globals.css`
 - `apps/web/src/app/layout.tsx`
 - `apps/web/src/app/page.tsx`
+
+### apps/web/src/app/api/auth/[...all]/
+- `apps/web/src/app/api/auth/[...all]/route.ts`
+
+### apps/web/src/app/browse/
+- `apps/web/src/app/browse/page.tsx`
 
 ### apps/web/src/app/collections/
 - `apps/web/src/app/collections/page.tsx`
@@ -77,6 +89,9 @@ Generated: 2026-04-19T06:15:50Z | Files: 91 | Described: 0/91
 
 ### apps/web/src/app/settings/
 - `apps/web/src/app/settings/page.tsx`
+
+### apps/web/src/app/sign-in/
+- `apps/web/src/app/sign-in/page.tsx`
 
 ### apps/web/src/components/
 - `apps/web/src/components/navigation.tsx`
@@ -100,6 +115,9 @@ Generated: 2026-04-19T06:15:50Z | Files: 91 | Described: 0/91
 - `apps/web/src/components/ui/label.tsx`
 
 ### apps/web/src/lib/
+- `apps/web/src/lib/auth-client.ts`
+- `apps/web/src/lib/auth-session-syncer.tsx`
+- `apps/web/src/lib/auth-store.ts`
 - `apps/web/src/lib/trpc-provider.tsx`
 - `apps/web/src/lib/trpc.ts`
 - `apps/web/src/lib/utils.ts`
@@ -107,8 +125,10 @@ Generated: 2026-04-19T06:15:50Z | Files: 91 | Described: 0/91
 ### packages/api/
 - `packages/api/package.json`
 - `packages/api/tsconfig.json`
+- `packages/api/vitest.config.ts`
 
 ### packages/api/src/
+- `packages/api/src/auth.ts`
 - `packages/api/src/index.ts`
 - `packages/api/src/router.ts`
 - `packages/api/src/server.ts`
@@ -119,6 +139,16 @@ Generated: 2026-04-19T06:15:50Z | Files: 91 | Described: 0/91
 - `packages/api/src/routers/loans.ts`
 - `packages/api/src/routers/objects.ts`
 - `packages/api/src/routers/qr.ts`
+
+### packages/api/src/routers/__tests__/
+- `packages/api/src/routers/__tests__/collections.test.ts`
+- `packages/api/src/routers/__tests__/contacts.test.ts`
+- `packages/api/src/routers/__tests__/loans.test.ts`
+- `packages/api/src/routers/__tests__/objects.test.ts`
+- `packages/api/src/routers/__tests__/qr.test.ts`
+
+### packages/api/src/test/
+- `packages/api/src/test/setup.ts`
 
 ### packages/api/src/trpc/
 - `packages/api/src/trpc/index.ts`
