@@ -17,10 +17,12 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
+  // Use production build — dev server has Turbopack SSR bugs with React hooks.
+  // API server must be running manually (pnpm --filter @brol/api dev)
   webServer: {
-    command: "npm run dev",
+    command: "pnpm start",
     url: "http://localhost:3000",
     reuseExistingServer: true,
-    timeout: 120 * 1000,
+    timeout: 30 * 1000,
   },
 });

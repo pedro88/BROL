@@ -10,6 +10,7 @@ import { trpc } from "../../../../lib/trpc";
 
 /**
  * Page d'édition d'un objet.
+ * Protégée — nécessite authentification (middleware).
  */
 export default function EditObjectPage() {
   const params = useParams();
@@ -17,27 +18,10 @@ export default function EditObjectPage() {
   const objectId = params.id as string;
   const [dialogOpen, setDialogOpen] = useState(true);
 
-  // Fetch object
   const { data: object, isLoading } = trpc.objects.get.useQuery(
     { id: objectId },
     { enabled: !!objectId }
   );
-
-  // Mock data for demo
-  const mockObject = {
-    id: objectId,
-    name: "Le Petit Prince",
-    author: "Antoine de Saint-Exupéry",
-    edition: "Gallimard, 1943",
-    condition: "GOOD" as const,
-    notes: "Édition de collection",
-    collection: {
-      id: "col1",
-      name: "Ma Bibliothèque",
-    },
-  };
-
-  const objectData = object ?? mockObject;
 
   const handleSuccess = () => {
     router.push(`/objects/${objectId}`);
@@ -79,7 +63,7 @@ export default function EditObjectPage() {
         )}
 
         {/* Dialog */}
-        {!isLoading && objectData && (
+        {!isLoading && object && (
           <EditObjectDialog
             open={dialogOpen}
             onOpenChange={(open) => {
@@ -87,16 +71,25 @@ export default function EditObjectPage() {
               if (!open) handleClose();
             }}
             objectId={objectId}
-            objectName={objectData.name}
+            objectName={object.name}
             initialData={{
-              name: objectData.name,
-              author: objectData.author,
-              edition: objectData.edition,
-              condition: objectData.condition,
-              notes: objectData.notes,
+              name: object.name,
+              author: object.author,
+              edition: object.edition,
+              condition: object.condition,
+              notes: object.notes,
             }}
             onSuccess={handleSuccess}
           />
+        )}
+
+        {/* Not found state */}
+        {!isLoading && !object && (
+          <div className="card-vhs p-8 text-center">
+            <p className="font-mono text-sm text-muted-foreground">
+              Objet non trouvé.
+            </p>
+          </div>
         )}
       </main>
 

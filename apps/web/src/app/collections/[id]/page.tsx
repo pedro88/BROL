@@ -1,23 +1,32 @@
+/**
+ * Page de détail d'une collection.
+ * Affiche les informations de la collection et ses objets.
+ * Accessible publiquement si la collection estPublic = true.
+ *
+ * @package @brol/web
+ */
+
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, BookOpen, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, BookOpen, Pencil, Trash2, Globe } from "lucide-react";
 import { Header, Navigation } from "../../../components/navigation";
 import { Button } from "../../../components/ui/button";
 import { ObjectCard } from "../../../components/objects/object-card";
 import { trpc } from "../../../lib/trpc";
-import type { AppRouter } from "@brol/api";
-import type { inferRouterOutputs } from "@trpc/server";
+import { getSessionToken } from "../../../lib/auth-store";
+import { useEffect, useState } from "react";
 
-type RouterOutputs = inferRouterOutputs<AppRouter>;
-type CollectionObject = RouterOutputs["collections"]["get"]["objects"][number];
-
-type ObjectWithLoans = RouterOutputs["collections"]["get"]["objects"][number];
-
-// Transform tRPC object to ObjectCard format
-function transformObject(obj: CollectionObject) {
-  const activeLoan = obj.loans?.find((l: { status: string }) => l.status === "ACTIVE");
+// Transform a private collection object (with loans) to ObjectCard format
+function transformPrivateObject(obj: {
+  id: string;
+  name: string;
+  author: string | null;
+  condition: "NEW" | "LIKE_NEW" | "GOOD" | "FAIR" | "POOR";
+  loans?: { id: string; status: string; borrower?: { id: string; name: string | null; avatarUrl: string | null }; returnDueDate?: Date }[];
+}) {
+  const activeLoan = obj.loans?.find((l) => l.status === "ACTIVE");
   return {
     id: obj.id,
     name: obj.name,
@@ -33,75 +42,151 @@ function transformObject(obj: CollectionObject) {
   };
 }
 
+// Transform a public collection object (no loans) to ObjectCard format
+function transformPublicObject(obj: {
+  id: string;
+  name: string;
+  author: string | null;
+  condition: "NEW" | "LIKE_NEW" | "GOOD" | "FAIR" | "POOR";
+}) {
+  return {
+    id: obj.id,
+    name: obj.name,
+    author: obj.author,
+    condition: obj.condition,
+    currentLoan: null,
+  };
+}
+
 /**
  * Page de détail d'une collection.
- * Affiche les informations de la collection et ses objets.
  */
 export default function CollectionDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const collectionId = params.id as string;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Fetch collection details
-  const { data: collection, isLoading } = trpc.collections.get.useQuery(
+  // Check auth state on mount
+  useEffect(() => {
+    setIsAuthenticated(!!getSessionToken());
+  }, []);
+
+  // Requête authentifiée (collections privées)
+  const { data: collection } = trpc.collections.get.useQuery(
     { id: collectionId },
-    { enabled: !!collectionId }
+    { enabled: !!collectionId && isAuthenticated }
   );
 
-  // Mock data for demo
-  const mockCollection = {
-    id: collectionId,
-    name: "Ma Bibliothèque",
-    description: "Romans et BD de ma collection personnelle",
-    coverImage: null as string | null,
-    objects: [
-      {
-        id: "obj1",
-        name: "Le Petit Prince",
-        author: "Antoine de Saint-Exupéry",
-        condition: "GOOD" as const,
-        loans: [],
-      },
-      {
-        id: "obj2",
-        name: "Astérix le Gaulois",
-        author: "Goscinny & Uderzo",
-        condition: "LIKE_NEW" as const,
-        loans: [
-          {
-            id: "loan1",
-            status: "ACTIVE" as const,
-            borrower: { id: "b1", name: "Jean Dupont", avatarUrl: null },
-            returnDueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          },
-        ],
-      },
-      {
-        id: "obj3",
-        name: "Python Crash Course",
-        author: "Eric Matthes",
-        condition: "FAIR" as const,
-        loans: [],
-      },
-    ] as ObjectWithLoans[],
-  };
-
-  const collectionData = collection ?? mockCollection;
-  const objects = collectionData.objects?.map(transformObject) ?? [];
-  const loanedCount = objects.filter((o: ReturnType<typeof transformObject>) => o.currentLoan).length;
-
-  // Delete mutation
-  const deleteMutation = trpc.collections.delete.useMutation({
-    onSuccess: () => {
-      router.push("/collections");
-    },
-  });
-
-  const handleDelete = () => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette collection ? Cette action est irréversible.")) {
-      deleteMutation.mutate({ id: collectionId });
+  // Requête publique (collections publiques)
+  const { data: publicCollection } = trpc.collections.getPublic.useQuery(
+    { id: collectionId },
+    {
+      enabled: !!collectionId && !isAuthenticated,
+      // Retry a few times in case of race with auth check
+      retry: 1,
     }
-  };
+  );
+
+  const isLoading = !!(collection || publicCollection);
+
+  // Use authenticated collection data or public data
+  const collectionData = isAuthenticated ? collection : publicCollection;
+
+  // Owner name — source differs between public and private views
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ownerName = isAuthenticated
+    ? (collectionData as any)?.user?.name
+    : (collectionData as any)?.ownerName;
+
+  const isEmptyCollection = !isLoading && !collectionData;
+  const isPublicAccess = !isAuthenticated && isEmptyCollection;
+
+  // Pour les données privées, on transforme les objets
+  // Transform objects to ObjectCard format
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const objects: any[] = collectionData
+    ? isAuthenticated
+      ? (collectionData as any).objects?.map(transformPrivateObject) ?? []
+      : (collectionData as any).objects?.map(transformPublicObject) ?? []
+    : [];
+
+  const loanedCount = objects.filter((o) => o.currentLoan).length;
+
+  // Empty/not-found state
+  if (isEmptyCollection) {
+    return (
+      <div className="min-h-screen pb-20">
+        <Header />
+        <main className="px-4 py-6 max-w-lg mx-auto">
+          <Link
+            href="/collections"
+            className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Collections
+          </Link>
+
+          <div className="card-vhs p-8 text-center">
+            <BookOpen className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+            <h2 className="font-display text-xl text-muted-foreground mb-2">
+              COLLECTION NON TROUVÉE
+            </h2>
+            <p className="font-mono text-sm text-muted-foreground mb-4">
+              Cette collection n&apos;existe pas ou n&apos;est pas accessible.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button asChild>
+                <Link href="/browse">
+                  <Globe className="w-4 h-4 mr-2" />
+                  Voir les collections publiques
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/sign-in?callbackUrl=/collections">
+                  Se connecter
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </main>
+        <Navigation />
+      </div>
+    );
+  }
+
+  // Pas connecté mais collection publique
+  if (isPublicAccess) {
+    return (
+      <div className="min-h-screen pb-20">
+        <Header />
+        <main className="px-4 py-6 max-w-lg mx-auto">
+          <Link
+            href="/browse"
+            className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Collections publiques
+          </Link>
+
+          <div className="card-vhs p-8 text-center">
+            <Globe className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+            <h2 className="font-display text-xl text-muted-foreground mb-2">
+              COLLECTION PUBLIQUE
+            </h2>
+            <p className="font-mono text-sm text-muted-foreground mb-4">
+              Connectez-vous pour voir le contenu et gérer vos prêts.
+            </p>
+            <Button asChild>
+              <Link href="/sign-in?callbackUrl=/collections">
+                Se connecter
+              </Link>
+            </Button>
+          </div>
+        </main>
+        <Navigation />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20">
@@ -110,11 +195,11 @@ export default function CollectionDetailPage() {
       <main className="px-4 py-6 max-w-lg mx-auto">
         {/* Back button */}
         <Link
-          href="/collections"
+          href={isAuthenticated ? "/collections" : "/browse"}
           className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Collections
+          {isAuthenticated ? "Collections" : "Collections publiques"}
         </Link>
 
         {/* Loading state */}
@@ -139,24 +224,22 @@ export default function CollectionDetailPage() {
                       {collectionData.description}
                     </p>
                   )}
+                  {ownerName && (
+                    <p className="font-mono text-xs text-muted-foreground mt-1">
+                      par {ownerName}
+                    </p>
+                  )}
                 </div>
 
-                <div className="flex gap-2">
-                  <Button variant="outline" size="icon" asChild>
-                    <Link href={`/collections/${collectionId}/edit`}>
-                      <Pencil className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleDelete}
-                    disabled={deleteMutation.isPending}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+                {isAuthenticated && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="icon" asChild>
+                      <Link href={`/collections/${collectionId}/edit`}>
+                        <Pencil className="w-4 h-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Stats */}
@@ -169,26 +252,30 @@ export default function CollectionDetailPage() {
                     objets
                   </span>
                 </div>
-                <div className="card-vhs px-4 py-2">
-                  <span className="font-display text-2xl text-secondary">
-                    {loanedCount}
-                  </span>
-                  <span className="font-mono text-xs text-muted-foreground ml-2">
-                    prêtés
-                  </span>
-                </div>
+                {isAuthenticated && loanedCount > 0 && (
+                  <div className="card-vhs px-4 py-2">
+                    <span className="font-display text-2xl text-secondary">
+                      {loanedCount}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground ml-2">
+                      prêtés
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Add object button */}
-            <div className="mb-4">
-              <Button asChild className="w-full">
-                <Link href={`/objects/add?collectionId=${collectionId}`}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Ajouter un objet
-                </Link>
-              </Button>
-            </div>
+            {/* Add object button (authenticated only) */}
+            {isAuthenticated && (
+              <div className="mb-4">
+                <Button asChild className="w-full">
+                  <Link href={`/objects/add?collectionId=${collectionId}`}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Ajouter un objet
+                  </Link>
+                </Button>
+              </div>
+            )}
 
             {/* Objects list */}
             {objects.length === 0 && (
@@ -198,7 +285,9 @@ export default function CollectionDetailPage() {
                   AUCUN OBJET
                 </h2>
                 <p className="font-mono text-sm text-muted-foreground">
-                  Ajoutez votre premier objet à cette collection
+                  {isAuthenticated
+                    ? "Ajoutez votre premier objet à cette collection"
+                    : "Cette collection est vide."}
                 </p>
               </div>
             )}

@@ -7,6 +7,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import superjson from "superjson";
 import { prisma } from "@brol/db";
+import { getSession } from "../auth";
 
 /**
  * Type pour le context de la requête.
@@ -14,18 +15,27 @@ import { prisma } from "@brol/db";
 export interface Context {
   prisma: typeof prisma;
   userId: string | null;
+  /** Raw request headers (lowercase keys) for auth helpers */
+  headers: Record<string, string>;
 }
 
 /**
  * Création du context pour chaque requête (fetch adapter).
+ * Intègre BetterAuth pour récupérer le userId depuis les cookies/session.
  */
 export async function createContext(opts: FetchCreateContextFnOptions): Promise<Context> {
-  // TODO: Intégrer BetterAuth pour récupérer le userId depuis les cookies/session
-  // Pour l'instant, on retourne null (non authentifié)
+  const session = await getSession(opts.req);
+
+  // Build headers object from request for use in procedures
+  const headers: Record<string, string> = {};
+  opts.req.headers.forEach((value, key) => {
+    headers[key.toLowerCase()] = value;
+  });
 
   return {
     prisma,
-    userId: null,
+    userId: session?.user?.id ?? null,
+    headers,
   };
 }
 

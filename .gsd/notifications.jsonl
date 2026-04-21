@@ -29,3 +29,8 @@
 {"id":"a285eb0e-9fbd-4137-890f-abd9adda0c8b","ts":"2026-04-19T06:17:05.329Z","severity":"info","message":"Reviewing prior context...","source":"notify","read":false}
 {"id":"f69a6968-556d-47a5-8c33-780c32e9fff8","ts":"2026-04-19T06:17:05.333Z","severity":"success","message":"✓ Reviewed prior context","source":"notify","read":false}
 {"id":"373e5498-719d-4348-ba1a-b3cf0cb666fd","ts":"2026-04-19T06:18:25.835Z","severity":"warning","message":"Web search: Set BRAVE_API_KEY or use an Anthropic model for built-in search","source":"notify","read":false}
+{"id":"cf67dc9c-9fc6-4e43-a2e7-98cffc48d40e","ts":"2026-04-20T12:08:53.755Z","severity":"warning","message":"Web search: Set BRAVE_API_KEY or use an Anthropic model for built-in search","source":"notify","read":false}
+{"id":"8581077f-8da2-4b35-b4f6-448b664c20a7","ts":"2026-04-20T12:09:25.908Z","severity":"warning","message":"[reconcile] imported 4 tasks from plan file for M002/S02 — DB was empty (#3600)","source":"workflow-logger","read":false}
+{"id":"27d4e7a0-82aa-4b81-ad47-0745559f90e1","ts":"2026-04-21T05:53:23.539Z","severity":"info","message":"Current version: v2.75.0\nChecking npm registry...","source":"notify","read":false}
+{"id":"c5883b11-a67b-4efb-980a-d6169f8550af","ts":"2026-04-21T05:53:23.609Z","severity":"info","message":"Updating: v2.75.0 → v2.77.0...","source":"notify","read":false}
+{"id":"ca6d4705-733b-47d4-bca3-e099969483f5","ts":"2026-04-21T05:53:44.534Z","severity":"info","message":"Updated to v2.77.0. Restart your GSD session to use the new version.","source":"notify","read":false}

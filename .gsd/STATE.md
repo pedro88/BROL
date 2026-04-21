@@ -1,12 +1,13 @@
 # GSD State
 
-**Active Milestone:** M001: M001: Collections & Objects Management
-**Active Slice:** None
-**Phase:** complete
-**Requirements Status:** 0 active · 0 validated · 0 deferred · 0 out of scope
+**Active Milestone:** M002: Auth + Collections publiques
+**Active Slice:** S02: Collections publiques
+**Phase:** evaluating-gates
+**Requirements Status:** 12 active · 1 validated · 2 deferred · 3 out of scope
 
 ## Milestone Registry
-- ✅ **M001:** M001: Collections & Objects Management
+- ✅ **M001:** Collections & Objects Management
+- 🔄 **M002:** Auth + Collections publiques
 
 ## Recent Decisions
 - None recorded
@@ -15,4 +16,4 @@
 - None
 
 ## Next Action
-All milestones complete.
+Evaluate 2 quality gate(s) for S02 before execution.
