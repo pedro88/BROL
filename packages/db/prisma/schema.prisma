@@ -24,8 +24,9 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Auth
-  emailVerified DateTime?
-  accounts      Account[]
+  hashedPassword  String?
+  emailVerified   Boolean   @default(false)
+  accounts        Account[]
   sessions      Session[]
 
   // Relations
@@ -44,6 +45,7 @@ model Account {
   type              String
   provider          String
   providerAccountId String
+  password          String?  // For email+password auth via BetterAuth
   refresh_token     String?
   access_token      String?
   expires_at        Int?
