@@ -45,7 +45,7 @@ export type {
 export interface UserPublic {
   id: string;
   name: string | null;
-  avatarUrl: string | null;
+  image: string | null;
 }
 
 export interface UserProfile extends UserPublic {

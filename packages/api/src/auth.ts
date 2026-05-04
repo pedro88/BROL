@@ -168,7 +168,7 @@ export async function getSession(request: Request): Promise<BetterAuthSession | 
               email: dbSession.user.email,
               name: dbSession.user.name ?? null,
               emailVerified: dbSession.user.emailVerified ?? false,
-              image: dbSession.user.avatarUrl ?? null,
+              image: dbSession.user.image ?? null,
             },
           };
         }

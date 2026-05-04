@@ -39,7 +39,7 @@ export const loansRouter = router({
             select: {
               id: true,
               name: true,
-              avatarUrl: true,
+              image: true,
             },
           },
         },
@@ -87,7 +87,7 @@ export const loansRouter = router({
             select: {
               id: true,
               name: true,
-              avatarUrl: true,
+              image: true,
             },
           },
         },
@@ -129,14 +129,14 @@ export const loansRouter = router({
             select: {
               id: true,
               name: true,
-              avatarUrl: true,
+              image: true,
             },
           },
           owner: {
             select: {
               id: true,
               name: true,
-              avatarUrl: true,
+              image: true,
             },
           },
         },
@@ -206,7 +206,7 @@ export const loansRouter = router({
         include: {
           object: true,
           borrower: {
-            select: { id: true, name: true, avatarUrl: true },
+            select: { id: true, name: true, image: true },
           },
         },
       });

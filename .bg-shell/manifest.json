@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "id": "d857b0f6",
+    "label": "web-dev-server",
+    "command": "cd /home/piet/Projets/webDev/BROL/apps/web && npx next dev --port 3000 2>&1",
+    "cwd": "/home/piet/Projets/webDev/BROL",
+    "ownerSessionFile": "/home/piet/.gsd/sessions/--home-piet-Projets-webDev-BROL--/2026-05-04T07-02-54-211Z_9a330ab6-f9a5-4fa7-9654-b7faa7377bbd.jsonl",
+    "persistAcrossSessions": false,
+    "startedAt": 1777879934090,
+    "processType": "server",
+    "group": null,
+    "readyPattern": "Ready",
+    "readyPort": 3000,
+    "pid": 78782
+  },
+  {
+    "id": "a2ed48fa",
+    "label": "api-server",
+    "command": "cd /home/piet/Projets/webDev/BROL && DATABASE_URL=\"postgresql://postgres:password@localhost:5432/brol_test?schema=public\" pnpm --filter @brol/api exec tsx src/server.ts",
+    "cwd": "/home/piet/Projets/webDev/BROL",
+    "ownerSessionFile": "/home/piet/.gsd/sessions/--home-piet-Projets-webDev-BROL--/2026-05-04T07-02-54-211Z_9a330ab6-f9a5-4fa7-9654-b7faa7377bbd.jsonl",
+    "persistAcrossSessions": true,
+    "startedAt": 1777883156267,
+    "processType": "server",
+    "group": "brol",
+    "readyPattern": "Server running on",
+    "readyPort": 3001,
+    "pid": 97277
+  }
+]

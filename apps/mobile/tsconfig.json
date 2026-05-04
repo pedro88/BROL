@@ -3,14 +3,28 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@brol/shared": ["../../packages/shared/src"],
-      "@brol/shared/*": ["../../packages/shared/src/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@brol/shared": [
+        "../../packages/shared/src"
+      ],
+      "@brol/shared/*": [
+        "../../packages/shared/src/*"
+      ]
     },
     "moduleResolution": "bundler",
     "module": "esnext",
     "jsx": "react-native"
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
+  "extends": "expo/tsconfig.base"
 }

@@ -51,7 +51,7 @@ export const objectsRouter = router({
             where: { status: "ACTIVE" },
             include: {
               borrower: {
-                select: { id: true, name: true, avatarUrl: true },
+                select: { id: true, name: true, image: true },
               },
             },
           },
@@ -101,7 +101,7 @@ export const objectsRouter = router({
           loans: {
             include: {
               borrower: {
-                select: { id: true, name: true, avatarUrl: true },
+                select: { id: true, name: true, image: true },
               },
             },
             orderBy: { lentAt: "desc" },

@@ -24,7 +24,7 @@ function transformPrivateObject(obj: {
   name: string;
   author: string | null;
   condition: "NEW" | "LIKE_NEW" | "GOOD" | "FAIR" | "POOR";
-  loans?: { id: string; status: string; borrower?: { id: string; name: string | null; avatarUrl: string | null }; returnDueDate?: Date }[];
+  loans?: { id: string; status: string; borrower?: { id: string; name: string | null; image: string | null }; returnDueDate?: Date }[];
 }) {
   const activeLoan = obj.loans?.find((l) => l.status === "ACTIVE");
   return {

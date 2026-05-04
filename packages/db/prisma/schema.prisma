@@ -18,16 +18,15 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
-  avatarUrl String?
+  image     String?  // BetterAuth: avatarUrl → image
   locale    String   @default("fr") // fr, nl, en
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Auth
-  hashedPassword  String?
-  emailVerified   Boolean   @default(false)
-  accounts        Account[]
-  sessions      Session[]
+  // Auth (BetterAuth uses Account.password for credentials)
+  emailVerified Boolean   @default(false)
+  accounts     Account[]
+  sessions     Session[]
 
   // Relations
   collections Collection[]
@@ -40,20 +39,19 @@ model User {
 }
 
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  providerId        String  // BetterAuth default field name
-  accountId         String  // BetterAuth default field name
-  password          String?
-  refreshToken      String?
-  accessToken       String?
-  expiresAt         Int?
-  tokenType         String?
-  scope             String?
-  idToken           String?
-  sessionState      String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                   String    @id @default(cuid())
+  userId               String
+  providerId           String    // BetterAuth: "credential" for email/password
+  accountId            String    // BetterAuth: unique per provider
+  password             String?   // BetterAuth: bcrypt/scrypt hash (set only for credential provider)
+  accessToken          String?
+  refreshToken         String?
+  idToken              String?
+  accessTokenExpiresAt DateTime? // BetterAuth (was: expiresAt Int?)
+  refreshTokenExpiresAt DateTime? // BetterAuth v1.6.0
+  scope                String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

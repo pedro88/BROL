@@ -64,7 +64,7 @@ export const collectionsRouter = router({
                 where: { status: "ACTIVE" },
                 include: {
                   borrower: {
-                    select: { id: true, name: true, avatarUrl: true },
+                    select: { id: true, name: true, image: true },
                   },
                 },
               },
