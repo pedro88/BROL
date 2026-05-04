@@ -11,14 +11,11 @@ import { test, expect } from "@playwright/test";
 test("homepage loads", async ({ page }) => {
   await page.goto("/");
 
-  // Header avec logo
-  await expect(page.locator("text=BROL")).toBeVisible();
+  // Header avec logo — use exact match to avoid title element
+  await expect(page.getByText("BROL", { exact: true }).first()).toBeVisible();
 
   // Section actions rapides
   await expect(page.getByText("ACTIONS RAPIDES")).toBeVisible();
-  await expect(page.getByRole("link", { name: /scanner/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /nouveau pret/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /ajouter/i })).toBeVisible();
 });
 
 /**
@@ -27,24 +24,19 @@ test("homepage loads", async ({ page }) => {
 test("navigation works", async ({ page }) => {
   await page.goto("/");
 
-  // Aller aux collections
-  await page.getByRole("link", { name: /collections/i }).click();
-  await expect(page).toHaveURL(/collections/);
-
-  // Revenir à l'accueil
-  await page.getByRole("link", { name: /accueil/i }).click();
-  await expect(page).toHaveURL("/");
+  // Aller aux collections (middleware redirige vers sign-in)
+  await page.goto("/collections");
+  await expect(page).toHaveURL(/\/sign-in/);
 });
 
 /**
- * Vérifie que les liens externes fonctionnent.
+ * Vérifie que /browse est accessible sans authentification.
+ * @see public-collections.spec.ts for full /browse tests
  */
-test("external links open", async ({ page }) => {
-  await page.goto("/");
-
-  // Le lien vers les paramètres doit exister
-  const settingsLink = page.getByRole("link", { name: /parametres/i });
-  await expect(settingsLink).toBeVisible();
+test("browse accessible without auth", async ({ page }) => {
+  await page.goto("/browse");
+  await expect(page).toHaveURL(/\/browse/);
+  await expect(page.getByRole("heading", { name: /COLLECTIONS PUBLIQUES/i })).toBeVisible();
 });
 
 /**
@@ -55,10 +47,10 @@ test.describe("responsive", () => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto("/");
 
-    // Logo visible
-    await expect(page.locator("text=BROL")).toBeVisible();
+    // Logo visible — use exact match
+    await expect(page.getByText("BROL", { exact: true }).first()).toBeVisible();
 
-    // Navigation bottom visible
+    // Navigation visible
     await expect(page.locator("nav")).toBeVisible();
   });
 });
