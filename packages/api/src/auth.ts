@@ -129,7 +129,7 @@ export interface BetterAuthSession {
     id: string;
     email: string;
     name: string | null;
-    emailVerified: Date | null;
+    emailVerified: boolean | null;
     image: string | null;
   };
 }
@@ -152,22 +152,22 @@ export async function getSession(request: Request): Promise<BetterAuthSession | 
       const token = authHeader.slice(7).trim();
       if (token) {
         const dbSession = await prisma.session.findUnique({
-          where: { sessionToken: token },
+          where: { token },
           include: { user: true },
         });
-        if (dbSession && dbSession.expires > new Date()) {
+        if (dbSession && dbSession.expiresAt > new Date()) {
           return {
             session: {
               id: dbSession.id,
-              token: dbSession.sessionToken,
+              token: dbSession.token,
               userId: dbSession.userId,
-              expiresAt: dbSession.expires,
+              expiresAt: dbSession.expiresAt,
             },
             user: {
               id: dbSession.user.id,
               email: dbSession.user.email,
               name: dbSession.user.name ?? null,
-              emailVerified: !!dbSession.user.emailVerified,
+              emailVerified: dbSession.user.emailVerified ?? false,
               image: dbSession.user.avatarUrl ?? null,
             },
           };

@@ -51,7 +51,8 @@ export function AuthSessionSyncer() {
         });
         const data = await res.json();
         if (!cancelled) {
-          const token = data?.session?.token;
+          // Both sign-in/sign-up and get-session return token at the root level
+        const token = data?.session?.token ?? data?.token;
           setSessionToken(token ?? undefined);
         }
       } catch {
