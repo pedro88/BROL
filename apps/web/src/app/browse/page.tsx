@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Page de parcourir les collections publiques.
  * Accessible sans authentification —任何人 peut browses les collections rendues publiques.

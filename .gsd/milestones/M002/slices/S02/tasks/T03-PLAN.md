@@ -6,16 +6,14 @@ skills_used: []
 
 # T03: Créer page /browse
 
-Créer page /browse pour lister les collections publiques. Utilise trpc.collections.listPublic.useQuery(). Grid responsive.
-
 ## Inputs
 
-- `packages/api/src/routers/collections.ts`
+- None specified.
 
 ## Expected Output
 
-- `apps/web/src/app/browse/page.tsx`
+- Update the implementation and proof artifacts needed for this task.
 
 ## Verification
 
-curl -o /dev/null -w '%{http_code}' http://localhost:3000/browse
+- Verify the task outcome with the slice-level checks.

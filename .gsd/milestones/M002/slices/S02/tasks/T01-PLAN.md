@@ -4,9 +4,7 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T01: Ajouter isPublic au modèle Prisma
-
-Ajouter champ isPublic Bool @default(false) au modèle Collection et migrer la DB
+# T01: Champ isPublic ajouté au modèle Collection Prisma
 
 ## Inputs
 
@@ -14,8 +12,8 @@ Ajouter champ isPublic Bool @default(false) au modèle Collection et migrer la D
 
 ## Expected Output
 
-- `packages/db/prisma/schema.prisma`
+- Update the implementation and proof artifacts needed for this task.
 
 ## Verification
 
-grep isPublic packages/db/prisma/schema.prisma
+- Verify the task outcome with the slice-level checks.

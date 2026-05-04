@@ -6,16 +6,14 @@ skills_used: []
 
 # T02: Ajouter listPublic/getPublic au tRPC router
 
-Ajouter listPublic (publicProcedure) et getPublic (publicProcedure) au collectionsRouter. Laisse list/get existants (protectedProcedure) pour les collections de l'utilisateur.
-
 ## Inputs
 
 - None specified.
 
 ## Expected Output
 
-- `packages/api/src/routers/collections.ts`
+- Update the implementation and proof artifacts needed for this task.
 
 ## Verification
 
-curl http://localhost:3001/api/trpc/collections.listPublic
+- Verify the task outcome with the slice-level checks.

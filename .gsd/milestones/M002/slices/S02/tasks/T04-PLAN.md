@@ -6,16 +6,14 @@ skills_used: []
 
 # T04: Ajouter isPublic toggle au CreateCollectionDialog
 
-Ajouter toggle isPublic au formulaire de création. Mettre à jour le schéma Zod pour inclure isPublic.
-
 ## Inputs
 
-- `packages/api/src/routers/collections.ts`
+- None specified.
 
 ## Expected Output
 
-- `apps/web/src/components/collections/create-collection-dialog.tsx`
+- Update the implementation and proof artifacts needed for this task.
 
 ## Verification
 
-grep isPublic apps/web/src/components/collections/create-collection-dialog.tsx
+- Verify the task outcome with the slice-level checks.

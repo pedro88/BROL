@@ -1,13 +1,14 @@
 # GSD State
 
-**Active Milestone:** M002: Auth + Collections publiques
-**Active Slice:** S02: Collections publiques
-**Phase:** evaluating-gates
-**Requirements Status:** 12 active · 1 validated · 2 deferred · 3 out of scope
+**Active Milestone:** M002: M002
+**Active Slice:** S03: Mock data → real tRPC queries
+**Phase:** planning
+**Requirements Status:** 3 active · 0 validated · 0 deferred · 0 out of scope
 
 ## Milestone Registry
-- ✅ **M001:** Collections & Objects Management
-- 🔄 **M002:** Auth + Collections publiques
+- ✅ **M001:** M001
+- 🔄 **M002:** M002
+- ⬜ **M003:** Auth: fix password hashing & persistence
 
 ## Recent Decisions
 - None recorded
@@ -16,4 +17,4 @@
 - None
 
 ## Next Action
-Evaluate 2 quality gate(s) for S02 before execution.
+Slice S03 has no DB tasks. Plan slice tasks before execution.
