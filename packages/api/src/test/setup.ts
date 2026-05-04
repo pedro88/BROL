@@ -83,14 +83,14 @@ function generateCuid(): string {
 export async function createTestUser(overrides: Partial<{
   email: string;
   name: string;
-  emailVerified: Date | null;
+  emailVerified: boolean | null;
 }> = {}) {
   return prisma.user.create({
     data: {
       id: generateCuid(),
       email: overrides.email ?? `test-${Date.now()}@example.com`,
       name: overrides.name ?? "Test User",
-      emailVerified: overrides.emailVerified ?? null,
+      emailVerified: overrides.emailVerified ?? false,
       updatedAt: new Date(),
     },
   });
