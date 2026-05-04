@@ -10,11 +10,11 @@
 - [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: 
 
-- [ ] **S03: Mock data → real tRPC queries** `risk:medium` `depends:[S01]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: 
 
-- [ ] **S04: Tests unitaires routers tRPC** `risk:medium` `depends:[S01,S02,S03]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: 
 
-- [ ] **S05: Tests e2e OAuth + public visibility** `risk:low` `depends:[S01,S02]`
+- [x] **S05: S05** `risk:low` `depends:[]`
   > After this:
