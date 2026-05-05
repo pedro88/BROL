@@ -21,16 +21,16 @@ User créé avec hashedPassword non-NULL. Hash détecté en base = bcrypt $2.
 
 ## Tasks
 
-- [ ] **T01: Corriger schema Account pour matcher BetterAuth** `est:30min`
+- [x] **T01: Corriger schema Account pour matcher BetterAuth** `est:30min`
   Migrer le schema Account : renommer providerAccountId → accountId, provider → providerId, retirer type (inutile), renommer les autres champs snake_case → camelCase.
   - Files: `packages/db/prisma/schema.prisma`
   - Verify: npx prisma validate && npx prisma generate
 
-- [ ] **T02: Push nouveau schema en base** `est:15min`
+- [x] **T02: Push nouveau schema en base** `est:15min`
   npx prisma db push pour appliquer le nouveau schema en base. Vérifier que la table accounts est bien créée.
   - Verify: psql \d accounts ou équivalent
 
-- [ ] **T03: Vérifier création Account avec password hashé** `est:30min`
+- [x] **T03: Vérifier création Account avec password hashé** `est:30min`
   Signup via le client web, puis vérifier en base : 1) User créé, 2) Account créé avec password non-NULL et providerId='credential'.
   - Verify: SELECT * FROM accounts WHERE password IS NOT NULL
 

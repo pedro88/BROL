@@ -117,14 +117,19 @@ export function CreateCollectionDialog({
       onSuccess?.();
       reset();
       setIsPublic(false);
+      onOpenChange(false);
     },
   });
 
+  const [error, setError] = useState<string | null>(null);
+
   const onSubmit = async (data: CreateCollectionInput) => {
+    setError(null);
     try {
       await createMutation.mutateAsync(data);
-    } catch (error) {
-      console.error("Failed to create collection:", error);
+    } catch (err) {
+      console.error("Failed to create collection:", err);
+      setError("Échec de la création. Veuillez réessayer.");
     }
   };
 
@@ -154,6 +159,9 @@ export function CreateCollectionDialog({
               <p className="font-mono text-xs text-destructive">
                 {errors.name.message}
               </p>
+            )}
+            {error && (
+              <p className="font-mono text-xs text-destructive mt-1">{error}</p>
             )}
           </div>
 

@@ -12,13 +12,13 @@
 
 ## Slices
 
-- [ ] **S01: Password hashing on signup** `risk:low` `depends:[]`
+- [x] **S01: S01** `risk:low` `depends:[]`
   > After this: Signup hash un password en bcrypt avant insertion, et le login vérifie le hash.
 
-- [ ] **S02: Password verification on sign-in** `risk:low` `depends:[S01]`
+- [x] **S02: Password verification on sign-in** `risk:low` `depends:[S01]`
   > After this: Le login vérifie le hash bcrypt et retourne une session.
 
-- [ ] **S03: Migrate existing users with NULL hashedPassword** `risk:medium` `depends:[S02]`
+- [x] **S03: Migrate existing users with NULL hashedPassword** `risk:medium` `depends:[S02]`
   > After this: Tous les users NULL migrés avec un hash temporaire.
 
 ## Boundary Map

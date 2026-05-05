@@ -1,16 +1,16 @@
 {
   "nodes": [
     {
-      "id": "milestone:M002",
-      "label": "M002: M002",
+      "id": "milestone:M003",
+      "label": "M003: Auth: fix password hashing & persistence",
       "type": "milestone",
-      "description": "Active milestone: M002",
+      "description": "Active milestone: M003",
       "confidence": "EXTRACTED",
       "sourceFile": "STATE.md"
     },
     {
-      "id": "concept:phase:validating-milestone",
-      "label": "Phase: validating-milestone",
+      "id": "concept:phase:planning",
+      "label": "Phase: planning",
       "type": "concept",
       "confidence": "EXTRACTED",
       "sourceFile": "STATE.md"
@@ -101,6 +101,13 @@
       "label": "T06: Objects E2E tests",
       "type": "task",
       "confidence": "EXTRACTED"
+    },
+    {
+      "id": "milestone:M002",
+      "label": "M002: M002",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/M002-ROADMAP.md"
     },
     {
       "id": "slice:M002:S01",
@@ -195,13 +202,6 @@
       "label": "T02: Exécuter les tests public-collections et collections",
       "type": "task",
       "confidence": "EXTRACTED"
-    },
-    {
-      "id": "milestone:M003",
-      "label": "M003: Auth: fix password hashing & persistence",
-      "type": "milestone",
-      "confidence": "EXTRACTED",
-      "sourceFile": "milestones/M003/M003-ROADMAP.md"
     },
     {
       "id": "slice:M003:S01",
@@ -423,5 +423,5 @@
       "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-05-04T07:36:40.782Z"
+  "builtAt": "2026-05-04T08:30:47.710Z"
 }

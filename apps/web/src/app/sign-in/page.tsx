@@ -9,6 +9,7 @@
 "use client";
 
 import { signInEmailPassword, signUpEmailPassword } from "@/lib/auth-client";
+import { setSessionToken } from "@/lib/auth-store";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -36,6 +37,11 @@ export default function SignInPage() {
         if (result.error) {
           setError(result.error);
         } else {
+          // Extract token from response and sync to global store for tRPC auth
+          // signInEmailPassword uses fetch with credentials:include, so the session
+          // cookie is set. But the token for Bearer auth needs to be synced manually.
+          // Call get-session to extract the token and set it in the store.
+          await syncTokenToStore();
           router.push(callbackUrl);
           router.refresh();
         }
@@ -44,12 +50,25 @@ export default function SignInPage() {
         if (result.error) {
           setError(result.error);
         } else {
+          // Same sync for sign-up
+          await syncTokenToStore();
           router.push(callbackUrl);
           router.refresh();
         }
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function syncTokenToStore(): Promise<void> {
+    try {
+      const res = await fetch(`/api/auth/get-session`, { credentials: "include" });
+      const data = await res.json();
+      const token = data?.session?.token ?? data?.token;
+      if (token) setSessionToken(token);
+    } catch {
+      // Non-critical — cookie auth still works for session management
     }
   }
 

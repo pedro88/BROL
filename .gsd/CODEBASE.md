@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-04T08:08:24Z | Files: 110 | Described: 0/110
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-04T08:08:24Z","fingerprint":"b0c571da9bbed459781241643b0e9380b9413c76","fileCount":110,"truncated":false} -->
+Generated: 2026-05-05T07:21:28Z | Files: 115 | Described: 0/115
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-05T07:21:28Z","fingerprint":"63cb7ba67419a371a47d4c2d1762e5aad5ea2003","fileCount":115,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -19,11 +19,19 @@ Generated: 2026-05-04T08:08:24Z | Files: 110 | Described: 0/110
 - `turbo.json`
 
 ### apps/mobile/
+- `apps/mobile/.gitignore`
 - `apps/mobile/app.json`
 - `apps/mobile/babel.config.js`
 - `apps/mobile/index.js`
 - `apps/mobile/package.json`
 - `apps/mobile/tsconfig.json`
+
+### apps/mobile/.expo/
+- `apps/mobile/.expo/devices.json`
+- `apps/mobile/.expo/README.md`
+
+### apps/mobile/.expo/types/
+- `apps/mobile/.expo/types/router.d.ts`
 
 ### apps/mobile/app/
 - `apps/mobile/app/_layout.tsx`
@@ -125,6 +133,7 @@ Generated: 2026-05-04T08:08:24Z | Files: 110 | Described: 0/110
 
 ### packages/api/
 - `packages/api/package.json`
+- `packages/api/test-adapter.ts`
 - `packages/api/tsconfig.json`
 - `packages/api/vitest.config.ts`
 

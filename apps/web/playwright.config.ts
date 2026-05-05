@@ -17,12 +17,15 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  // Use production build — dev server has Turbopack SSR bugs with React hooks.
-  // API server must be running manually (pnpm --filter @brol/api dev)
+  // Use production build with test DATABASE_URL so it matches the API server.
+  // API server must be running separately with DATABASE_URL=brol.
   webServer: {
-    command: "pnpm start",
+    command: "DATABASE_URL=\"postgresql://postgres:password@localhost:5432/brol?schema=public\" pnpm start",
     url: "http://localhost:3000",
     reuseExistingServer: true,
     timeout: 30 * 1000,
+    env: {
+      DATABASE_URL: "postgresql://postgres:password@localhost:5432/brol?schema=public",
+    },
   },
 });

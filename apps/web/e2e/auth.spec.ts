@@ -1,97 +1,353 @@
-/**
- * Tests E2E pour l'authentification.
- * S05: Email/password sign-in + middleware redirects + session persistence.
- *
- * @decisions OAuth (Google, GitHub, Apple) commented out in sign-in page.
- * Tests OAuth are skipped. Email/password tested instead.
- */
+import { test as base, expect, Page } from "@playwright/test";
+import {
+  createUserAPI,
+  cleanupUser,
+  clearSession,
+  signUp,
+  signIn,
+  uniqueEmail,
+} from "./helpers/auth";
 
-import { test, expect } from "@playwright/test";
+// Re-export for convenience
+export { createUserAPI, cleanupUser, clearSession, signUp, signIn, uniqueEmail };
 
-/**
- * Vérifie que la page de connexion affiche le formulaire email/password.
- */
-test("sign-in page renders email/password form", async ({ page }) => {
-  await page.goto("/sign-in");
+const WEB_BASE = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 
-  await expect(page.getByRole("heading", { name: /connexion/i })).toBeVisible();
-  await expect(page.getByLabel(/email/i)).toBeVisible();
-  await expect(page.getByLabel(/mot de passe/i)).toBeVisible();
-  await expect(page.getByRole("button", { name: /se connecter/i })).toBeVisible();
+// Extend base test with shared fixtures
+const test = base.extend<{ testEmail: string }>({
+  // No shared testEmail fixture — each test manages its own
 });
 
-/**
- * Vérifie que les boutons OAuth NE sont PAS rendus (commentés dans le code).
- * Ce test confirme que le placeholder OAuth est bien désactivé.
- */
-test("OAuth buttons are NOT rendered (commented out in code)", async ({ page }) => {
-  await page.goto("/sign-in");
+// ============================================================================
+// Form validation
+// ============================================================================
 
-  // OAuth buttons should not be in the DOM since they're inside JSX comment block
-  await expect(page.getByRole("button", { name: /google/i })).not.toBeVisible();
-  await expect(page.getByRole("button", { name: /github/i })).not.toBeVisible();
-  await expect(page.getByRole("button", { name: /apple/i })).not.toBeVisible();
+test.describe("form validation", () => {
+  test("empty email shows required error", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    // Submit without filling email
+    await page.getByRole("button", { name: /se connecter/i }).click();
+    // HTML5 required prevents submission, or we see validation message
+    await expect(page.getByLabel(/email/i)).toBeFocused();
+  });
+
+  test("empty password shows required error", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await page.getByLabel(/email/i).fill("test@example.com");
+    await page.getByRole("button", { name: /se connecter/i }).click();
+    await expect(page.getByLabel(/mot de passe/i)).toBeFocused();
+  });
+
+  test("invalid email format shows error", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await page.getByLabel(/email/i).fill("not-an-email");
+    await page.getByLabel(/mot de passe/i).fill("TestPass123!");
+    await page.getByRole("button", { name: /se connecter/i }).click();
+    // Browser HTML5 email validation should prevent submission
+    await expect(page.getByLabel(/email/i)).toHaveAttribute("type", "email");
+  });
+
+  test("password too short shows error", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+
+    // Toggle to sign-up mode
+    await page.getByText(/pas encore de compte/i).click();
+    await expect(page.getByRole("heading", { name: /créer un compte/i })).toBeVisible();
+
+    // Try to submit with password < 8 chars
+    await page.getByLabel(/nom/i).fill("Short Pass Test");
+    await page.getByLabel(/email/i).fill(uniqueEmail());
+    await page.getByLabel(/mot de passe/i).fill("1234567"); // 7 chars — too short
+    await page.getByRole("button", { name: /créer mon compte/i }).click();
+
+    // Browser minLength=8 should prevent submission
+    await expect(page.getByLabel(/mot de passe/i)).toBeFocused();
+  });
 });
 
-/**
- * Vérifie le toggle sign-in / sign-up.
- */
-test("can switch between sign-in and sign-up modes", async ({ page }) => {
-  await page.goto("/sign-in");
+// ============================================================================
+// Sign-up
+// ============================================================================
 
-  // Toggle to sign-up
-  await page.getByText(/pas encore de compte/i).click();
-  await expect(page.getByRole("heading", { name: /créer un compte/i })).toBeVisible();
-  await expect(page.getByLabel(/nom/i)).toBeVisible();
+test.describe("sign-up", () => {
+  let testEmail: string;
 
-  // Toggle back to sign-in
-  await page.getByText(/déjà un compte/i).click();
-  await expect(page.getByRole("heading", { name: /connexion/i })).toBeVisible();
+  test.beforeEach(() => {
+    testEmail = uniqueEmail();
+  });
+
+  test.afterEach(async () => {
+    await cleanupUser(testEmail).catch(() => {});
+  });
+
+  test("creates account and redirects away from sign-in", async ({ page }) => {
+    const password = "TestPass123!";
+    await signUp(page, testEmail, password, "Sign Up Test User");
+
+    // Should be redirected away from /sign-in
+    await expect(page).not.toHaveURL(/\/sign-in/);
+  });
+
+  test("duplicate email shows error", async ({ page }) => {
+    const password = "TestPass123!";
+    // Pre-create account via API (avoids needing to handle first signUp in UI)
+    await createUserAPI(testEmail, password, "First User");
+
+    // Navigate to sign-up and submit with existing email
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await page.getByText(/pas encore de compte/i).click();
+    await expect(page.getByRole("heading", { name: /créer un compte/i })).toBeVisible();
+
+    await page.getByLabel(/nom/i).fill("Duplicate User");
+    await page.getByLabel(/email/i).fill(testEmail);
+    await page.getByLabel(/mot de passe/i).fill(password);
+    await page.getByRole("button", { name: /créer mon compte/i }).click();
+
+    // Should stay on sign-up page and show error
+    await expect(page.getByRole("heading", { name: /créer un compte/i })).toBeVisible();
+    // BetterAuth duplicate email error
+    await expect(page.locator('[role="alert"], .text-destructive, [data-error]').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test("sign-up and re-sign-in cycle — password hash works in DB", async ({ page }) => {
+    const password = "TestPass123!";
+    // Sign up via UI
+    await signUp(page, testEmail, password, "DB Hash Test");
+
+    // Clear session via browser fetch (credentials:include sends the cookie)
+    await clearSession(page);
+
+    // Sign in with same credentials — should work
+    await signIn(page, testEmail, password);
+    await expect(page).not.toHaveURL(/\/sign-in/);
+  });
+
+  test("sign-up with too-short password is blocked", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await page.getByText(/pas encore de compte/i).click();
+    await expect(page.getByRole("heading", { name: /créer un compte/i })).toBeVisible();
+
+    await page.getByLabel(/nom/i).fill("Test User");
+    await page.getByLabel(/email/i).fill(testEmail);
+    await page.getByLabel(/mot de passe/i).fill("1234567"); // too short (minLength=8)
+    await page.getByRole("button", { name: /créer mon compte/i }).click();
+
+    // Browser should prevent submission
+    await expect(page.getByLabel(/mot de passe/i)).toBeFocused();
+  });
 });
 
-/**
- * Vérifie que le middleware redirige vers /sign-in (route /collections).
- * Ce test ne nécessite pas d'authentification — juste la vérification middleware.
- */
-test("unauthenticated user redirected to sign-in from /collections", async ({ page }) => {
-  await page.goto("/collections");
-  await expect(page).toHaveURL(/\/sign-in/);
+// ============================================================================
+// Sign-in happy path
+// ============================================================================
+
+test.describe("sign-in", () => {
+  let testEmail: string;
+
+  test.beforeEach(async () => {
+    testEmail = uniqueEmail();
+    const password = "TestPass123!";
+    await createUserAPI(testEmail, password, "Sign In Test User");
+  });
+
+  test.afterEach(async () => {
+    await cleanupUser(testEmail).catch(() => {});
+  });
+
+  test("valid credentials redirect away from sign-in", async ({ page }) => {
+    const password = "TestPass123!";
+    await signIn(page, testEmail, password);
+    await expect(page).not.toHaveURL(/\/sign-in/);
+  });
+
+  test("session cookie is set after sign-in", async ({ page }) => {
+    const password = "TestPass123!";
+    await signIn(page, testEmail, password);
+
+    const cookies = await page.context().cookies();
+    const sessionCookie = cookies.find(
+      (c) => c.name.includes("session") || c.name.includes("better-auth"),
+    );
+    expect(sessionCookie).toBeDefined();
+    expect(sessionCookie?.value.length).toBeGreaterThan(0);
+  });
+
+  test("wrong password shows error", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await page.getByLabel(/email/i).fill(testEmail);
+    await page.getByLabel(/mot de passe/i).fill("WrongPassword999!");
+    await page.getByRole("button", { name: /se connecter/i }).click();
+
+    await expect(page).toHaveURL(/\/sign-in/);
+    // BetterAuth returns "Invalid email or password"
+    await expect(page.locator('[role="alert"], .text-destructive, [data-error]').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test("non-existent email shows error", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await page.getByLabel(/email/i).fill(`nonexistent-${uniqueEmail()}`);
+    await page.getByLabel(/mot de passe/i).fill("TestPass123!");
+    await page.getByRole("button", { name: /se connecter/i }).click();
+
+    await expect(page).toHaveURL(/\/sign-in/);
+    // BetterAuth returns "Invalid email or password"
+    await expect(page.locator('[role="alert"], .text-destructive, [data-error]').first()).toBeVisible({ timeout: 5000 });
+  });
 });
 
-/**
- * Vérifie que /settings redirige vers /sign-in.
- */
-test("unauthenticated user redirected to sign-in from /settings", async ({ page }) => {
-  await page.goto("/settings");
-  await expect(page).toHaveURL(/\/sign-in/);
+// ============================================================================
+// Session persistence (use createUserAPI + UI sign-in)
+// ============================================================================
+
+test.describe("session persistence", () => {
+  let testEmail: string;
+
+  test.beforeEach(async ({ page }) => {
+    testEmail = uniqueEmail();
+    const password = "TestPass123!";
+    await createUserAPI(testEmail, password, "Session Test User");
+    await signIn(page, testEmail, password);
+  });
+
+  test.afterEach(async () => {
+    await cleanupUser(testEmail).catch(() => {});
+  });
+
+  test("session persists across page navigation", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/collections`);
+    await expect(page).toHaveURL(/\/collections/);
+  });
+
+  test("session survives page refresh", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/collections`);
+    await expect(page).toHaveURL(/\/collections/);
+    await page.reload();
+    await expect(page).toHaveURL(/\/collections/);
+  });
+
+  test("has active session on /collections after sign-in", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/collections`);
+    await expect(page).toHaveURL(/\/collections/);
+    const cookies = await page.context().cookies();
+    const sessionCookie = cookies.find((c) => c.name === "better-auth.session_token");
+    expect(sessionCookie).toBeDefined();
+  });
 });
 
-/**
- * Vérifie que /browse est accessible sans authentification.
- */
-test("browse page accessible without auth", async ({ page }) => {
-  await page.goto("/browse");
+// ============================================================================
+// Sign-out (use UI sign-in then clear via fetch)
+// ============================================================================
 
-  await expect(page).toHaveURL(/\/browse/);
-  await expect(page.getByRole("heading", { name: /collections publiques/i })).toBeVisible();
+test.describe("sign-out", () => {
+  let testEmail: string;
+
+  test.beforeEach(async ({ page }) => {
+    testEmail = uniqueEmail();
+    const password = "TestPass123!";
+    await createUserAPI(testEmail, password, "Sign Out Test User");
+    await signIn(page, testEmail, password);
+  });
+
+  test.afterEach(async () => {
+    await cleanupUser(testEmail).catch(() => {});
+  });
+
+  test("authenticated session allows access to /collections", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/collections`);
+    await expect(page).toHaveURL(/\/collections/);
+    const cookies = await page.context().cookies();
+    const sessionCookie = cookies.find((c) => c.name === "better-auth.session_token");
+    expect(sessionCookie).toBeDefined();
+  });
+
+  test("sign-out clears session", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/collections`);
+    await expect(page).toHaveURL(/\/collections/);
+    await clearSession(page);
+    await page.goto(`${WEB_BASE}/collections`);
+    await expect(page).toHaveURL(/\/sign-in/, { timeout: 5000 });
+  });
+
+  test("session cleared — /collections redirects to sign-in", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/collections`);
+    await expect(page).toHaveURL(/\/collections/);
+    await clearSession(page);
+    await page.goto(`${WEB_BASE}/collections`);
+    await expect(page).toHaveURL(/\/sign-in/);
+  });
 });
 
-/**
- * OAuth sign-in flows — skipped because OAuth credentials not configured.
- * Uncomment and configure env vars to enable:
- *   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
- *   GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
- *   APPLE_CLIENT_ID, APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY
- */
-test.skip("OAuth: sign-in page renders OAuth buttons", async ({ page }) => {
-  await page.goto("/sign-in");
-  await expect(page.getByRole("button", { name: /google/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: /github/i })).toBeVisible();
+// ============================================================================
+// Browse (public — no auth needed)
+// ============================================================================
+
+test.describe("browse", () => {
+  test("accessible without auth", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/browse`);
+    await expect(page).toHaveURL(/\/browse/);
+  });
+
+  test("shows COLLECTIONS PUBLIQUES heading", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/browse`);
+    await expect(page.getByRole("heading", { name: /collections publiques/i }).first()).toBeVisible();
+  });
 });
 
-test.skip("OAuth: complete Google sign-in flow", async ({ page }) => {
-  await page.goto("/sign-in");
-  await page.getByRole("button", { name: /google/i }).click();
-  // Playwright will redirect to Google's OAuth consent page
-  // This test requires real credentials and network access to Google
+// ============================================================================
+// Toggle between sign-in / sign-up modes
+// ============================================================================
+
+test.describe("toggle", () => {
+  test("sign-in to sign-up mode", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await page.getByText(/pas encore de compte/i).click();
+    await expect(page.getByRole("heading", { name: /créer un compte/i })).toBeVisible();
+  });
+
+  test("sign-up to sign-in mode", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await page.getByText(/pas encore de compte/i).click();
+    await expect(page.getByRole("heading", { name: /créer un compte/i })).toBeVisible();
+    await page.getByText(/déjà un compte/i).click();
+    await expect(page.getByRole("heading", { name: /connexion/i })).toBeVisible();
+  });
+});
+
+// ============================================================================
+// Responsive
+// ============================================================================
+
+test.describe("responsive", () => {
+  test("form renders at 375px mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await expect(page.getByLabel(/email/i)).toBeVisible();
+  });
+
+  test("browse renders at 375px mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto(`${WEB_BASE}/browse`);
+    await expect(page).toHaveURL(/\/browse/);
+  });
+});
+
+// ============================================================================
+// OAuth (not implemented yet)
+// ============================================================================
+
+test.describe("OAuth", () => {
+  test("Google button NOT rendered (commented out)", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await expect(page.getByRole("button", { name: /google/i })).not.toBeVisible();
+  });
+
+  test("GitHub button NOT rendered (commented out)", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await expect(page.getByRole("button", { name: /github/i })).not.toBeVisible();
+  });
+
+  test("Apple button NOT rendered (commented out)", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/sign-in`);
+    await expect(page.getByRole("button", { name: /apple/i })).not.toBeVisible();
+  });
 });

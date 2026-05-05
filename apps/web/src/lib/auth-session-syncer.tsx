@@ -51,12 +51,15 @@ export function AuthSessionSyncer() {
         });
         const data = await res.json();
         if (!cancelled) {
-          // Both sign-in/sign-up and get-session return token at the root level
-        const token = data?.session?.token ?? data?.token;
+          // get-session returns { user, session }. The raw token for tRPC auth
+          // is in data.session.token (BetterAuth v1.6 format).
+          // For sign-in/sign-up responses, token is also at root level (data.token).
+          const token = data?.session?.token ?? data?.token;
           setSessionToken(token ?? undefined);
         }
       } catch {
-        if (!cancelled) setSessionToken(undefined);
+        // Non-critical — token might already be set, or network error.
+        // Don't clear the token on transient errors.
       }
     }
 
