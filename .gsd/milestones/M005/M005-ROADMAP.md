@@ -7,7 +7,7 @@
 - [x] **S01: S01** `risk:high` `depends:[]`
   > After this: L'app redirige / → sign-in si non-connecté, / → dashboard si connecté. Le bouton login/logout fonctionne.
 
-- [ ] **S02: S02** `risk:medium` `depends:[]`
+- [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: Les stats du dashboard affichent des vraies données depuis la DB.
 
 ## Boundary Map

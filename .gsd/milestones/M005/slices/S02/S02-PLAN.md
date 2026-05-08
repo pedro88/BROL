@@ -26,7 +26,7 @@
   - Files: `packages/api/src/routers/objects.ts`, `packages/api/src/routers/contacts.ts`, `packages/api/src/routers/loans.ts`
   - Verify: grep -n 'list\|count\|stats' packages/api/src/routers/*.ts
 
-- [ ] **T02: Remplacer les données mock par des hooks tRPC** `est:45min`
+- [x] **T02: Remplacer les données mock par des hooks tRPC** `est:45min`
   Rendre page.tsx client-side ('use client'). Remplacer les valeurs codées en dur par des appels trpc.objects.list, trpc.contacts.list, trpc.loans.list. Ajouter des loading skeletons et empty states. Gérer les erreurs avec un fallback.
   - Files: `apps/web/src/app/page.tsx`
   - Verify: grep -n 'useQuery\|trpc\.\|useState' apps/web/src/app/page.tsx && ! grep "'24'\|'3'\|'12'" apps/web/src/app/page.tsx

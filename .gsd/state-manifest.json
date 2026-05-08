@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-05T08:07:24.448Z",
+  "exported_at": "2026-05-08T06:51:42.984Z",
   "milestones": [
     {
       "id": "M001",
@@ -171,6 +171,26 @@
       ],
       "requirement_coverage": "Tous les requirements actifs sont couverts par les tests — cette milestone vise à valider que les tests eux-mêmes fonctionnent comme contrats de validation.",
       "boundary_map_markdown": "| Boundary | Upstream | Downstream |\n|---|---|---|\n| API server + E2E config | — | S02, S03, S04 |\n| Auth UI flow | S01 | S03, S04 |\n| Sessions + sign-out | S02 | S04 |\n| E2E stability | S03 | — |",
+      "sequence": 0
+    },
+    {
+      "id": "M005",
+      "title": "Login/logout button + route redirect + dashboard real data",
+      "status": "active",
+      "depends_on": [],
+      "created_at": "2026-05-08T06:24:31.258Z",
+      "completed_at": null,
+      "vision": "Bouton login/logout visible dans le header. La page / redirige vers /sign-in si pas de session, vers / (dashboard) si connecté. Les stats et actions rapides du dashboard affichent des vraies données depuis la DB au lieu de valeurs mockées.",
+      "success_criteria": [],
+      "key_risks": [],
+      "proof_strategy": [],
+      "verification_contract": "",
+      "verification_integration": "",
+      "verification_operational": "",
+      "verification_uat": "",
+      "definition_of_done": [],
+      "requirement_coverage": "Not provided.",
+      "boundary_map_markdown": "Not provided.",
       "sequence": 0
     }
   ],
@@ -491,6 +511,50 @@
       "integration_closure": "Les tests de données utilisent les fixtures auth de S03. Le browse fonctionne sans auth.",
       "observability_impact": "Rapport Playwright HTML généré avec screenshots en cas d'échec (déjà configuré).",
       "sequence": 4,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M005",
+      "id": "S01",
+      "title": "S01",
+      "status": "complete",
+      "risk": "high",
+      "depends": [],
+      "demo": "L'app redirige / → sign-in si non-connecté, / → dashboard si connecté. Le bouton login/logout fonctionne.",
+      "created_at": "2026-05-08T06:27:08.096Z",
+      "completed_at": "2026-05-08T06:38:07.055Z",
+      "full_summary_md": "---\nid: S01\nparent: M005\nmilestone: M005\nprovides:\n  - [\"Header avec état auth reactif\", \"Protection de la racine / par middleware\"]\nrequires:\n  []\naffects:\n  - [\"S02: Le dashboard real data dépend maintenant d'un utilisateur authentifié\"]\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\npatterns_established:\n  - (none)\nobservability_surfaces:\n  - [\"Session state dans nanostore visible via useSessionToken hook\"]\ndrill_down_paths:\n  []\nduration: \"\"\nverification_result: passed\ncompleted_at: 2026-05-08T06:38:07.056Z\nblocker_discovered: false\n---\n\n# S01: Login/logout button + redirect conditionnel\n\n**Login/logout button in header + root / redirect based on auth state.**\n\n## What Happened\n\nS01 implemented the login/logout button in the Header component and conditional root redirect. The Header now uses useSyncExternalStore to read the nanostore session token atom and displays 'Login' or 'Logout' accordingly. The logout flow calls signOut(), clears the session token, and redirects to /sign-in. The middleware now protects the root `/` path — unauthenticated users are redirected to /sign-in with callbackUrl. Manual testing confirmed: anonymous / → /sign-in ✓, sign-up → dashboard with Logout ✓, logout → /sign-in ✓. Also added Content-Type header to signOut client to fix 415 error.\n\n## Verification\n\nManual browser tests: anonymous / → /sign-in redirect ✓, signup + login → dashboard with Logout button ✓, click logout → /sign-in with Login button ✓. All assertions passed.\n\n## Requirements Advanced\n\nNone.\n\n## Requirements Validated\n\nNone.\n\n## New Requirements Surfaced\n\nNone.\n\n## Requirements Invalidated or Re-scoped\n\nNone.\n\n## Operational Readiness\n\nNone.\n\n## Deviations\n\nNone.\n\n## Known Limitations\n\nNone.\n\n## Follow-ups\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "full_uat_md": "# S01: Login/logout button + redirect conditionnel — UAT\n\n**Milestone:** M005\n**Written:** 2026-05-08T06:38:07.057Z\n\n## UAT S01\n\n### Scenario 1: Anonymous user visits root\n1. Navigate to http://localhost:3000/\n2. ✅ Should redirect to /sign-in?callbackUrl=/\n\n### Scenario 2: User signs up and sees dashboard\n1. Go to sign-in page, toggle to sign-up mode\n2. Fill in name, email, password and submit\n3. ✅ Should land on dashboard (/)\n4. ✅ Header shows \"Logout\" button\n\n### Scenario 3: User logs out\n1. Click \"Logout\" in header\n2. ✅ Should redirect to /sign-in\n3. ✅ Header shows \"Login\" link\n4. ✅ Navigating to / redirects to /sign-in\n\n### Scenario 4: Authenticated user visits root\n1. Log in successfully\n2. Navigate to /\n3. ✅ Should stay on dashboard, no redirect\n",
+      "goal": "Ajouter le bouton login/logout dans le header + implémenter la redirection conditionnelle / selon l'état de session.",
+      "success_criteria": "- Bouton 'Login' dans header si non-connecté, 'Logout' si connecté\n- / non-connecté → redirect vers /sign-in\n- / connecté → reste sur /\n- Click Logout → session détruite, redirect /sign-in\n- Navigation /settings accessible seulement si connecté (redirect /sign-in sinon)",
+      "proof_level": "E2E: visit / non-connecté → redirect vers /sign-in. E2E: visit / connecté → reste sur /. Click logout → redirect vers /sign-in.",
+      "integration_closure": "",
+      "observability_impact": "Logs des redirects conditionnels en dev.",
+      "sequence": 1,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M005",
+      "id": "S02",
+      "title": "S02",
+      "status": "complete",
+      "risk": "medium",
+      "depends": [],
+      "demo": "Les stats du dashboard affichent des vraies données depuis la DB.",
+      "created_at": "2026-05-08T06:27:08.096Z",
+      "completed_at": "2026-05-08T06:51:42.955Z",
+      "full_summary_md": "---\nid: S02\nparent: M005\nmilestone: M005\nprovides:\n  - [\"Dashboard with live DB data instead of hardcoded values\"]\nrequires:\n  []\naffects:\n  []\nkey_files:\n  - [\"packages/api/src/routers/collections.ts\", \"packages/api/src/routers/contacts.ts\", \"packages/api/src/routers/loans.ts\", \"apps/web/src/app/page.tsx\"]\nkey_decisions:\n  - [\"No dedicated stats endpoint needed — derive totals from collections.list (sum objectCount), contacts.list (length), loans.lentOut (length)\"]\npatterns_established:\n  - (none)\nobservability_surfaces:\n  - [\"Loading indicators on stat cards during fetch\", \"Graceful empty state when no loans active\"]\ndrill_down_paths:\n  []\nduration: \"\"\nverification_result: passed\ncompleted_at: 2026-05-08T06:51:42.956Z\nblocker_discovered: false\n---\n\n# S02: Supprimer les données mock du dashboard\n\n**Replaced mock data with real tRPC queries — dashboard now shows real object count, contacts, active loans from DB.**\n\n## What Happened\n\nS02 replaced mock dashboard data with real tRPC calls. Page converted to client component. Three queries in parallel batch: collections.list (sum objectCount), contacts.list (array length), loans.lentOut (active loans length). Network confirmed all three load in a single batched request to the API. Loading and empty states handled. The \"returns\" section now shows actual active loans with object name, borrower, and due date.\n\n## Verification\n\nNetwork trace: GET /api/trpc/collections.list,contacts.list,loans.lentOut?batch=1 → 200. grep confirms no hardcoded mock values in page.tsx.\n\n## Requirements Advanced\n\nNone.\n\n## Requirements Validated\n\nNone.\n\n## New Requirements Surfaced\n\nNone.\n\n## Requirements Invalidated or Re-scoped\n\nNone.\n\n## Operational Readiness\n\nNone.\n\n## Deviations\n\nNone.\n\n## Known Limitations\n\nNone.\n\n## Follow-ups\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "full_uat_md": "# S02: Supprimer les données mock du dashboard — UAT\n\n**Milestone:** M005\n**Written:** 2026-05-08T06:51:42.956Z\n\n## UAT S02\n\n### Test stats\n1. Load dashboard as authenticated user\n2. ✅ Stat \"Objets\" shows real count from summed collection objectCounts\n3. ✅ Stat \"Contacts\" shows real count from contacts list length\n4. ✅ Stat \"Prêtés\" shows real count from active loans length\n5. ✅ No hardcoded numbers visible in DOM\n\n### Test loans section\n1. Dashboard displays active loan cards with object name and borrower\n2. ✅ Empty state shown when no active loans\n\n### Test loading state\n1. During fetch, stat cards show \"...\" placeholder\n2. ✅ Returns section shows \"Chargement...\" during fetch\n",
+      "goal": "Remplacer les données mock (24 objets, 3 prêts, 12 contacts) par des appels tRPC réels.",
+      "success_criteria": "- StatCard 'Objets' affiche le nombre réel d'objets du user\n- StatCard 'Prêtés' affiche les prêts actifs du user\n- StatCard 'Contacts' affiche le nombre réel de contacts du user\n- Les sections vides/loading sont gérées proprement\n- Aucun hardcoded '24', '3', '12' dans le DOM",
+      "proof_level": "E2E: dashboard stats reflètent les vraies valeurs (count réel d'objets, prêts actifs, contacts).",
+      "integration_closure": "",
+      "observability_impact": "Loading states pendant le fetch des données réelles.",
+      "sequence": 2,
       "replan_triggered_at": null,
       "is_sketch": 0,
       "sketch_scope": ""
@@ -1628,6 +1692,264 @@
         "Décision sur les causes restantes"
       ],
       "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T01",
+      "title": "Analyzed auth client, store, session syncer, sign-in page, middleware, and providers to understand the auth system.",
+      "status": "complete",
+      "one_liner": "Analyzed auth client, store, session syncer, sign-in page, middleware, and providers to understand the auth system.",
+      "narrative": "Reviewed the auth system architecture: auth-store.ts uses nanostores atom for session token, auth-client.ts has signInEmailPassword/signUpEmailPassword/signOut/getSession helpers, auth-session-syncer.tsx polls /api/auth/get-session every 30s to keep store in sync. The sign-in page already handles sign-in/sign-up with manual token sync. The existing middleware protects some routes but not root /. The Header had no login/logout button. BetterAuth session cookie is \"better-auth.session_token\".",
+      "verification_result": "Read auth-store.ts, auth-client.ts, auth-session-syncer.tsx, sign-in/page.tsx, middleware.ts, providers.tsx, layout.tsx. All files examined and token sync patterns understood.",
+      "duration": "",
+      "completed_at": "2026-05-08T06:32:37.850Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "apps/web/src/lib/auth-store.ts",
+        "apps/web/src/lib/auth-client.ts",
+        "apps/web/src/lib/auth-session-syncer.tsx",
+        "apps/web/src/middleware.ts",
+        "apps/web/src/components/navigation.tsx",
+        "apps/web/src/app/sign-in/page.tsx"
+      ],
+      "key_decisions": [
+        "Header will use useSyncExternalStore to read nanostore atom for React 19 compatibility"
+      ],
+      "full_summary_md": "---\nid: T01\nparent: S01\nmilestone: M005\nkey_files:\n  - apps/web/src/lib/auth-store.ts\n  - apps/web/src/lib/auth-client.ts\n  - apps/web/src/lib/auth-session-syncer.tsx\n  - apps/web/src/middleware.ts\n  - apps/web/src/components/navigation.tsx\n  - apps/web/src/app/sign-in/page.tsx\nkey_decisions:\n  - Header will use useSyncExternalStore to read nanostore atom for React 19 compatibility\nduration: \nverification_result: untested\ncompleted_at: 2026-05-08T06:32:37.848Z\nblocker_discovered: false\n---\n\n# T01: Analyzed auth client, store, session syncer, sign-in page, middleware, and providers to understand the auth system.\n\n**Analyzed auth client, store, session syncer, sign-in page, middleware, and providers to understand the auth system.**\n\n## What Happened\n\nReviewed the auth system architecture: auth-store.ts uses nanostores atom for session token, auth-client.ts has signInEmailPassword/signUpEmailPassword/signOut/getSession helpers, auth-session-syncer.tsx polls /api/auth/get-session every 30s to keep store in sync. The sign-in page already handles sign-in/sign-up with manual token sync. The existing middleware protects some routes but not root /. The Header had no login/logout button. BetterAuth session cookie is \"better-auth.session_token\".\n\n## Verification\n\nRead auth-store.ts, auth-client.ts, auth-session-syncer.tsx, sign-in/page.tsx, middleware.ts, providers.tsx, layout.tsx. All files examined and token sync patterns understood.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `apps/web/src/lib/auth-store.ts`\n- `apps/web/src/lib/auth-client.ts`\n- `apps/web/src/lib/auth-session-syncer.tsx`\n- `apps/web/src/middleware.ts`\n- `apps/web/src/components/navigation.tsx`\n- `apps/web/src/app/sign-in/page.tsx`\n",
+      "description": "Lire le fichier apps/web/src/lib/auth-client.ts pour comprendre le helper signOut existant. Examiner comment auth-session-syncer.tsx détecte la session et expose le state.",
+      "estimate": "15min",
+      "files": [
+        "apps/web/src/lib/auth-client.ts",
+        "apps/web/src/lib/auth-session-syncer.tsx",
+        "apps/web/src/lib/auth-store.ts"
+      ],
+      "verify": "grep -n 'signOut\\|useSession\\|useAuth' apps/web/src/lib/",
+      "inputs": [
+        "Codebase: auth system"
+      ],
+      "expected_output": [
+        "apps/web/src/lib/auth-client.ts avec signOut visible"
+      ],
+      "observability_impact": "Aucun — compréhension du système existant.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T02",
+      "title": "Modified Header to display Login/Logout button based on auth state.",
+      "status": "complete",
+      "one_liner": "Modified Header to display Login/Logout button based on auth state.",
+      "narrative": "Added a login/logout button to the Header. When not authenticated, shows a 'Login' link to /sign-in. When authenticated, shows a 'Logout' button that calls signOut(), clears the session token, and redirects to /sign-in. Used useSyncExternalStore to read the nanostore atom for React 19 compatibility.",
+      "verification_result": "grep confirms: signOut imported, useSessionToken hook defined, Login link (href=/sign-in) and Logout button with aria-label rendered conditionally based on isAuthenticated.",
+      "duration": "",
+      "completed_at": "2026-05-08T06:33:01.860Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "apps/web/src/components/navigation.tsx"
+      ],
+      "key_decisions": [
+        "Header is now a client component with 'use client'",
+        "Used useSyncExternalStore to subscribe to nanostore atom"
+      ],
+      "full_summary_md": "---\nid: T02\nparent: S01\nmilestone: M005\nkey_files:\n  - apps/web/src/components/navigation.tsx\nkey_decisions:\n  - Header is now a client component with 'use client'\n  - Used useSyncExternalStore to subscribe to nanostore atom\nduration: \nverification_result: untested\ncompleted_at: 2026-05-08T06:33:01.860Z\nblocker_discovered: false\n---\n\n# T02: Modified Header to display Login/Logout button based on auth state.\n\n**Modified Header to display Login/Logout button based on auth state.**\n\n## What Happened\n\nAdded a login/logout button to the Header. When not authenticated, shows a 'Login' link to /sign-in. When authenticated, shows a 'Logout' button that calls signOut(), clears the session token, and redirects to /sign-in. Used useSyncExternalStore to read the nanostore atom for React 19 compatibility.\n\n## Verification\n\ngrep confirms: signOut imported, useSessionToken hook defined, Login link (href=/sign-in) and Logout button with aria-label rendered conditionally based on isAuthenticated.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `apps/web/src/components/navigation.tsx`\n",
+      "description": "Ajouter un bouton dans Header qui affiche 'Login' si non-connecté (/sign-in link) ou 'Logout' (bouton qui appelle signOut + redirect /sign-in) si connecté. Utiliser le auth store pour lire l'état. Ajouter un indicateur visuel de session (avatar ou initiales du user).",
+      "estimate": "30min",
+      "files": [
+        "apps/web/src/components/navigation.tsx"
+      ],
+      "verify": "grep -n 'Login\\|Logout\\|signOut' apps/web/src/components/navigation.tsx",
+      "inputs": [
+        "auth-store.ts",
+        "auth-client.ts",
+        "navigation.tsx"
+      ],
+      "expected_output": [
+        "apps/web/src/components/navigation.tsx modifié"
+      ],
+      "observability_impact": "Bouton reflète auth state en temps réel.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T03",
+      "title": "Added root / to protected routes in middleware with session cookie check.",
+      "status": "complete",
+      "one_liner": "Added root / to protected routes in middleware with session cookie check.",
+      "narrative": "Updated middleware.ts to protect the root path /. Unauthenticated users visiting / are redirected to /sign-in with callbackUrl=/. Authenticated users see the dashboard normally. The check for / is placed before the public paths loop to ensure it takes priority.",
+      "verification_result": "grep confirms: middleware checks pathname === '/' for protected, reads better-auth.session_token cookie, redirects to /sign-in with callbackUrl if missing.",
+      "duration": "",
+      "completed_at": "2026-05-08T06:33:01.862Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "apps/web/src/middleware.ts"
+      ],
+      "key_decisions": [
+        "Root / is now the first pattern checked in middleware, before the PUBLIC_PATHS loop"
+      ],
+      "full_summary_md": "---\nid: T03\nparent: S01\nmilestone: M005\nkey_files:\n  - apps/web/src/middleware.ts\nkey_decisions:\n  - Root / is now the first pattern checked in middleware, before the PUBLIC_PATHS loop\nduration: \nverification_result: untested\ncompleted_at: 2026-05-08T06:33:01.861Z\nblocker_discovered: false\n---\n\n# T03: Added root / to protected routes in middleware with session cookie check.\n\n**Added root / to protected routes in middleware with session cookie check.**\n\n## What Happened\n\nUpdated middleware.ts to protect the root path /. Unauthenticated users visiting / are redirected to /sign-in with callbackUrl=/. Authenticated users see the dashboard normally. The check for / is placed before the public paths loop to ensure it takes priority.\n\n## Verification\n\ngrep confirms: middleware checks pathname === '/' for protected, reads better-auth.session_token cookie, redirects to /sign-in with callbackUrl if missing.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `apps/web/src/middleware.ts`\n",
+      "description": "Lire middleware.ts actuel et le modifier pour que / (et /settings, /collections, /loans, /contacts, /qr, /objects/*, /collections/*) redirigent vers /sign-in si pas de session valide. /browse, /sign-in, /sign-up restent publics.",
+      "estimate": "45min",
+      "files": [
+        "apps/web/src/middleware.ts"
+      ],
+      "verify": "grep -n 'redirect\\|sign-in\\|middleware' apps/web/src/middleware.ts",
+      "inputs": [
+        "BetterAuth session cookie name"
+      ],
+      "expected_output": [
+        "apps/web/src/middleware.ts modifié"
+      ],
+      "observability_impact": "Logs des redirects en dev (console.log temporaire).",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S01",
+      "id": "T04",
+      "title": "Verified login/logout/redirect flow end-to-end in browser.",
+      "status": "complete",
+      "one_liner": "Verified login/logout/redirect flow end-to-end in browser.",
+      "narrative": "Manual verification of the full login/logout flow in browser: 1) Anonymous user visiting / → redirected to /sign-in ✓ 2) Created new account (piet-gsd@test.com) → redirected to / ✓ 3) Dashboard shows Logout button in header ✓ 4) Click Logout → session cleared, redirect to /sign-in ✓ Also signed up, login, logout → sign-in page ✓. Logout button shows 'Login' after logout ✓. Fixed signOut 415 error by adding Content-Type header.",
+      "verification_result": "Manual browser test via Playwright: anonymous / → /sign-in redirect ✓, signup + login → dashboard with Logout button ✓, logout → /sign-in with Login button ✓. All assertions passed.",
+      "duration": "",
+      "completed_at": "2026-05-08T06:37:52.652Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T04\nparent: S01\nmilestone: M005\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\nduration: \nverification_result: untested\ncompleted_at: 2026-05-08T06:37:52.651Z\nblocker_discovered: false\n---\n\n# T04: Verified login/logout/redirect flow end-to-end in browser.\n\n**Verified login/logout/redirect flow end-to-end in browser.**\n\n## What Happened\n\nManual verification of the full login/logout flow in browser: 1) Anonymous user visiting / → redirected to /sign-in ✓ 2) Created new account (piet-gsd@test.com) → redirected to / ✓ 3) Dashboard shows Logout button in header ✓ 4) Click Logout → session cleared, redirect to /sign-in ✓ Also signed up, login, logout → sign-in page ✓. Logout button shows 'Login' after logout ✓. Fixed signOut 415 error by adding Content-Type header.\n\n## Verification\n\nManual browser test via Playwright: anonymous / → /sign-in redirect ✓, signup + login → dashboard with Logout button ✓, logout → /sign-in with Login button ✓. All assertions passed.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "description": "Lancer l'app web (port 3000) et l'API (port 3001). Vérifier manuellement : / non-connecté → /sign-in. /sign-in → login. Après login → /. Header affiche 'Logout'. Click logout → /sign-in. Vérifier aussi /settings redirige si non-connecté.",
+      "estimate": "30min",
+      "files": [],
+      "verify": "Vérification browser: / → /sign-in (anon), login → / (header montre logout), logout → /sign-in",
+      "inputs": [],
+      "expected_output": [
+        "Vérification manuelle complète"
+      ],
+      "observability_impact": "Aucun — test manuel.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S02",
+      "id": "T01",
+      "title": "Identified tRPC endpoints for dashboard stats: collections.list (with objectCount), contacts.list, loans.lentOut.",
+      "status": "complete",
+      "one_liner": "Identified tRPC endpoints for dashboard stats: collections.list (with objectCount), contacts.list, loans.lentOut.",
+      "narrative": "Identified available tRPC endpoints for dashboard stats: collections.list returns items with objectCount per collection, contacts.list returns all user contacts, loans.lentOut returns active loans. No need for a dedicated stats endpoint — can derive totals from existing endpoints.",
+      "verification_result": "grep -n 'list\\|count\\|stats' packages/api/src/routers/*.ts confirmed all available endpoints: collections.list (has _count.objects), objects.list (requires collectionId), contacts.list, loans.lentOut (ACTIVE/OVERDUE loans).",
+      "duration": "",
+      "completed_at": "2026-05-08T06:39:04.667Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "packages/api/src/routers/objects.ts",
+        "packages/api/src/routers/contacts.ts",
+        "packages/api/src/routers/loans.ts",
+        "packages/api/src/routers/collections.ts"
+      ],
+      "key_decisions": [
+        "Pas de nouveau endpoint stats nécessaire — collections.list donne objectCount, contacts.list et loans.lentOut suffisent"
+      ],
+      "full_summary_md": "---\nid: T01\nparent: S02\nmilestone: M005\nkey_files:\n  - packages/api/src/routers/objects.ts\n  - packages/api/src/routers/contacts.ts\n  - packages/api/src/routers/loans.ts\n  - packages/api/src/routers/collections.ts\nkey_decisions:\n  - Pas de nouveau endpoint stats nécessaire — collections.list donne objectCount, contacts.list et loans.lentOut suffisent\nduration: \nverification_result: untested\ncompleted_at: 2026-05-08T06:39:04.666Z\nblocker_discovered: false\n---\n\n# T01: Identified tRPC endpoints for dashboard stats: collections.list (with objectCount), contacts.list, loans.lentOut.\n\n**Identified tRPC endpoints for dashboard stats: collections.list (with objectCount), contacts.list, loans.lentOut.**\n\n## What Happened\n\nIdentified available tRPC endpoints for dashboard stats: collections.list returns items with objectCount per collection, contacts.list returns all user contacts, loans.lentOut returns active loans. No need for a dedicated stats endpoint — can derive totals from existing endpoints.\n\n## Verification\n\ngrep -n 'list\\|count\\|stats' packages/api/src/routers/*.ts confirmed all available endpoints: collections.list (has _count.objects), objects.list (requires collectionId), contacts.list, loans.lentOut (ACTIVE/OVERDUE loans).\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `packages/api/src/routers/objects.ts`\n- `packages/api/src/routers/contacts.ts`\n- `packages/api/src/routers/loans.ts`\n- `packages/api/src/routers/collections.ts`\n",
+      "description": "Vérifier que les routers tRPC exposent des count ou list endpoints utilisables pour les stats : objects.list, contacts.list, loans.list. Lire les routers et les types shared si nécessaire.",
+      "estimate": "15min",
+      "files": [
+        "packages/api/src/routers/objects.ts",
+        "packages/api/src/routers/contacts.ts",
+        "packages/api/src/routers/loans.ts"
+      ],
+      "verify": "grep -n 'list\\|count\\|stats' packages/api/src/routers/*.ts",
+      "inputs": [
+        "Routers existants"
+      ],
+      "expected_output": [
+        "Liste des endpoints disponibles pour les stats"
+      ],
+      "observability_impact": "Aucun — lecture seule.",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M005",
+      "slice_id": "S02",
+      "id": "T02",
+      "title": "Replaced mock dashboard data with real tRPC queries for objects, contacts, and active loans.",
+      "status": "complete",
+      "one_liner": "Replaced mock dashboard data with real tRPC queries for objects, contacts, and active loans.",
+      "narrative": "Replaced all hardcoded mock values in page.tsx. Converted to client component (\"use client\"). Added trpc collections.list query to sum objectCount for total objects, contacts.list for contact count, loans.lentOut for active loans count. Added loading states (\"...\") during fetch. Enhanced the \"retours récents\" section to show actual active loan cards with object name, borrower, and due date (or empty state). No more '24', '3', '12' hardcoded values.",
+      "verification_result": "grep confirms no hardcoded '24', '3', '12' in page.tsx. grep shows trpc.collections.list, trpc.contacts.list, trpc.loans.lentOut useQuery calls. Network trace showed GET /api/trpc/collections.list,contacts.list,loans.lentOut?batch=1 → 200.",
+      "duration": "",
+      "completed_at": "2026-05-08T06:51:17.470Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [
+        "apps/web/src/app/page.tsx"
+      ],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T02\nparent: S02\nmilestone: M005\nkey_files:\n  - apps/web/src/app/page.tsx\nkey_decisions:\n  - (none)\nduration: \nverification_result: untested\ncompleted_at: 2026-05-08T06:51:17.469Z\nblocker_discovered: false\n---\n\n# T02: Replaced mock dashboard data with real tRPC queries for objects, contacts, and active loans.\n\n**Replaced mock dashboard data with real tRPC queries for objects, contacts, and active loans.**\n\n## What Happened\n\nReplaced all hardcoded mock values in page.tsx. Converted to client component (\"use client\"). Added trpc collections.list query to sum objectCount for total objects, contacts.list for contact count, loans.lentOut for active loans count. Added loading states (\"...\") during fetch. Enhanced the \"retours récents\" section to show actual active loan cards with object name, borrower, and due date (or empty state). No more '24', '3', '12' hardcoded values.\n\n## Verification\n\ngrep confirms no hardcoded '24', '3', '12' in page.tsx. grep shows trpc.collections.list, trpc.contacts.list, trpc.loans.lentOut useQuery calls. Network trace showed GET /api/trpc/collections.list,contacts.list,loans.lentOut?batch=1 → 200.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\n- `apps/web/src/app/page.tsx`\n",
+      "description": "Rendre page.tsx client-side ('use client'). Remplacer les valeurs codées en dur par des appels trpc.objects.list, trpc.contacts.list, trpc.loans.list. Ajouter des loading skeletons et empty states. Gérer les erreurs avec un fallback.",
+      "estimate": "45min",
+      "files": [
+        "apps/web/src/app/page.tsx"
+      ],
+      "verify": "grep -n 'useQuery\\|trpc\\.\\|useState' apps/web/src/app/page.tsx && ! grep \"'24'\\|'3'\\|'12'\" apps/web/src/app/page.tsx",
+      "inputs": [
+        "Endoints identifiés en T01",
+        "trpc provider"
+      ],
+      "expected_output": [
+        "apps/web/src/app/page.tsx avec données réelles"
+      ],
+      "observability_impact": "Loading + error states visibles.",
       "full_plan_md": "",
       "sequence": 0,
       "blocker_source": "",

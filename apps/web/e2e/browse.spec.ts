@@ -128,37 +128,48 @@ test.describe("browse page", () => {
 // ============================================================================
 
 test.describe("homepage", () => {
+  let testEmail: string;
+
+  test.beforeEach(async ({ page }) => {
+    testEmail = uniqueEmail();
+    const password = "TestPass123!";
+    await createUserAPI(testEmail, password, "Homepage Browse Test User");
+    await signIn(page, testEmail, password);
+    await expect(page).not.toHaveURL(/\/sign-in/);
+  });
+
+  test.afterEach(async () => {
+    await cleanupUser(testEmail).catch(() => {});
+  });
+
   test("loads with VHS theme", async ({ page }) => {
-    await page.goto(`${WEB_BASE}/`);
-    // VHS logo text
     await expect(page.getByText("BROL", { exact: true }).first()).toBeVisible();
   });
 
   test("shows quick actions section", async ({ page }) => {
-    await page.goto(`${WEB_BASE}/`);
     await expect(page.getByText(/ACTIONS RAPIDES/i)).toBeVisible();
   });
 
   test("navigation visible in header", async ({ page }) => {
-    await page.goto(`${WEB_BASE}/`);
-    const nav = page.locator("nav");
-    await expect(nav).toBeVisible();
+    await expect(page.locator("nav")).toBeVisible();
   });
 
   test("logo links to homepage", async ({ page }) => {
-    // Start from /browse (public, has Header with BROL logo)
-    await page.goto(`${WEB_BASE}/browse`);
+    await page.goto(`${WEB_BASE}/collections`);
     const logo = page.locator("text=BROL").first();
     await logo.click();
     await expect(page).toHaveURL(`${WEB_BASE}/`);
   });
+});
 
-  test("quick action links to collections", async ({ page }) => {
+// ============================================================================
+// Homepage — anonymous redirect
+// ============================================================================
+
+test.describe("homepage anonymous redirect", () => {
+  test("visiting / without auth redirects to /sign-in", async ({ page }) => {
     await page.goto(`${WEB_BASE}/`);
-    // Find a quick action link that leads to /collections
-    const collectionsLink = page.getByRole("link", { name: /collections/i }).first();
-    await collectionsLink.click();
-    await expect(page).toHaveURL(/\/sign-in/); // redirects to sign-in (not authenticated)
+    await expect(page).toHaveURL(/\/sign-in/);
   });
 });
 
@@ -174,10 +185,17 @@ test.describe("responsive", () => {
   });
 
   test("homepage renders at 375px mobile", async ({ page }) => {
+    // Must sign in first — / is now protected
+    const email = uniqueEmail();
+    const password = "TestPass123!";
+    await createUserAPI(email, password, "Responsive Home Test User");
+    await signIn(page, email, password);
+    await expect(page).not.toHaveURL(/\/sign-in/);
+
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto(`${WEB_BASE}/`);
     await expect(page.getByText("BROL", { exact: true }).first()).toBeVisible();
     await expect(page.getByText(/ACTIONS RAPIDES/i)).toBeVisible();
+    await cleanupUser(email).catch(() => {});
   });
 });
 

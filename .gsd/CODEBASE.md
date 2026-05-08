@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-08T06:20:31Z | Files: 117 | Described: 0/117
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-08T06:20:31Z","fingerprint":"f9bb9885e8c0bef8974195f7c93594305be30e94","fileCount":117,"truncated":false} -->
+Generated: 2026-05-08T07:14:58Z | Files: 123 | Described: 0/123
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-08T07:14:58Z","fingerprint":"15ef2cbb729c1e9be341d27ee03819aa3a9d86b7","fileCount":123,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -14,6 +14,7 @@ Generated: 2026-05-08T06:20:31Z | Files: 117 | Described: 0/117
 - `pnpm-workspace.yaml`
 - `RAPPORT.md`
 - `README.md`
+- `TESTS.md`
 - `tsconfig.json`
 - `tsconfig.tsbuildinfo`
 - `turbo.json`
@@ -128,6 +129,7 @@ Generated: 2026-05-08T06:20:31Z | Files: 117 | Described: 0/117
 - `apps/web/src/components/ui/label.tsx`
 
 ### apps/web/src/lib/
+- `apps/web/src/lib/api-client.ts`
 - `apps/web/src/lib/auth-client.ts`
 - `apps/web/src/lib/auth-session-syncer.tsx`
 - `apps/web/src/lib/auth-store.ts`
@@ -209,3 +211,9 @@ Generated: 2026-05-08T06:20:31Z | Files: 117 | Described: 0/117
 
 ### packages/tsconfig/
 - `packages/tsconfig/package.json`
+
+### scripts/
+- `scripts/e2e-run.sh`
+- `scripts/e2e-servers.sh`
+- `scripts/e2e-start-servers.sh`
+- `scripts/e2e-stop-servers.sh`
