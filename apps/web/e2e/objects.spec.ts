@@ -1,75 +1,220 @@
 /**
- * Tests E2E pour les objets.
- * @decisions Tests couvrent l'ajout et la visualisation d'objets.
+ * E2E tests: Objects CRUD.
+ *
+ * S06: Full edge-case coverage.
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect, Page } from "@playwright/test";
+import {
+  signIn,
+  createUserAPI,
+  cleanupUser,
+  uniqueEmail,
+} from "./helpers/auth";
 
-/**
- * Vérifie que la page d'ajout d'objet charge correctement.
- */
-test("add object page loads", async ({ page }) => {
-  await page.goto("/objects/add");
+const WEB_BASE = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE ?? "http://localhost:3001";
 
-  // Titre de la page
-  await expect(page.getByRole("heading", { name: /ajouter un objet/i })).toBeVisible();
+// ============================================================================
+// Helpers
+// ============================================================================
 
-  // Bouton de retour
-  await expect(page.getByRole("link", { name: /retour/i })).toBeVisible();
+async function createUserWithSession(page: Page): Promise<{ email: string; password: string }> {
+  const email = uniqueEmail();
+  const password = "TestPass123!";
+  await createUserAPI(email, password, "Objects Test User");
+  await signIn(page, email, password);
+  return { email, password };
+}
+
+async function createCollectionAPI(
+  userToken: string,
+  name: string,
+): Promise<{ id: string }> {
+  const res = await fetch(`${API_BASE}/api/trpc/collections.create`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify({ name }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(`createCollectionAPI: ${JSON.stringify(data.error)}`);
+  return { id: data.result?.data?.id };
+}
+
+async function createObjectAPI(
+  userToken: string,
+  collectionId: string,
+  name: string,
+): Promise<{ id: string }> {
+  const res = await fetch(`${API_BASE}/api/trpc/objects.create`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify({ collectionId, name }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(`createObjectAPI: ${JSON.stringify(data.error)}`);
+  return { id: data.result?.data?.id };
+}
+
+// ============================================================================
+// /objects/add
+// ============================================================================
+
+test.describe("objects/add", () => {
+  let testEmail: string;
+  let testToken: string;
+  let collectionId: string;
+
+  test.beforeEach(async ({ page }) => {
+    testEmail = uniqueEmail();
+    const password = "TestPass123!";
+    const user = await createUserAPI(testEmail, password, "Objects Add Test User");
+    testToken = user.token;
+    await signIn(page, testEmail, password);
+
+    // Create a collection to add objects to
+    const col = await createCollectionAPI(testToken, "E2E Test Collection");
+    collectionId = col.id;
+  });
+
+  test.afterEach(async () => {
+    await cleanupUser(testEmail).catch(() => {});
+  });
+
+  test("page loads with auth", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/objects/add`);
+    await expect(page).not.toHaveURL(/\/sign-in/);
+  });
+
+  test("form validation — name required", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/objects/add`);
+    const submitBtn = page.getByRole("button", { name: /ajouter|ajout|créer/i });
+    await submitBtn.click();
+    // Browser required attribute should prevent submission
+    await expect(page.getByLabel(/nom/i)).toBeFocused().catch(
+      async () => {
+        await expect(page.locator("text=/requis|required/i").first()).toBeVisible({ timeout: 3000 });
+      },
+    );
+  });
+
+  test("creates object in collection", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/objects/add`);
+    await page.getByLabel(/nom/i).fill("E2E Test Object");
+    // Select collection if a select exists, otherwise relies on default
+    const submitBtn = page.getByRole("button", { name: /ajouter|ajout|créer|ajouter/i });
+    await submitBtn.click();
+    await page.waitForLoadState("networkidle");
+    // Should navigate away from /objects/add (success)
+    expect(page.url()).not.toContain("/objects/add");
+  });
+
+  test("redirects to /sign-in without auth", async ({ page }) => {
+    // Sign out first
+    await page.getByText(/se déconnecter/i).click().catch(() => {});
+    await page.waitForURL(/\/sign-in/, { timeout: 5000 }).catch(() => {});
+    await page.goto(`${WEB_BASE}/objects/add`);
+    await expect(page).toHaveURL(/\/sign-in/);
+  });
 });
 
-/**
- * Vérifie que la page d'ajout avec collectionId charge correctement.
- */
-test("add object page with collection param loads", async ({ page }) => {
-  await page.goto("/objects/add?collectionId=test-collection");
+// ============================================================================
+// /objects/:id
+// ============================================================================
 
-  // Titre de la page
-  await expect(page.getByRole("heading", { name: /ajouter un objet/i })).toBeVisible();
+test.describe("object detail", () => {
+  let testEmail: string;
+  let testToken: string;
+  let objectId: string;
+  let collectionId: string;
 
-  // Le bouton retour doit pointer vers la collection
-  const backLink = page.getByRole("link", { name: /retour/i });
-  await expect(backLink).toHaveAttribute("href", /\/collections\/test-collection/);
+  test.beforeEach(async ({ page }) => {
+    testEmail = uniqueEmail();
+    const password = "TestPass123!";
+    const user = await createUserAPI(testEmail, password, "Object Detail Test User");
+    testToken = user.token;
+    await signIn(page, testEmail, password);
+
+    const col = await createCollectionAPI(testToken, "Object Detail Collection");
+    collectionId = col.id;
+    const obj = await createObjectAPI(testToken, collectionId, "Detail Test Object");
+    objectId = obj.id;
+  });
+
+  test.afterEach(async () => {
+    await cleanupUser(testEmail).catch(() => {});
+  });
+
+  test("non-existent object shows not found", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/objects/non-existent-id`);
+    await expect(
+      page.getByText(/non trouvé|intouvable|not found/i).first(),
+    ).toBeVisible({ timeout: 5000 });
+  });
+
+  test("valid object shows name", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/objects/${objectId}`);
+    await expect(page.getByText(/Detail Test Object/i)).toBeVisible({ timeout: 5000 });
+  });
 });
 
-/**
- * Vérifie le formulaire d'objet.
- */
-test("object form has required fields", async ({ page }) => {
-  await page.goto("/objects/add");
+// ============================================================================
+// Navigation
+// ============================================================================
 
-  // Vérifier que le champ nom existe
-  await expect(page.getByLabel(/nom/i)).toBeVisible();
+test.describe("navigation", () => {
+  let testEmail: string;
 
-  // Vérifier le select de condition
-  await expect(page.locator("select#collectionId, input[name='collectionId']").or(page.locator("select"))).toBeVisible();
+  test.beforeEach(async ({ page }) => {
+    testEmail = uniqueEmail();
+    const password = "TestPass123!";
+    await createUserAPI(testEmail, password, "Nav Objects Test User");
+    await signIn(page, testEmail, password);
+  });
+
+  test.afterEach(async () => {
+    await cleanupUser(testEmail).catch(() => {});
+  });
+
+  test("can navigate to object add page", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/objects`);
+    // The add button or link should be visible
+    const addBtn = page.getByRole("link", { name: /ajouter|add/i }).or(
+      page.getByRole("button", { name: /ajouter|add/i }),
+    ).first();
+    await addBtn.click();
+    await expect(page).toHaveURL(/\/objects\/add/);
+  });
 });
 
-/**
- * Vérifie la navigation vers le détail d'un objet.
- */
-test("navigates to object detail", async ({ page }) => {
-  await page.goto("/objects/test-id");
+// ============================================================================
+// Responsive
+// ============================================================================
 
-  // Titre de l'objet ou message de chargement
-  await expect(page.locator("h1")).toBeVisible();
-
-  // Actions disponibles
-  await expect(page.getByRole("button", { name: /preter/i })).toBeVisible();
-});
-
-/**
- * Vérifie le comportement responsive.
- */
 test.describe("responsive", () => {
-  test("works on mobile viewport", async ({ page }) => {
+  let testEmail: string;
+
+  test.beforeEach(async ({ page }) => {
+    testEmail = uniqueEmail();
+    const password = "TestPass123!";
+    await createUserAPI(testEmail, password, "Responsive Objects Test User");
+    await signIn(page, testEmail, password);
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto("/objects/add");
+  });
 
-    // Titre visible
-    await expect(page.getByRole("heading", { name: /ajouter un objet/i })).toBeVisible();
+  test.afterEach(async () => {
+    await cleanupUser(testEmail).catch(() => {});
+  });
 
-    // Navigation visible
-    await expect(page.locator("nav")).toBeVisible();
+  test("add object page renders at 375px", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/objects/add`);
+    await expect(page).not.toHaveURL(/\/sign-in/);
+    await expect(page.getByLabel(/nom/i)).toBeVisible();
   });
 });

@@ -3,6 +3,12 @@
  * @package @brol/db
  */
 
+import path from "path";
+import dotenv from "dotenv";
+
+// Load .env from project root BEFORE Prisma initializes
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+
 import { PrismaClient } from "@prisma/client";
 
 // Singleton pour éviter d'instancier plusieurs clients en développement
@@ -14,6 +20,7 @@ declare global {
 /**
  * Obtient une instance singleton du client Prisma.
  * En développement, réutilise l'instance globale pour éviter les erreurs HMR.
+ * dotenv charge DATABASE_URL depuis .env à la racine avant l'init de Prisma.
  */
 export function getPrismaClient(): PrismaClient {
   if (process.env.NODE_ENV === "production") {

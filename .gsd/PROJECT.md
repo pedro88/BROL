@@ -13,7 +13,7 @@ Stop losing track of your stuff — know where everything is, who has it, and wh
 **M001 complete.** Collections and Objects CRUD UI exists with mock data. Web app renders, navigation works, VHS 80s theme applied. tRPC routers are built and typed. E2E tests exist but API server not included in test setup.
 
 **Still missing:**
-- Real authentication (BetterAuth planned but not integrated)
+- Real authentication (BetterAuth email/password — OAuth commented out, ready for future)
 - Real data (frontend uses mock data, userId always null in context)
 - Mobile app wired to backend (screens exist, no tRPC calls)
 - Public QR scan (schema exists, endpoint missing)

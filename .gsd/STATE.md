@@ -1,12 +1,15 @@
 # GSD State
 
-**Active Milestone:** M001: M001: Collections & Objects Management
-**Active Slice:** None
-**Phase:** complete
-**Requirements Status:** 0 active · 0 validated · 0 deferred · 0 out of scope
+**Active Milestone:** M002: M002
+**Active Slice:** S01: ✅
+**Phase:** planning
+**Requirements Status:** 3 active · 0 validated · 0 deferred · 0 out of scope
 
 ## Milestone Registry
-- ✅ **M001:** M001: Collections & Objects Management
+- ✅ **M001:** M001
+- 🔄 **M002:** M002
+- ✅ **M003:** Auth: fix password hashing & persistence
+- ⬜ **M004:** Fix & stabilisation des tests E2E et unitaires
 
 ## Recent Decisions
 - None recorded
@@ -15,4 +18,4 @@
 - None
 
 ## Next Action
-All milestones complete.
+Slice S01 has no DB tasks. Plan slice tasks before execution.

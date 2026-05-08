@@ -20,8 +20,9 @@
     "@prisma/client": "^6.2.1"
   },
   "devDependencies": {
+    "@brol/tsconfig": "workspace:*",
+    "dotenv": "^17.4.2",
     "prisma": "^6.2.1",
-    "typescript": "^5.7.2",
-    "@brol/tsconfig": "workspace:*"
+    "typescript": "^5.7.2"
   }
 }

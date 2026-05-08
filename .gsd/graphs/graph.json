@@ -1,0 +1,556 @@
+{
+  "nodes": [
+    {
+      "id": "milestone:M002",
+      "label": "M002: M002",
+      "type": "milestone",
+      "description": "Active milestone: M002",
+      "confidence": "EXTRACTED",
+      "sourceFile": "STATE.md"
+    },
+    {
+      "id": "concept:phase:planning",
+      "label": "Phase: planning",
+      "type": "concept",
+      "confidence": "EXTRACTED",
+      "sourceFile": "STATE.md"
+    },
+    {
+      "id": "milestone:M001",
+      "label": "M001: ## Vision",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M001/M001-ROADMAP.md"
+    },
+    {
+      "id": "slice:M001:S01",
+      "label": "S01: Collections CRUD",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M001/slices/S01/S01-PLAN.md"
+    },
+    {
+      "id": "task:M001:S01:T01",
+      "label": "T01: Collections list page with grid, create dialog, and navigation",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M001:S01:T02",
+      "label": "T02: Create collection dialog with form validation",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M001:S01:T03",
+      "label": "T03: Collection detail and edit pages with objects list",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M001:S01:T04",
+      "label": "T04: Delete collection with confirmation",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M001:S01:T05",
+      "label": "T05: Collections and objects E2E tests",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M001:S02",
+      "label": "S02: Objects Management",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M001/slices/S02/S02-PLAN.md"
+    },
+    {
+      "id": "task:M001:S02:T01",
+      "label": "T01: Add object page with collection selector",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M001:S02:T02",
+      "label": "T02: Object form with all fields and validation",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M001:S02:T03",
+      "label": "T03: Object card with loan status display",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M001:S02:T04",
+      "label": "T04: Object detail page with loan history",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M001:S02:T05",
+      "label": "T05: Edit/delete object functionality",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M001:S02:T06",
+      "label": "T06: Objects E2E tests",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M002:S01",
+      "label": "M002/S01",
+      "type": "slice",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M002:S02",
+      "label": "S02: S02",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/slices/S02/S02-PLAN.md"
+    },
+    {
+      "id": "task:M002:S02:T01",
+      "label": "T01: Champ isPublic ajouté au modèle Collection Prisma",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S02:T02",
+      "label": "T02: Ajouter listPublic/getPublic au tRPC router",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S02:T03",
+      "label": "T03: Créer page /browse",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S02:T04",
+      "label": "T04: Ajouter isPublic toggle au CreateCollectionDialog",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M002:S03",
+      "label": "S03: Mock data → real tRPC queries",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/slices/S03/S03-PLAN.md"
+    },
+    {
+      "id": "task:M002:S03:T01",
+      "label": "T01: Fix auth.ts: sessionToken → token, expires → expiresAt",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S03:T02",
+      "label": "T02: Vérifier que l'API démarre sans erreur et que les endpoints répondent",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S03:T03",
+      "label": "T03: Test du flow sign-in → Bearer token → protected endpoint",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M002:S04",
+      "label": "S04: Tests unitaires routers tRPC",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/slices/S04/S04-PLAN.md"
+    },
+    {
+      "id": "task:M002:S04:T01",
+      "label": "T01: Exécuter vitest et vérifier 100% pass",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M002:S05",
+      "label": "S05: Tests e2e OAuth + public visibility",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/slices/S05/S05-PLAN.md"
+    },
+    {
+      "id": "task:M002:S05:T01",
+      "label": "T01: Mettre à jour auth.spec.ts et exécuter les tests",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S05:T02",
+      "label": "T02: Exécuter les tests public-collections et collections",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M002:S06",
+      "label": "S06: Tests e2e complets (tous les cas)",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M002/slices/S06/S06-PLAN.md"
+    },
+    {
+      "id": "task:M002:S06:T01",
+      "label": "T01: Auth helper + cleanup",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S06:T02",
+      "label": "T02: Auth full spec (~30 tests)",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S06:T03",
+      "label": "T03: Collections spec (~12 tests)",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S06:T04",
+      "label": "T04: Objects spec (~8 tests)",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M002:S06:T05",
+      "label": "T05: Browse + public spec (~16 tests)",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "milestone:M003",
+      "label": "M003: Auth: fix password hashing & persistence",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M003/M003-ROADMAP.md"
+    },
+    {
+      "id": "slice:M003:S01",
+      "label": "S01: Password hashing on signup",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M003/slices/S01/S01-PLAN.md"
+    },
+    {
+      "id": "task:M003:S01:T01",
+      "label": "T01: Corriger schema Account pour matcher BetterAuth",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S01:T02",
+      "label": "T02: Push nouveau schema en base",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M003:S01:T03",
+      "label": "T03: Vérifier création Account avec password hashé",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "milestone:M004",
+      "label": "M004: Fix & stabilisation des tests E2E et unitaires",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/M004-ROADMAP.md"
+    },
+    {
+      "id": "slice:M004:S01",
+      "label": "S01: Diagnostiquer la cause racine des échecs E2E et stabiliser le serveur API",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M004/slices/S01/S01-PLAN.md"
+    },
+    {
+      "id": "task:M004:S01:T01",
+      "label": "T01: Unifier BETTER_AUTH_SECRET entre les 2 instances",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M004:S01:T02",
+      "label": "T02: Configurer Playwright pour lancer le serveur API (port 3001) en plus du web",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M004:S01:T03",
+      "label": "T03: Run de vérification E2E — valider la cause racine",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    }
+  ],
+  "edges": [
+    {
+      "from": "milestone:M001",
+      "to": "slice:M001:S01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S01",
+      "to": "task:M001:S01:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S01",
+      "to": "task:M001:S01:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S01",
+      "to": "task:M001:S01:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S01",
+      "to": "task:M001:S01:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S01",
+      "to": "task:M001:S01:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M001",
+      "to": "slice:M001:S02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S02",
+      "to": "task:M001:S02:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S02",
+      "to": "task:M001:S02:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S02",
+      "to": "task:M001:S02:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S02",
+      "to": "task:M001:S02:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S02",
+      "to": "task:M001:S02:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M001:S02",
+      "to": "task:M001:S02:T06",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "slice:M002:S01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "slice:M002:S02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S02",
+      "to": "task:M002:S02:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S02",
+      "to": "task:M002:S02:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S02",
+      "to": "task:M002:S02:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S02",
+      "to": "task:M002:S02:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "slice:M002:S03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S03",
+      "to": "task:M002:S03:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S03",
+      "to": "task:M002:S03:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S03",
+      "to": "task:M002:S03:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "slice:M002:S04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S04",
+      "to": "task:M002:S04:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "slice:M002:S05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S05",
+      "to": "task:M002:S05:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S05",
+      "to": "task:M002:S05:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M002",
+      "to": "slice:M002:S06",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S06",
+      "to": "task:M002:S06:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S06",
+      "to": "task:M002:S06:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S06",
+      "to": "task:M002:S06:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S06",
+      "to": "task:M002:S06:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M002:S06",
+      "to": "task:M002:S06:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M003",
+      "to": "slice:M003:S01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S01",
+      "to": "task:M003:S01:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S01",
+      "to": "task:M003:S01:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M003:S01",
+      "to": "task:M003:S01:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M004",
+      "to": "slice:M004:S01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S01",
+      "to": "task:M004:S01:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S01",
+      "to": "task:M004:S01:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M004:S01",
+      "to": "task:M004:S01:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    }
+  ],
+  "builtAt": "2026-05-05T08:07:24.481Z"
+}

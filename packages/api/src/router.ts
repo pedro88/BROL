@@ -3,19 +3,39 @@
  * @package @brol/api
  */
 
-import { router } from "./trpc";
+import { router, publicProcedure } from "./trpc";
 import { collectionsRouter } from "./routers/collections";
 import { objectsRouter } from "./routers/objects";
 import { loansRouter } from "./routers/loans";
 import { contactsRouter } from "./routers/contacts";
 import { qrRouter } from "./routers/qr";
-import { publicProcedure } from "./trpc";
+import { auth } from "./auth";
+
+/**
+ * Auth router — public endpoints for session management.
+ */
+const authRouter = router({
+  /**
+   * Get current session.
+   * Public: returns null for anonymous users, session+user when logged in.
+   */
+  me: publicProcedure.query(async ({ ctx }) => {
+    const session = await auth.api.getSession({
+      headers: { cookie: ctx.headers["cookie"] ?? "" },
+    });
+    return {
+      sessionToken: session?.session?.token ?? null,
+      user: session?.user ?? null,
+    };
+  }),
+});
 
 /**
  * Router racine de l'application.
  * Organisé par domaine fonctionnel.
  */
 export const appRouter = router({
+  auth: authRouter,
   collections: collectionsRouter,
   objects: objectsRouter,
   loans: loansRouter,

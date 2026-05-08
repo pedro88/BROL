@@ -41,3 +41,17 @@ vendor/
 coverage/
 .cache/
 tmp/
+
+# ── Build outputs in packages ──
+packages/*/dist/
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map
+
+# ── GSD WAL files ──
+.gsd/gsd.db-shm
+.gsd/gsd.db-wal
+
+# ── GSD worktrees ──
+.gsd/worktrees/

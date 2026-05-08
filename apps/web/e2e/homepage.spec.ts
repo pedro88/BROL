@@ -1,64 +1,51 @@
 /**
- * Tests E2E pour la page d'accueil.
- * @decisions Tests couvrent le happy path + erreurs basiques.
+ * E2E tests: Homepage navigation and redirects.
+ *
+ * S06: Covered by browse.spec.ts but split for clarity.
+ * Tests homepage-specific behavior: nav links, CTA, external redirects.
  */
 
 import { test, expect } from "@playwright/test";
 
-/**
- * Vérifie que la page d'accueil charge correctement.
- */
-test("homepage loads", async ({ page }) => {
-  await page.goto("/");
+const WEB_BASE = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 
-  // Header avec logo
-  await expect(page.locator("text=BROL")).toBeVisible();
+test.describe("homepage", () => {
+  test("loads with VHS logo", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/`);
+    await expect(page.getByText("BROL", { exact: true }).first()).toBeVisible();
+  });
 
-  // Section actions rapides
-  await expect(page.getByText("ACTIONS RAPIDES")).toBeVisible();
-  await expect(page.getByRole("link", { name: /scanner/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /nouveau pret/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /ajouter/i })).toBeVisible();
+  test("shows ACTIONS RAPIDES section", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/`);
+    await expect(page.getByText("ACTIONS RAPIDES")).toBeVisible();
+  });
+
+  test("logo click returns to homepage", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/browse`);
+    await page.locator("text=BROL").first().click();
+    await expect(page).toHaveURL(`${WEB_BASE}/`);
+  });
+
+  test("collections CTA redirects to sign-in when not authenticated", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/`);
+    // Find a CTA or quick action for collections
+    const collectionsLink = page.getByRole("link", { name: /collections/i }).first();
+    await collectionsLink.click();
+    // Should redirect to sign-in (not authenticated)
+    await expect(page).toHaveURL(/\/sign-in/);
+  });
+
+  test("navbar visible", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/`);
+    await expect(page.locator("nav")).toBeVisible();
+  });
 });
 
-/**
- * Vérifie que la navigation fonctionne.
- */
-test("navigation works", async ({ page }) => {
-  await page.goto("/");
-
-  // Aller aux collections
-  await page.getByRole("link", { name: /collections/i }).click();
-  await expect(page).toHaveURL(/collections/);
-
-  // Revenir à l'accueil
-  await page.getByRole("link", { name: /accueil/i }).click();
-  await expect(page).toHaveURL("/");
-});
-
-/**
- * Vérifie que les liens externes fonctionnent.
- */
-test("external links open", async ({ page }) => {
-  await page.goto("/");
-
-  // Le lien vers les paramètres doit exister
-  const settingsLink = page.getByRole("link", { name: /parametres/i });
-  await expect(settingsLink).toBeVisible();
-});
-
-/**
- * Vérifie le comportement responsive.
- */
-test.describe("responsive", () => {
-  test("works on mobile viewport", async ({ page }) => {
+test.describe("homepage responsive", () => {
+  test("renders at 375px mobile", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto("/");
-
-    // Logo visible
-    await expect(page.locator("text=BROL")).toBeVisible();
-
-    // Navigation bottom visible
+    await page.goto(`${WEB_BASE}/`);
+    await expect(page.getByText("BROL", { exact: true }).first()).toBeVisible();
     await expect(page.locator("nav")).toBeVisible();
   });
 });

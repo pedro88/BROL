@@ -39,6 +39,7 @@ export const createCollectionSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
   coverImage: z.string().url().optional(),
+  isPublic: z.boolean().default(false),
 });
 
 /**
@@ -48,6 +49,7 @@ export const updateCollectionSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional().nullable(),
   coverImage: z.string().url().optional().nullable(),
+  isPublic: z.boolean().optional(),
 });
 
 export type CreateCollectionInput = z.infer<typeof createCollectionSchema>;

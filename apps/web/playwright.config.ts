@@ -17,10 +17,7 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: true,
-    timeout: 120 * 1000,
-  },
+  // Servers must be launched manually via `bash scripts/e2e-run.sh` or `bash scripts/e2e-servers.sh`.
+  // Do NOT use Playwright's webServer config — it causes EADDRINUSE / timeout issues.
+  // CI uses e2e-run.sh to manage server lifecycle.
 });
