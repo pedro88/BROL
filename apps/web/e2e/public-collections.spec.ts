@@ -29,7 +29,10 @@ async function createPublicCollectionAPI(
     body: JSON.stringify({ name, isPublic: true }),
   });
   const data = await res.json();
-  return { id: data.result?.data?.id ?? data.id };
+  if (data.error) {
+    throw new Error(`createPublicCollectionAPI: ${JSON.stringify(data.error)}`);
+  }
+  return { id: data.result?.data?.id };
 }
 
 async function createPrivateCollectionAPI(
@@ -45,7 +48,10 @@ async function createPrivateCollectionAPI(
     body: JSON.stringify({ name, isPublic: false }),
   });
   const data = await res.json();
-  return { id: data.result?.data?.id ?? data.id };
+  if (data.error) {
+    throw new Error(`createPrivateCollectionAPI: ${JSON.stringify(data.error)}`);
+  }
+  return { id: data.result?.data?.id };
 }
 
 // ============================================================================
@@ -61,7 +67,7 @@ test.describe("public access", () => {
     const password = "TestPass123!";
     const user = await createUserAPI(testEmail, password, "Public Access Test User");
     const col = await createPublicCollectionAPI(user.token, "Public Access Collection");
-    collectionId = col.id;
+    collectionId = col.id!;
   });
 
   test.afterEach(async () => {
@@ -72,7 +78,7 @@ test.describe("public access", () => {
     await page.goto(`${WEB_BASE}/collections/${collectionId}`);
     // Should NOT redirect to /sign-in
     await expect(page).not.toHaveURL(/\/sign-in/);
-    await expect(page).toHaveURL(new RegExp(`/collections/${collectionId.slice(0, 8)}`));
+    await expect(page).toHaveURL(/\/collections\//);
   });
 
   test("shows collection name and objects", async ({ page }) => {

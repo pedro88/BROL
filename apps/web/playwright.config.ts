@@ -17,15 +17,7 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  // Use production build with test DATABASE_URL so it matches the API server.
-  // API server must be running separately with DATABASE_URL=brol.
-  webServer: {
-    command: "DATABASE_URL=\"postgresql://postgres:password@localhost:5432/brol?schema=public\" pnpm start",
-    url: "http://localhost:3000",
-    reuseExistingServer: true,
-    timeout: 30 * 1000,
-    env: {
-      DATABASE_URL: "postgresql://postgres:password@localhost:5432/brol?schema=public",
-    },
-  },
+  // Servers must be launched manually via `bash scripts/e2e-run.sh` or `bash scripts/e2e-servers.sh`.
+  // Do NOT use Playwright's webServer config — it causes EADDRINUSE / timeout issues.
+  // CI uses e2e-run.sh to manage server lifecycle.
 });

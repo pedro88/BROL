@@ -1,4 +1,4 @@
-# GSD context snapshot (2026-05-04T12:19:49.703Z)
+# GSD context snapshot (2026-05-06T09:07:05.772Z)
 
 ## Top project memories
 - [MEM002] (architecture) Mode d'authentification pour M002 Chose: Email + mot de passe via BetterAuth emailAndPassword, OAuth commenté. Rationale: OAuth (Google/GitHub/Apple) requiert des credentials non-configurés. Email+password avec BetterAuth fonctionne out-of-box, permet d'avancer sur S02 et le reste de M002 sans dépendre des consoles OAut….

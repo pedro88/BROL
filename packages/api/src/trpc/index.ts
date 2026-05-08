@@ -5,7 +5,6 @@
 
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
-import superjson from "superjson";
 import { prisma } from "@brol/db";
 import { getSession } from "../auth";
 
@@ -43,7 +42,6 @@ export async function createContext(opts: FetchCreateContextFnOptions): Promise<
  * Initialisation de tRPC avec les plugins nécessaires.
  */
 const t = initTRPC.context<Context>().create({
-  transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
       ...shape,

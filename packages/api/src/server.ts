@@ -70,29 +70,18 @@ async function handleTrpc(req: IncomingMessage, res: { statusCode: number; setHe
     return;
   }
 
-  // Collect body before building the fetch Request (needed for POST/PUT/PATCH)
+  // Collect body (needed for POST/PUT/PATCH; empty for GET)
   const bodyBuffer = await collectBody(req);
-  const bodyStr = bodyBuffer.toString("utf-8");
+  const bodyStr = bodyBuffer.length > 0 ? bodyBuffer.toString("utf-8") : undefined;
 
   const protocol = req.socket.encrypted ? "https" : "http";
   const host = req.headers.host ?? `localhost:${PORT}`;
   const url = `${protocol}://${host}${req.url}`;
 
-  // Create body as ReadableStream for fetch Request
-  const bodyStream = bodyBuffer.length > 0
-    ? new ReadableStream({
-        start(controller) {
-          controller.enqueue(new Uint8Array(bodyBuffer));
-          controller.close();
-        },
-      })
-    : undefined;
-
   const fetchReq = new Request(url, {
     method: req.method,
     headers: req.headers as Record<string, string>,
-    body: bodyStream,
-    duplex: "half",
+    body: bodyStr,
   });
 
   await fetchRequestHandler({

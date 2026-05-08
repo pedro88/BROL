@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-05T07:21:28Z | Files: 115 | Described: 0/115
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-05T07:21:28Z","fingerprint":"63cb7ba67419a371a47d4c2d1762e5aad5ea2003","fileCount":115,"truncated":false} -->
+Generated: 2026-05-08T06:20:31Z | Files: 117 | Described: 0/117
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-08T06:20:31Z","fingerprint":"f9bb9885e8c0bef8974195f7c93594305be30e94","fileCount":117,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -59,10 +59,14 @@ Generated: 2026-05-05T07:21:28Z | Files: 115 | Described: 0/115
 
 ### apps/web/e2e/
 - `apps/web/e2e/auth.spec.ts`
+- `apps/web/e2e/browse.spec.ts`
 - `apps/web/e2e/collections.spec.ts`
 - `apps/web/e2e/homepage.spec.ts`
 - `apps/web/e2e/objects.spec.ts`
 - `apps/web/e2e/public-collections.spec.ts`
+
+### apps/web/e2e/helpers/
+- `apps/web/e2e/helpers/auth.ts`
 
 ### apps/web/src/
 - `apps/web/src/middleware.ts`

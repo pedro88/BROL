@@ -43,7 +43,8 @@ async function createCollectionAPI(
     body: JSON.stringify({ name, isPublic }),
   });
   const data = await res.json();
-  return { id: data.result?.data?.id ?? data.id };
+  if (data.error) throw new Error(`createCollectionAPI: ${JSON.stringify(data.error)}`);
+  return { id: data.result?.data?.id };
 }
 
 async function createCollectionViaUI(
@@ -267,6 +268,10 @@ test.describe("navigation", () => {
     const card = page.locator(".card-vhs, [data-testid='collection-card']").first();
     const hasCard = await card.isVisible().catch(() => false);
     if (hasCard) {
+      // Close any open dialog first
+      await page.locator('[role="dialog"]').first().click({ force: true }).catch(() => {});
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
       await card.click();
       await expect(page).toHaveURL(/\/collections\/.+/);
     } else {
@@ -275,8 +280,12 @@ test.describe("navigation", () => {
       await page.getByLabel(/nom/i).fill("Nav Test Collection");
       await page.getByRole("button", { name: /créer/i }).click();
       await page.waitForLoadState("networkidle");
+      // Close the dialog
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(500);
       // Then click the card
       const card2 = page.locator(".card-vhs").first();
+      await expect(card2).toBeVisible({ timeout: 5000 });
       await card2.click();
       await expect(page).toHaveURL(/\/collections\/.+/);
     }
@@ -284,11 +293,16 @@ test.describe("navigation", () => {
 
   test("can navigate back to collections list", async ({ page }) => {
     await page.goto(`${WEB_BASE}/collections/${collectionId}`);
-    const backLink = page.getByRole("link", { name: /retour|back|collections/i }).or(
-      page.locator("a").filter({ hasText: /retour|collections/i }).first(),
+    // Pick the first link with "Collections" text in the main content area
+    const backLink = page.locator("main a").filter({ hasText: /collections/i }).first();
+    await expect(backLink).toBeVisible({ timeout: 3000 }).catch(
+      async () => {
+        // Fallback: any link going back to /collections
+        const anyBack = page.getByRole("link").first();
+        await expect(anyBack).toBeVisible({ timeout: 3000 });
+      },
     );
-    await expect(backLink).toBeVisible({ timeout: 3000 });
-    await backLink.click();
+    await backLink.click({ timeout: 10000 });
     await expect(page).toHaveURL(/\/collections/);
   });
 });

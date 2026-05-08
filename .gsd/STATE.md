@@ -9,6 +9,7 @@
 - ✅ **M001:** M001
 - 🔄 **M002:** M002
 - ✅ **M003:** Auth: fix password hashing & persistence
+- ⬜ **M004:** Fix & stabilisation des tests E2E et unitaires
 
 ## Recent Decisions
 - None recorded

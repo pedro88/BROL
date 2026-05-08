@@ -40,7 +40,8 @@ async function createCollectionAPI(
     body: JSON.stringify({ name }),
   });
   const data = await res.json();
-  return { id: data.result?.data?.id ?? data.id };
+  if (data.error) throw new Error(`createCollectionAPI: ${JSON.stringify(data.error)}`);
+  return { id: data.result?.data?.id };
 }
 
 async function createObjectAPI(
@@ -57,7 +58,8 @@ async function createObjectAPI(
     body: JSON.stringify({ collectionId, name }),
   });
   const data = await res.json();
-  return { id: data.result?.data?.id ?? data.id };
+  if (data.error) throw new Error(`createObjectAPI: ${JSON.stringify(data.error)}`);
+  return { id: data.result?.data?.id };
 }
 
 // ============================================================================

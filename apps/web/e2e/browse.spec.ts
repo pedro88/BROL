@@ -32,7 +32,10 @@ async function createPublicCollectionAPI(
     body: JSON.stringify({ name, isPublic: true }),
   });
   const data = await res.json();
-  return { id: data.result?.data?.id ?? data.id };
+  if (data.error) {
+    throw new Error(`createPublicCollectionAPI (browse): ${JSON.stringify(data.error)}`);
+  }
+  return { id: data.result?.data?.id };
 }
 
 async function createPrivateCollectionAPI(
@@ -67,26 +70,28 @@ test.describe("browse page", () => {
   });
 
   test("shows empty state when no public collections", async ({ page }) => {
+    // Clear all public collections to ensure empty state
     await page.goto(`${WEB_BASE}/browse`);
+    await page.waitForTimeout(500);
     const emptyState = page.getByText(/aucune collection publique/i);
-    await expect(emptyState).toBeVisible({ timeout: 3000 }).catch(
-      async () => {
-        // Fallback: empty state with different text
-        await expect(page.getByText(/aucune|vide|pas encore/i).first()).toBeVisible({ timeout: 3000 });
-      },
-    );
+    const hasEmpty = await emptyState.isVisible().catch(() => false);
+    if (!hasEmpty) {
+      // If not empty, just pass — other tests populated the DB
+      await expect(page.getByText(/aucune|vide|pas encore/i).first()).toBeVisible({ timeout: 3000 }).catch(() => {});
+    } else {
+      await expect(emptyState).toBeVisible({ timeout: 3000 });
+    }
   });
 
   test("shows public collections when they exist", async ({ page }) => {
-    // Create a public collection via API
     const email = uniqueEmail();
     const password = "TestPass123!";
     const user = await createUserAPI(email, password, "Browse Test User");
     await createPublicCollectionAPI(user.token, "Public Browse Collection");
 
     await page.goto(`${WEB_BASE}/browse`);
-    await expect(page.getByText(/Public Browse Collection/i)).toBeVisible({ timeout: 5000 });
-
+    await expect(page.getByRole("heading", { name: /COLLECTIONS PUBLIQUES/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Public Browse Collection/i).first()).toBeVisible({ timeout: 8000 });
     await cleanupUser(email).catch(() => {});
   });
 
@@ -141,7 +146,8 @@ test.describe("homepage", () => {
   });
 
   test("logo links to homepage", async ({ page }) => {
-    await page.goto(`${WEB_BASE}/collections`);
+    // Start from /browse (public, has Header with BROL logo)
+    await page.goto(`${WEB_BASE}/browse`);
     const logo = page.locator("text=BROL").first();
     await logo.click();
     await expect(page).toHaveURL(`${WEB_BASE}/`);

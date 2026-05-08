@@ -44,21 +44,24 @@ export interface SignUpResult {
 
 /**
  * Signs in a user with email and password.
+ * Note: BetterAuth's sign-in API is async and the client SDK
+ * returns a Promise resolving after the redirect completes.
+ * Since we're on a SPA page, we handle navigation client-side.
  */
 export async function signInEmailPassword(
   email: string,
   password: string,
-  callbackUrl?: string,
 ): Promise<SignInResult> {
   try {
-    const body: Record<string, string> = { email, password };
-    if (callbackUrl) body.callbackURL = callbackUrl;
-
+    // Don't pass callbackURL to the fetch — BetterAuth's API endpoint
+    // will return a redirect response when callbackURL is provided,
+    // which breaks our client-side SPA flow. Instead, establish the
+    // session cookie first, then navigate manually.
     const res = await fetch(`${baseUrl}/api/auth/sign-in/email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(body),
+      body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
@@ -80,17 +83,15 @@ export async function signUpEmailPassword(
   email: string,
   password: string,
   name: string,
-  callbackUrl?: string,
 ): Promise<SignUpResult> {
   try {
-    const body: Record<string, string> = { email, password, name };
-    if (callbackUrl) body.callbackURL = callbackUrl;
-
+    // Same reasoning as signInEmailPassword: don't pass callbackURL
+    // to avoid redirect response from BetterAuth API.
     const res = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(body),
+      body: JSON.stringify({ email, password, name }),
     });
 
     const data = await res.json();
@@ -129,22 +130,3 @@ export async function getSession(): Promise<unknown> {
     return null;
   }
 }
-
-// ============================================================================
-// OAuth — commented out for future use
-// ============================================================================
-
-/**
- * Initiates OAuth sign-in for the given provider.
- * Redirects the browser to the provider's consent page.
- *
- * Uncomment when OAuth providers are configured.
- */
-// export async function oauthSignIn(
-//   provider: "google" | "github" | "apple",
-//   callbackUrl?: string,
-// ) {
-//   const url = new URL(`/sign-in/${provider}`, baseUrl);
-//   if (callbackUrl) url.searchParams.set("callbackUrl", callbackUrl);
-//   window.location.href = url.toString();
-// }
