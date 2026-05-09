@@ -14,17 +14,17 @@
     "pid": 225484
   },
   {
-    "id": "05f69c75",
+    "id": "31bd5351",
     "label": "api-dev",
     "command": "cd packages/api && pnpm dev 2>&1",
     "cwd": "/home/piet/Projets/webDev/BROL",
     "ownerSessionFile": "/home/piet/.gsd/sessions/--home-piet-Projets-webDev-BROL--/2026-05-09T06-48-50-916Z_a17640f4-3680-449a-a841-754a6b31179b.jsonl",
     "persistAcrossSessions": false,
-    "startedAt": 1778312316762,
+    "startedAt": 1778313593650,
     "processType": "server",
     "group": "brol-api",
     "readyPattern": null,
     "readyPort": 3001,
-    "pid": 225548
+    "pid": 227836
   }
 ]

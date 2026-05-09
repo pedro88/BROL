@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, Clock, User, BookOpen, QrCode } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Clock, User, BookOpen, QrCode, Download, Printer } from "lucide-react";
 import { Header, Navigation } from "../../../components/navigation";
 import { Button } from "../../../components/ui/button";
 import { trpc } from "../../../lib/trpc";
 import { AssignQrDialog } from "../../../components/qr/assign-qr-dialog";
+import { QrCodeImage, useQrDownload } from "../../../components/qr/qr-code-image";
 
 /**
  * Page de détail d'un objet.
@@ -24,6 +25,7 @@ export default function ObjectDetailPage() {
   );
 
   const [assignQrOpen, setAssignQrOpen] = useState(false);
+  const { downloadPng, printQr } = useQrDownload();
 
   const deleteMutation = trpc.objects.delete.useMutation({
     onSuccess: () => {
@@ -231,12 +233,31 @@ export default function ObjectDetailPage() {
             <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
               QR Code
             </h2>
-            <div className="card-vhs p-4 flex items-center justify-between">
-              <div>
-                <p className="font-mono text-xs text-muted-foreground">Code</p>
-                <p className="font-mono text-sm text-primary">{object.qrStock.code}</p>
+            <div className="card-vhs p-4 flex flex-col items-center gap-4">
+              <QrCodeImage code={object.qrStock.code} size={180} />
+              <div className="w-full space-y-2">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => downloadPng(object.qrStock.code, object.name)}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Télécharger PNG
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => printQr(object.qrStock.code, object.name)}
+                  >
+                    <Printer className="w-4 h-4 mr-2" />
+                    Imprimer
+                  </Button>
+                </div>
+                <p className="font-mono text-xs text-muted-foreground text-center">
+                  {object.qrStock.code}
+                </p>
               </div>
-              <span className="font-mono text-xs text-secondary">Tagué</span>
             </div>
           </div>
         ) : (
