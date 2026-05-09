@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, Clock, User, BookOpen } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Clock, User, BookOpen, QrCode } from "lucide-react";
 import { Header, Navigation } from "../../../components/navigation";
 import { Button } from "../../../components/ui/button";
 import { trpc } from "../../../lib/trpc";
+import { AssignQrDialog } from "../../../components/qr/assign-qr-dialog";
 
 /**
  * Page de détail d'un objet.
@@ -20,6 +22,8 @@ export default function ObjectDetailPage() {
     { id: objectId },
     { enabled: !!objectId }
   );
+
+  const [assignQrOpen, setAssignQrOpen] = useState(false);
 
   const deleteMutation = trpc.objects.delete.useMutation({
     onSuccess: () => {
@@ -221,6 +225,36 @@ export default function ObjectDetailPage() {
           </div>
         )}
 
+        {/* QR Code section */}
+        {object.qrStock ? (
+          <div className="mt-6">
+            <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
+              QR Code
+            </h2>
+            <div className="card-vhs p-4 flex items-center justify-between">
+              <div>
+                <p className="font-mono text-xs text-muted-foreground">Code</p>
+                <p className="font-mono text-sm text-primary">{object.qrStock.code}</p>
+              </div>
+              <span className="font-mono text-xs text-secondary">Tagué</span>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-6">
+            <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
+              QR Code
+            </h2>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setAssignQrOpen(true)}
+            >
+              <QrCode className="w-4 h-4 mr-2" />
+              Assigner un QR code
+            </Button>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="mt-6 space-y-3">
           <Button variant="outline" className="w-full">
@@ -231,6 +265,13 @@ export default function ObjectDetailPage() {
       </main>
 
       <Navigation />
+
+      <AssignQrDialog
+        open={assignQrOpen}
+        onOpenChange={setAssignQrOpen}
+        objectId={objectId}
+        objectName={object.name}
+      />
     </div>
   );
 }
