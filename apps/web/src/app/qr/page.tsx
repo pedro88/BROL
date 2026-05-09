@@ -7,6 +7,7 @@ import { Header, Navigation } from "../../components/navigation";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { trpc } from "../../lib/trpc";
+import { QrCodeImage } from "../../components/qr/qr-code-image";
 
 /**
  * Page de gestion du stock de QR codes.
@@ -163,25 +164,25 @@ export default function QrStockPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3">
             {data?.items.map((qr) => (
               <div
                 key={qr.id}
-                className={`card-vhs p-3 flex items-center justify-between gap-3 ${
+                className={`card-vhs p-3 flex flex-col items-center gap-2 ${
                   qr.used ? "opacity-60" : ""
                 }`}
               >
-                <div className="flex-1 min-w-0">
-                  <p className="font-mono text-xs text-primary truncate">
+                <QrCodeImage
+                  code={qr.code}
+                  size={80}
+                  className="shrink-0"
+                />
+                <div className="w-full text-center">
+                  <p className="font-mono text-[10px] text-primary truncate" title={qr.code}>
                     {qr.code}
                   </p>
-                  <p className="font-mono text-xs text-muted-foreground mt-1">
-                    Créé le {new Date(qr.createdAt).toLocaleDateString("fr-BE")}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
                   <span
-                    className={`font-mono text-xs px-2 py-0.5 ${
+                    className={`font-mono text-xs px-2 py-0.5 mt-1 inline-block ${
                       qr.used
                         ? "bg-secondary/20 text-secondary"
                         : "bg-green-500/20 text-green-400"
@@ -189,18 +190,18 @@ export default function QrStockPage() {
                   >
                     {qr.used ? "Utilisé" : "Libre"}
                   </span>
-                  {!qr.used && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(qr.id)}
-                      disabled={deleteMutation.isPending}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
                 </div>
+                {!qr.used && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(qr.id)}
+                    disabled={deleteMutation.isPending}
+                    className="text-muted-foreground hover:text-destructive self-end"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
