@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { router, protectedProcedure } from "../trpc";
+import { router, protectedProcedure, publicProcedure } from "../trpc";
 import {
   generateQrStockSchema,
   assignQrStockSchema,
@@ -135,19 +135,27 @@ export const qrRouter = router({
 
   /**
    * Récupère un QR code par son code (pour scan).
+   * Public — accessible sans auth pour permettre à quiconque de scanner un objet.
    */
-  getByCode: protectedProcedure
+  getByCode: publicProcedure
     .input(z.object({ code: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Recherche globale (pas de filtre userId) car le scanneur ne connaît pas le propriétaire
       const qrStock = await ctx.prisma.qrStock.findFirst({
         where: {
           code: input.code,
-          userId: ctx.userId,
         },
         include: {
           objects: {
             select: {
               id: true,
+              name: true,
+              author: true,
+              condition: true,
+            },
+          },
+          user: {
+            select: {
               name: true,
             },
           },

@@ -3,9 +3,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createObjectSchema, type CreateObjectInput, OBJECT_CONDITIONS } from "@brol/shared";
-import { BookOpen } from "lucide-react";
+import { BookOpen, QrCode } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -77,10 +77,51 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
     { enabled: !collectionId }
   );
 
+  // Fetch available QR codes when collectionId is provided
+  const { data: qrCodes } = trpc.qr.listStock.useQuery(
+    { used: false },
+    { enabled: !!collectionId }
+  );
+
+  // QR code selection state
+  const [qrSelection, setQrSelection] = useState<"none" | "existing" | "create">("none");
+  const [selectedQrId, setSelectedQrId] = useState<string>("");
+  const [creatingQr, setCreatingQr] = useState(false);
+
   const onSubmit = async (formData: CreateObjectInput) => {
     try {
-      await createMutation.mutateAsync(formData);
+      let qrStockId: string | undefined;
+
+      // Handle QR code selection
+      if (qrSelection === "create") {
+        setCreatingQr(true);
+        // Generate a new QR code first
+        const qrResult = await utils.qr.generateStock.fetch({ count: 1 });
+        if (qrResult.codes.length > 0) {
+          qrStockId = qrResult.codes[0].id;
+        }
+        setCreatingQr(false);
+      } else if (qrSelection === "existing" && selectedQrId) {
+        qrStockId = selectedQrId;
+      }
+
+      const objectData = {
+        ...formData,
+        qrStockId,
+      };
+
+      const created = await createMutation.mutateAsync(objectData);
+
+      // If we have a QR but didn't pass it during creation (because the API creates first then marks used),
+      // we need to assign it separately
+      if (qrStockId && !formData.qrStockId) {
+        await utils.qr.assignToObject.mutateAsync({
+          objectId: created.id,
+          qrStockId,
+        });
+      }
     } catch (error) {
+      setCreatingQr(false);
       console.error("Failed to create object:", error);
     }
   };
@@ -220,14 +261,86 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         />
       </div>
 
+      {/* QR Code selection — only when collectionId is provided */}
+      {collectionId && (
+        <div className="space-y-2">
+          <Label className="font-mono text-xs uppercase">
+            QR Code
+          </Label>
+          <div className="space-y-2">
+            {[
+              { value: "none", label: "Aucun QR code" },
+              { value: "existing", label: "Sélectionner un QR existant" },
+              { value: "create", label: "Créer un nouveau QR" },
+            ].map((option) => (
+              <label
+                key={option.value}
+                className={`
+                  flex items-center gap-3 p-3 border-2 border-border cursor-pointer
+                  hover:border-primary/50 transition-colors
+                  ${qrSelection === option.value ? "border-primary bg-primary/10" : ""}
+                `}
+              >
+                <input
+                  type="radio"
+                  value={option.value}
+                  checked={qrSelection === option.value}
+                  onChange={() => setQrSelection(option.value as typeof qrSelection)}
+                  className="sr-only"
+                />
+                <QrCode className="w-4 h-4 text-muted-foreground" />
+                <span className="font-mono text-sm">{option.label}</span>
+              </label>
+            ))}
+          </div>
+
+          {/* Existing QR selector */}
+          {qrSelection === "existing" && (
+            <select
+              value={selectedQrId}
+              onChange={(e) => setSelectedQrId(e.target.value)}
+              className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+            >
+              <option value="">Sélectionner un QR code</option>
+              {qrCodes?.items.map((qr) => (
+                <option key={qr.id} value={qr.id}>
+                  {qr.code}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {qrSelection === "existing" && selectedQrId && (
+            <p className="font-mono text-xs text-green-400">
+              QR sélectionné : {qrCodes?.items.find((q) => q.id === selectedQrId)?.code}
+            </p>
+          )}
+
+          {qrSelection === "create" && (
+            <p className="font-mono text-xs text-muted-foreground">
+              Un nouveau QR code sera généré automatiquement à la création de l&apos;objet.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Submit */}
       <Button
         type="submit"
         className="w-full"
-        disabled={isSubmitting || createMutation.isPending}
+        disabled={isSubmitting || createMutation.isPending || creatingQr}
       >
-        <BookOpen className="w-4 h-4 mr-2" />
-        {createMutation.isPending ? "Création..." : "Ajouter l'objet"}
+        {createMutation.isPending || creatingQr ? (
+          <>
+            <BookOpen className="w-4 h-4 mr-2 animate-spin" />
+            {creatingQr ? "Génération du QR..." : "Création..."}
+          </>
+        ) : (
+          <>
+            <BookOpen className="w-4 h-4 mr-2" />
+            Ajouter l&apos;objet
+          </>
+        )}
       </Button>
     </form>
   );

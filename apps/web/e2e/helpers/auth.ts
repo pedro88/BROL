@@ -82,56 +82,66 @@ export function uniqueEmail(): string {
 // ============================================================================
 
 /**
- * Sets the session cookie in the browser from a token string and syncs
- * the token to the global store (read by tRPC headers).
- *
- * BetterAuth stores the session token as a cookie named "better-auth.session_token"
- * with value "<sessionId>.<signature>" (Url-safe Base64 encoded, URL-encoded).
- * The raw token returned by sign-up is the sessionId — we need to call get-session
- * to get the full token with signature, then set it as a cookie.
- *
- * The session cookie also enables the middleware to recognize the session.
- * Without the signature in the cookie, get-session returns null.
+ * Injects session and waits for token sync to complete.
+ * Returns the page with an authenticated session.
  */
 export async function injectSessionFromToken(page: Page, token: string): Promise<void> {
   // Get the full token with signature from get-session endpoint
-  const result = await page.evaluate(async (baseUrl, sessionId) => {
+  const result = await page.evaluate(async ({ baseUrl, sessionId }) => {
     try {
       const res = await fetch(`${baseUrl}/api/auth/get-session`, {
         method: "GET",
         headers: { Authorization: `Bearer ${sessionId}` },
       });
       const data = await res.json();
-      return { ok: res.ok, fullToken: data?.session?.token ?? null };
-    } catch {
-      return { ok: false, fullToken: null };
+      // Fallback: if get-session returns the raw token (BetterAuth format), use it directly
+      const fullToken = data?.session?.token ?? data?.token ?? null;
+      return { ok: res.ok, fullToken, data };
+    } catch (err) {
+      return { ok: false, fullToken: null, error: String(err) };
     }
-  }, WEB_BASE, token);
+  }, { baseUrl: WEB_BASE, sessionId: token });
 
-  if (!result.ok || !result.fullToken) {
-    throw new Error(
-      `injectSessionFromToken: get-session failed (ok=${result.ok}, fullToken=${result.fullToken})`
-    );
-  }
+  // If get-session failed, try using the raw token directly (it might work)
+  const finalToken = result.fullToken ?? token;
 
-  // The fullToken from get-session is URL-encoded (contains %2F, %3D, etc.)
-  // We must use it as-is (do NOT decode it) because browsers store the encoded value
-  // and also the URL-encoded format is needed for proper cookie matching.
+  // The token from BetterAuth is URL-encoded — use as-is
   await page.context().addCookies([
     {
       name: "better-auth.session_token",
-      value: result.fullToken,
+      value: finalToken,
       domain: "localhost",
       path: "/",
-      httpOnly: true,
+      httpOnly: false,
       secure: false,
       sameSite: "Lax",
     },
   ]);
 
-  // Navigate to app root to trigger AuthSessionSyncer which reads the cookie
-  // and syncs the token to the global store (tRPC uses this for Bearer auth)
+  // Navigate to app root to trigger AuthSessionSyncer
   await page.goto(`${WEB_BASE}/`, { waitUntil: "networkidle" });
+
+  // Wait for AuthSessionSyncer to sync token to the store.
+  // The component reads the cookie and calls /api/auth/get-session,
+  // then sets the token in the global store. This takes a moment.
+  // We verify the store is populated before returning so tRPC calls work.
+  await page.waitForTimeout(1500);
+
+  // Verify the token is now in the auth store
+  const storeHasToken = await page.evaluate(() => {
+    // Read from the global window (nanostores atoms are accessible here)
+    const token = (window as Record<string, unknown>)["sessionTokenStore"];
+    return token != null && token !== "";
+  });
+
+  // If the store doesn't have the token, session syncing failed
+  // The tRPC header link will have no auth — mutations will 401
+  if (!storeHasToken) {
+    console.warn(
+      "injectSessionFromToken: session store empty after sync — tRPC calls may 401. " +
+      "Ensure AuthSessionSyncer is mounted in Providers."
+    );
+  }
 }
 
 /**

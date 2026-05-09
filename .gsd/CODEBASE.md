@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-09T06:49:58Z | Files: 123 | Described: 0/123
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-09T06:49:58Z","fingerprint":"15ef2cbb729c1e9be341d27ee03819aa3a9d86b7","fileCount":123,"truncated":false} -->
+Generated: 2026-05-09T15:18:35Z | Files: 128 | Described: 0/128
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-09T15:18:35Z","fingerprint":"a299cc046f526038b557831035276dbc2f868120","fileCount":128,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -65,6 +65,7 @@ Generated: 2026-05-09T06:49:58Z | Files: 123 | Described: 0/123
 - `apps/web/e2e/homepage.spec.ts`
 - `apps/web/e2e/objects.spec.ts`
 - `apps/web/e2e/public-collections.spec.ts`
+- `apps/web/e2e/qr.spec.ts`
 
 ### apps/web/e2e/helpers/
 - `apps/web/e2e/helpers/auth.ts`
@@ -101,6 +102,12 @@ Generated: 2026-05-09T06:49:58Z | Files: 123 | Described: 0/123
 ### apps/web/src/app/objects/add/
 - `apps/web/src/app/objects/add/page.tsx`
 
+### apps/web/src/app/qr/
+- `apps/web/src/app/qr/page.tsx`
+
+### apps/web/src/app/qr/[code]/
+- `apps/web/src/app/qr/[code]/page.tsx`
+
 ### apps/web/src/app/settings/
 - `apps/web/src/app/settings/page.tsx`
 
@@ -119,6 +126,10 @@ Generated: 2026-05-09T06:49:58Z | Files: 123 | Described: 0/123
 - `apps/web/src/components/objects/edit-object-dialog.tsx`
 - `apps/web/src/components/objects/object-card.tsx`
 - `apps/web/src/components/objects/object-form.tsx`
+
+### apps/web/src/components/qr/
+- `apps/web/src/components/qr/assign-qr-dialog.tsx`
+- `apps/web/src/components/qr/qr-code-image.tsx`
 
 ### apps/web/src/components/ui/
 - `apps/web/src/components/ui/button.tsx`

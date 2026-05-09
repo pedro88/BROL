@@ -41,6 +41,18 @@ describe("qrRouter", () => {
       expect(result.codes[0].userId).toBe(owner.id);
     });
 
+    it("generates a single QR code", async () => {
+      const result = await callerFor(owner.id).qr.generateStock({ count: 1 });
+      expect(result.count).toBe(1);
+      expect(result.codes).toHaveLength(1);
+    });
+
+    it("generates the maximum allowed count", async () => {
+      const result = await callerFor(owner.id).qr.generateStock({ count: 100 });
+      expect(result.count).toBe(100);
+      expect(result.codes).toHaveLength(100);
+    });
+
     it("QR codes have unique codes", async () => {
       const result = await callerFor(owner.id).qr.generateStock({ count: 10 });
       const codes = result.codes.map((c) => c.code);
@@ -95,6 +107,17 @@ describe("qrRouter", () => {
       ).rejects.toThrow("non disponible");
     });
 
+    it("throws when assigning to object that already has a QR", async () => {
+      const result = await callerFor(owner.id).qr.generateStock({ count: 2 });
+      const qr1 = result.codes[0];
+      const qr2 = result.codes[1];
+      await callerFor(owner.id).qr.assignToObject({ qrStockId: qr1.id, objectId: object.id });
+
+      await expect(
+        callerFor(owner.id).qr.assignToObject({ qrStockId: qr2.id, objectId: object.id })
+      ).rejects.toThrow("déjà un QR code");
+    });
+
     it("throws when assigning to other user's object", async () => {
       const qr = (await callerFor(owner.id).qr.generateStock({ count: 1 })).codes[0];
       await expect(
@@ -107,15 +130,29 @@ describe("qrRouter", () => {
     it("returns QR by code", async () => {
       const generated = await callerFor(owner.id).qr.generateStock({ count: 1 });
       const qr = generated.codes[0];
-      const result = await callerFor(owner.id).qr.getByCode({ code: qr.code });
+      // getByCode is now publicProcedure — use null userId
+      const publicCaller = appRouter.createCaller({ prisma, userId: null as unknown as string, headers: {} });
+      const result = await publicCaller.qr.getByCode({ code: qr.code });
       expect(result.id).toBe(qr.id);
+      expect(result.objects).toBeDefined();
     });
 
-    it("throws for other user's QR code", async () => {
+    it("returns associated object info", async () => {
       const qr = (await callerFor(owner.id).qr.generateStock({ count: 1 })).codes[0];
+      await callerFor(owner.id).qr.assignToObject({ qrStockId: qr.id, objectId: object.id });
+
+      const publicCaller = appRouter.createCaller({ prisma, userId: null as unknown as string, headers: {} });
+      const result = await publicCaller.qr.getByCode({ code: qr.code });
+      expect(result.objects).toHaveLength(1);
+      expect(result.objects[0].name).toBe("Test Object");
+      expect(result.user.name).toBe("Owner");
+    });
+
+    it("throws for unknown code", async () => {
+      const publicCaller = appRouter.createCaller({ prisma, userId: null as unknown as string, headers: {} });
       await expect(
-        callerFor(otherUser.id).qr.getByCode({ code: qr.code })
-      ).rejects.toThrow();
+        publicCaller.qr.getByCode({ code: "unknown-code" })
+      ).rejects.toThrow("non trouvé");
     });
   });
 
