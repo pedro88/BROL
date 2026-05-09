@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "id": "356eff4a",
+    "label": "web-dev",
+    "command": "cd apps/web && pnpm next dev --port 3000 2>&1",
+    "cwd": "/home/piet/Projets/webDev/BROL",
+    "ownerSessionFile": "/home/piet/.gsd/sessions/--home-piet-Projets-webDev-BROL--/2026-05-09T06-48-50-916Z_a17640f4-3680-449a-a841-754a6b31179b.jsonl",
+    "persistAcrossSessions": false,
+    "startedAt": 1778312308749,
+    "processType": "server",
+    "group": "brol-web",
+    "readyPattern": null,
+    "readyPort": 3000,
+    "pid": 225484
+  },
+  {
+    "id": "05f69c75",
+    "label": "api-dev",
+    "command": "cd packages/api && pnpm dev 2>&1",
+    "cwd": "/home/piet/Projets/webDev/BROL",
+    "ownerSessionFile": "/home/piet/.gsd/sessions/--home-piet-Projets-webDev-BROL--/2026-05-09T06-48-50-916Z_a17640f4-3680-449a-a841-754a6b31179b.jsonl",
+    "persistAcrossSessions": false,
+    "startedAt": 1778312316762,
+    "processType": "server",
+    "group": "brol-api",
+    "readyPattern": null,
+    "readyPort": 3001,
+    "pid": 225548
+  }
+]
