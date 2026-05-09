@@ -10,6 +10,7 @@
 - 🔄 **M002:** M002
 - ✅ **M003:** Auth: fix password hashing & persistence
 - ⬜ **M004:** Fix & stabilisation des tests E2E et unitaires
+- ⬜ **M005:** Login/logout button + route redirect + dashboard real data
 
 ## Recent Decisions
 - None recorded

@@ -1,5 +1,26 @@
+"use client";
+
 import Link from "next/link";
-import { Home, BookOpen, Repeat, Users, QrCode, Settings } from "lucide-react";
+import { useSyncExternalStore } from "react";
+import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut } from "lucide-react";
+import { signOut } from "@/lib/auth-client";
+import { setSessionToken, sessionTokenStore, getSessionToken } from "@/lib/auth-store";
+import { useRouter } from "next/navigation";
+
+/**
+ * React hook to read the session token store.
+ * Uses useSyncExternalStore for React 19 compatibility.
+ */
+function useSessionToken(): string | undefined {
+  return useSyncExternalStore(
+    (callback) => {
+      const unsub = sessionTokenStore.subscribe(callback);
+      return unsub;
+    },
+    () => getSessionToken(),
+    () => undefined, // server snapshot
+  );
+}
 
 /**
  * Structure de navigation principale.
@@ -36,8 +57,20 @@ export function Navigation() {
 
 /**
  * Header principal de l'application.
+ * Affiche le logo BROL et un bouton Login/Logout selon l'état de session.
  */
 export function Header() {
+  const token = useSessionToken();
+  const router = useRouter();
+  const isAuthenticated = !!token;
+
+  async function handleLogout() {
+    await signOut();
+    setSessionToken(undefined);
+    router.push("/sign-in");
+    router.refresh();
+  }
+
   return (
     <header className="sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border">
       <div className="flex items-center justify-between px-4 py-3">
@@ -54,7 +87,27 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Actions header */}
+          {isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 p-2 text-muted-foreground hover:text-destructive transition-colors"
+              aria-label="Logout"
+            >
+              <LogOut className="w-5 h-5" strokeWidth={1.5} />
+              <span className="text-xs font-mono uppercase">Logout</span>
+            </button>
+          ) : (
+            <Link
+              href="/sign-in"
+              className="flex items-center gap-1 p-2 text-muted-foreground hover:text-primary transition-colors"
+              aria-label="Login"
+            >
+              <LogIn className="w-5 h-5" strokeWidth={1.5} />
+              <span className="text-xs font-mono uppercase">Login</span>
+            </Link>
+          )}
+
+          {/* Settings — always visible, protected by middleware */}
           <Link
             href="/settings"
             className="p-2 text-muted-foreground hover:text-foreground transition-colors"

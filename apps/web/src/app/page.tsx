@@ -1,11 +1,36 @@
+"use client";
+
 import Link from "next/link";
 import { Header, Navigation } from "../components/navigation";
+import { trpc } from "../lib/trpc";
 
 /**
- * Page d'accueil principale.
- * Affiche le récapitulatif de l'utilisateur et les actions rapides.
+ * Page d'accueil principale — dashboard utilisateur.
+ * Affiche les stats réelles et les actions rapides.
  */
 export default function HomePage() {
+  // Stats réelles depuis la DB
+  const collectionsQuery = trpc.collections.list.useQuery(undefined, {
+    staleTime: 30_000,
+  });
+  const contactsQuery = trpc.contacts.list.useQuery(undefined, {
+    staleTime: 30_000,
+  });
+  const loansQuery = trpc.loans.lentOut.useQuery(undefined, {
+    staleTime: 30_000,
+  });
+
+  // Dériver les totaux
+  const totalObjects =
+    collectionsQuery.data?.items.reduce(
+      (sum, c) => sum + (c.objectCount ?? 0),
+      0,
+    ) ?? 0;
+  const activeLoans = loansQuery.data?.items.length ?? 0;
+  const totalContacts = contactsQuery.data?.items.length ?? 0;
+  const isLoading =
+    collectionsQuery.isLoading || contactsQuery.isLoading || loansQuery.isLoading;
+
   return (
     <div className="min-h-screen pb-20">
       <Header />
@@ -21,11 +46,29 @@ export default function HomePage() {
           </p>
         </section>
 
-        {/* Stats rapides */}
+        {/* Stats */}
         <section className="grid grid-cols-3 gap-3 mb-8">
-          <StatCard label="Objets" value="24" trend="+2" />
-          <StatCard label="Prêtés" value="3" trend="active" variant="warning" />
-          <StatCard label="Contacts" value="12" />
+          <StatCard
+            label="Objets"
+            value={isLoading ? "..." : String(totalObjects)}
+            trend={
+              isLoading
+                ? undefined
+                : collectionsQuery.data
+                  ? `${collectionsQuery.data.items.length} collections`
+                  : undefined
+            }
+          />
+          <StatCard
+            label="Prêtés"
+            value={isLoading ? "..." : String(activeLoans)}
+            variant={activeLoans > 0 ? "warning" : "default"}
+            trend={isLoading ? undefined : activeLoans > 0 ? "active" : "rien"}
+          />
+          <StatCard
+            label="Contacts"
+            value={isLoading ? "..." : String(totalContacts)}
+          />
         </section>
 
         {/* Actions rapides */}
@@ -62,11 +105,44 @@ export default function HomePage() {
             // RETOURS RECENTS
           </h2>
 
-          <div className="card-vhs p-4 text-center">
-            <p className="font-mono text-muted-foreground text-sm">
-              Aucun prêt récent
-            </p>
-          </div>
+          {isLoading ? (
+            <div className="card-vhs p-4 text-center">
+              <p className="font-mono text-muted-foreground text-sm">
+                Chargement...
+              </p>
+            </div>
+          ) : loansQuery.data && loansQuery.data.items.length > 0 ? (
+            <div className="space-y-3">
+              {loansQuery.data.items.slice(0, 3).map((loan) => (
+                <div key={loan.id} className="card-vhs p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-display text-lg">
+                        {loan.object.name}
+                      </p>
+                      <p className="font-mono text-xs text-muted-foreground">
+                        → {loan.borrower.name}
+                      </p>
+                    </div>
+                    {loan.returnDueDate && (
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {new Date(loan.returnDueDate).toLocaleDateString("fr-BE", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="card-vhs p-4 text-center">
+              <p className="font-mono text-muted-foreground text-sm">
+                Aucun prêt en cours
+              </p>
+            </div>
+          )}
         </section>
       </main>
 
@@ -97,8 +173,12 @@ function StatCard({
 
   return (
     <div className="card-vhs p-3 text-center">
-      <p className={`font-display text-3xl ${variantStyles[variant]}`}>{value}</p>
-      <p className="font-mono text-xs text-muted-foreground uppercase">{label}</p>
+      <p className={`font-display text-3xl ${variantStyles[variant]}`}>
+        {value}
+      </p>
+      <p className="font-mono text-xs text-muted-foreground uppercase">
+        {label}
+      </p>
       {trend && (
         <p className="font-mono text-xs text-muted-foreground mt-1">
           {trend}
@@ -123,9 +203,12 @@ function QuickAction({
   variant: "primary" | "secondary" | "accent";
 }) {
   const variantStyles = {
-    primary: "border-primary hover:bg-primary hover:text-primary-foreground",
-    secondary: "border-secondary hover:bg-secondary hover:text-secondary-foreground",
-    accent: "border-accent hover:bg-accent hover:text-accent-foreground",
+    primary:
+      "border-primary hover:bg-primary hover:text-primary-foreground",
+    secondary:
+      "border-secondary hover:bg-secondary hover:text-secondary-foreground",
+    accent:
+      "border-accent hover:bg-accent hover:text-accent-foreground",
   };
 
   return (
@@ -134,7 +217,9 @@ function QuickAction({
       className={`card-vhs block p-4 border-l-4 ${variantStyles[variant]} transition-all hover:scale-[1.02] active:scale-[0.98]`}
     >
       <h3 className="font-display text-xl mb-1">{title}</h3>
-      <p className="font-mono text-xs text-muted-foreground">{description}</p>
+      <p className="font-mono text-xs text-muted-foreground">
+        {description}
+      </p>
     </Link>
   );
 }

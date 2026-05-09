@@ -26,6 +26,17 @@ const PROTECTED_PATTERNS = [
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Root page / → protected: redirect to sign-in if no session, show dashboard if logged in
+  if (pathname === "/") {
+    const sessionCookie = request.cookies.get("better-auth.session_token");
+    if (!sessionCookie) {
+      const loginUrl = new URL("/sign-in", request.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
   // Allow public paths
   for (const publicPath of PUBLIC_PATHS) {
     if (pathname.startsWith(publicPath)) {

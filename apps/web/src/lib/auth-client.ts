@@ -112,6 +112,7 @@ export async function signUpEmailPassword(
 export async function signOut(): Promise<void> {
   await fetch(`${baseUrl}/api/auth/sign-out`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     credentials: "include",
   });
 }
