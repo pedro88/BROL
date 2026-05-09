@@ -68,13 +68,13 @@ export default function CollectionDetailPage() {
   const [isAuthenticated] = useState(() => !!getSessionToken());
 
   // Requête authentifiée (collections privées)
-  const { data: collection } = trpc.collections.get.useQuery(
+  const { data: collection, isFetching: isFetchingAuth } = trpc.collections.get.useQuery(
     { id: collectionId },
     { enabled: !!collectionId && isAuthenticated }
   );
 
   // Requête publique (collections publiques)
-  const { data: publicCollection } = trpc.collections.getPublic.useQuery(
+  const { data: publicCollection, isFetching: isFetchingPublic } = trpc.collections.getPublic.useQuery(
     { id: collectionId },
     {
       enabled: !!collectionId && !isAuthenticated,
@@ -83,7 +83,8 @@ export default function CollectionDetailPage() {
     }
   );
 
-  const isLoading = !!(collection || publicCollection);
+  // isLoading reflète l'état de chargement effectif (au moins une requête en cours)
+  const isLoading = isFetchingAuth || isFetchingPublic;
 
   // Use authenticated collection data or public data
   const collectionData = isAuthenticated ? collection : publicCollection;
