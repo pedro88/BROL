@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-09T07:48:14Z | Files: 123 | Described: 0/123
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-09T07:48:14Z","fingerprint":"15ef2cbb729c1e9be341d27ee03819aa3a9d86b7","fileCount":123,"truncated":false} -->
+Generated: 2026-05-09T13:52:39Z | Files: 127 | Described: 0/127
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-09T13:52:39Z","fingerprint":"4bf54e150847e02de49b496104e2d2199e19325c","fileCount":127,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -101,6 +101,12 @@ Generated: 2026-05-09T07:48:14Z | Files: 123 | Described: 0/123
 ### apps/web/src/app/objects/add/
 - `apps/web/src/app/objects/add/page.tsx`
 
+### apps/web/src/app/qr/
+- `apps/web/src/app/qr/page.tsx`
+
+### apps/web/src/app/qr/[code]/
+- `apps/web/src/app/qr/[code]/page.tsx`
+
 ### apps/web/src/app/settings/
 - `apps/web/src/app/settings/page.tsx`
 
@@ -119,6 +125,10 @@ Generated: 2026-05-09T07:48:14Z | Files: 123 | Described: 0/123
 - `apps/web/src/components/objects/edit-object-dialog.tsx`
 - `apps/web/src/components/objects/object-card.tsx`
 - `apps/web/src/components/objects/object-form.tsx`
+
+### apps/web/src/components/qr/
+- `apps/web/src/components/qr/assign-qr-dialog.tsx`
+- `apps/web/src/components/qr/qr-code-image.tsx`
 
 ### apps/web/src/components/ui/
 - `apps/web/src/components/ui/button.tsx`
