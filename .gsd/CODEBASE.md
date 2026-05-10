@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-09T15:18:35Z | Files: 128 | Described: 0/128
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-09T15:18:35Z","fingerprint":"a299cc046f526038b557831035276dbc2f868120","fileCount":128,"truncated":false} -->
+Generated: 2026-05-10T13:10:16Z | Files: 134 | Described: 0/134
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-10T13:10:16Z","fingerprint":"2dadcd0221aa480959b560b9266e0e21777305b8","fileCount":134,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -93,6 +93,15 @@ Generated: 2026-05-09T15:18:35Z | Files: 128 | Described: 0/128
 ### apps/web/src/app/collections/[id]/edit/
 - `apps/web/src/app/collections/[id]/edit/page.tsx`
 
+### apps/web/src/app/contacts/
+- `apps/web/src/app/contacts/page.tsx`
+
+### apps/web/src/app/contacts/[id]/
+- `apps/web/src/app/contacts/[id]/page.tsx`
+
+### apps/web/src/app/loans/
+- `apps/web/src/app/loans/page.tsx`
+
 ### apps/web/src/app/objects/[id]/
 - `apps/web/src/app/objects/[id]/page.tsx`
 
@@ -121,6 +130,9 @@ Generated: 2026-05-09T15:18:35Z | Files: 128 | Described: 0/128
 ### apps/web/src/components/collections/
 - `apps/web/src/components/collections/collection-card.tsx`
 - `apps/web/src/components/collections/create-collection-dialog.tsx`
+
+### apps/web/src/components/loans/
+- `apps/web/src/components/loans/create-loan-dialog.tsx`
 
 ### apps/web/src/components/objects/
 - `apps/web/src/components/objects/edit-object-dialog.tsx`
@@ -159,6 +171,10 @@ Generated: 2026-05-09T15:18:35Z | Files: 128 | Described: 0/128
 - `packages/api/src/index.ts`
 - `packages/api/src/router.ts`
 - `packages/api/src/server.ts`
+
+### packages/api/src/emails/
+- `packages/api/src/emails/index.ts`
+- `packages/api/src/emails/reminder.tsx`
 
 ### packages/api/src/routers/
 - `packages/api/src/routers/collections.ts`
