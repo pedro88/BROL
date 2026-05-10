@@ -10,6 +10,7 @@ import {
   returnLoanSchema,
   paginationSchema,
 } from "@brol/shared";
+import { sendReminderEmail } from "../emails";
 
 /**
  * Router pour les prêts.
@@ -286,13 +287,16 @@ export const loansRouter = router({
         where: {
           id: input.loanId,
           ownerId: ctx.userId,
-          status: "ACTIVE",
+          status: { in: ["ACTIVE", "OVERDUE"] },
         },
         include: {
           borrower: {
             select: { email: true, name: true },
           },
           object: {
+            select: { name: true },
+          },
+          owner: {
             select: { name: true },
           },
         },
@@ -302,10 +306,21 @@ export const loansRouter = router({
         throw new Error("Prêt non trouvé");
       }
 
-      // TODO: Envoyer un email de rappel
-      // await sendReminderEmail(loan.borrower.email, loan);
+      // Envoyer l'email de rappel
+      const emailResult = await sendReminderEmail({
+        to: loan.borrower.email ?? "",
+        borrowerName: loan.borrower.name ?? "",
+        objectName: loan.object.name,
+        ownerName: loan.owner.name ?? "Le propriétaire",
+        lentAt: loan.lentAt,
+        returnDueDate: loan.returnDueDate,
+      });
 
-      // Marquer le rappel comme envoyé
+      if (!emailResult.success) {
+        console.error(`[loans.remind] Email failed: ${emailResult.message}`);
+      }
+
+      // Marquer le rappel comme envoyé (même si l'email a échoué — on ne renvoie pas à chaque clic)
       await ctx.prisma.loan.update({
         where: { id: input.loanId },
         data: { reminderSentAt: new Date() },
@@ -313,7 +328,9 @@ export const loansRouter = router({
 
       return {
         success: true,
-        message: `Rappel envoyé à ${loan.borrower.name || loan.borrower.email}`,
+        message: emailResult.success
+          ? emailResult.message
+          : "Rappel marqué comme envoyé (email désactivé)",
       };
     }),
 
