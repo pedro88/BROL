@@ -10,6 +10,7 @@ import {
   returnLoanSchema,
   paginationSchema,
 } from "@brol/shared";
+import { sendReminderEmail } from "../emails";
 
 /**
  * Router pour les prêts.
@@ -22,6 +23,7 @@ export const loansRouter = router({
   lentOut: protectedProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
+      const now = new Date();
       const loans = await ctx.prisma.loan.findMany({
         where: {
           ownerId: ctx.userId,
@@ -51,8 +53,19 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
+      // Calculer le statut OVERDUE à la volée
+      const loansWithComputedStatus = loans.map((loan) => ({
+        ...loan,
+        computedStatus:
+          loan.status === "ACTIVE" &&
+          loan.returnDueDate &&
+          loan.returnDueDate < now
+            ? "OVERDUE"
+            : loan.status,
+      }));
+
       return {
-        items: loans,
+        items: loansWithComputedStatus,
         nextCursor: loans.length === (input?.limit ?? 20)
           ? loans[loans.length - 1]?.id ?? null
           : null,
@@ -65,6 +78,7 @@ export const loansRouter = router({
   borrowed: protectedProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
+      const now = new Date();
       const loans = await ctx.prisma.loan.findMany({
         where: {
           borrowerId: ctx.userId,
@@ -96,8 +110,19 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
+      // Calculer le statut OVERDUE à la volée
+      const loansWithComputedStatus = loans.map((loan) => ({
+        ...loan,
+        computedStatus:
+          loan.status === "ACTIVE" &&
+          loan.returnDueDate &&
+          loan.returnDueDate < now
+            ? "OVERDUE"
+            : loan.status,
+      }));
+
       return {
-        items: loans,
+        items: loansWithComputedStatus,
         nextCursor: loans.length === (input?.limit ?? 20)
           ? loans[loans.length - 1]?.id ?? null
           : null,
@@ -110,6 +135,7 @@ export const loansRouter = router({
   history: protectedProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
+      const now = new Date();
       const loans = await ctx.prisma.loan.findMany({
         where: {
           OR: [
@@ -145,8 +171,19 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
+      // Calculer le statut OVERDUE à la volée
+      const loansWithComputedStatus = loans.map((loan) => ({
+        ...loan,
+        computedStatus:
+          loan.status === "ACTIVE" &&
+          loan.returnDueDate &&
+          loan.returnDueDate < now
+            ? "OVERDUE"
+            : loan.status,
+      }));
+
       return {
-        items: loans,
+        items: loansWithComputedStatus,
         nextCursor: loans.length === (input?.limit ?? 20)
           ? loans[loans.length - 1]?.id ?? null
           : null,
@@ -250,13 +287,16 @@ export const loansRouter = router({
         where: {
           id: input.loanId,
           ownerId: ctx.userId,
-          status: "ACTIVE",
+          status: { in: ["ACTIVE", "OVERDUE"] },
         },
         include: {
           borrower: {
             select: { email: true, name: true },
           },
           object: {
+            select: { name: true },
+          },
+          owner: {
             select: { name: true },
           },
         },
@@ -266,10 +306,21 @@ export const loansRouter = router({
         throw new Error("Prêt non trouvé");
       }
 
-      // TODO: Envoyer un email de rappel
-      // await sendReminderEmail(loan.borrower.email, loan);
+      // Envoyer l'email de rappel
+      const emailResult = await sendReminderEmail({
+        to: loan.borrower.email ?? "",
+        borrowerName: loan.borrower.name ?? "",
+        objectName: loan.object.name,
+        ownerName: loan.owner.name ?? "Le propriétaire",
+        lentAt: loan.lentAt,
+        returnDueDate: loan.returnDueDate,
+      });
 
-      // Marquer le rappel comme envoyé
+      if (!emailResult.success) {
+        console.error(`[loans.remind] Email failed: ${emailResult.message}`);
+      }
+
+      // Marquer le rappel comme envoyé (même si l'email a échoué — on ne renvoie pas à chaque clic)
       await ctx.prisma.loan.update({
         where: { id: input.loanId },
         data: { reminderSentAt: new Date() },
@@ -277,7 +328,9 @@ export const loansRouter = router({
 
       return {
         success: true,
-        message: `Rappel envoyé à ${loan.borrower.name || loan.borrower.email}`,
+        message: emailResult.success
+          ? emailResult.message
+          : "Rappel marqué comme envoyé (email désactivé)",
       };
     }),
 

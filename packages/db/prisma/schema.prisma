@@ -33,6 +33,7 @@ model User {
   contacts    Contact[]      @relation("UserContacts")
   borrowerOf Loan[]          @relation("Borrower")
   ownerOf    Loan[]          @relation("Owner")
+  borrowerOfContact Contact[] @relation("ContactBorrower")
   qrStocks   QrStock[]
 
   @@map("users")
@@ -142,17 +143,21 @@ enum ObjectCondition {
 // ============================================
 
 model Contact {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  email     String?
-  phone     String?
-  note      String?
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  email      String?
+  phone      String?
+  note       String?
+  borrowerId String?  // Lien optionnel vers un User enregistré sur Brol
+  createdAt  DateTime @default(now())
 
-  user User @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
+  user      User  @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
+  borrower  User? @relation("ContactBorrower", fields: [borrowerId], references: [id])
 
   @@index([userId])
+  @@index([email])
+  @@index([borrowerId])
   @@map("contacts")
 }
 

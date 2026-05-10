@@ -9,6 +9,7 @@ import { Button } from "../../../components/ui/button";
 import { trpc } from "../../../lib/trpc";
 import { AssignQrDialog } from "../../../components/qr/assign-qr-dialog";
 import { QrCodeImage, useQrDownload } from "../../../components/qr/qr-code-image";
+import { CreateLoanDialog } from "../../../components/loans/create-loan-dialog";
 
 /**
  * Page de détail d'un objet.
@@ -25,6 +26,7 @@ export default function ObjectDetailPage() {
   );
 
   const [assignQrOpen, setAssignQrOpen] = useState(false);
+  const [loanDialogOpen, setLoanDialogOpen] = useState(false);
   const { downloadPng, printQr } = useQrDownload();
 
   const deleteMutation = trpc.objects.delete.useMutation({
@@ -89,6 +91,7 @@ export default function ObjectDetailPage() {
   }
 
   const currentLoan = object.loans?.[0];
+  const hasActiveLoan = currentLoan?.status === "ACTIVE";
   const pastLoans = object.loans?.slice(1) ?? [];
 
   return (
@@ -177,10 +180,10 @@ export default function ObjectDetailPage() {
         </div>
 
         {/* Current loan */}
-        {currentLoan?.status === "ACTIVE" && (
+        {hasActiveLoan && currentLoan && (
           <div className="mt-6">
             <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
-              {/* PRÊT EN COURS */}
+              PRÊT EN COURS
             </h2>
             <div className="card-vhs border-secondary/50 p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -278,14 +281,25 @@ export default function ObjectDetailPage() {
 
         {/* Actions */}
         <div className="mt-6 space-y-3">
-          <Button variant="outline" className="w-full">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setLoanDialogOpen(true)}
+          >
             <User className="w-4 h-4 mr-2" />
-            Prêter cet objet
+            {hasActiveLoan ? "Prêt en cours" : "Prêter cet objet"}
           </Button>
         </div>
       </main>
 
       <Navigation />
+
+      <CreateLoanDialog
+        open={loanDialogOpen}
+        onOpenChange={setLoanDialogOpen}
+        objectId={objectId}
+        objectName={object.name}
+      />
 
       <AssignQrDialog
         open={assignQrOpen}
