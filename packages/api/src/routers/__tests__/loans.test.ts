@@ -191,4 +191,68 @@ describe("loansRouter", () => {
       expect(result.items).toHaveLength(1);
     });
   });
+
+  describe("computed OVERDUE status", () => {
+    it("lentOut returns OVERDUE for past due date with ACTIVE status", async () => {
+      await prisma.loan.create({
+        data: {
+          objectId: object.id,
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          status: "ACTIVE",
+          returnDueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+        },
+      });
+
+      const result = await callerFor(owner.id).loans.lentOut();
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].computedStatus).toBe("OVERDUE");
+      expect(result.items[0].status).toBe("ACTIVE"); // DB status unchanged
+    });
+
+    it("lentOut returns ACTIVE for future due date", async () => {
+      await prisma.loan.create({
+        data: {
+          objectId: object.id,
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          status: "ACTIVE",
+          returnDueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        },
+      });
+
+      const result = await callerFor(owner.id).loans.lentOut();
+      expect(result.items[0].computedStatus).toBe("ACTIVE");
+    });
+
+    it("borrowed returns OVERDUE for past due date", async () => {
+      await prisma.loan.create({
+        data: {
+          objectId: object.id,
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          status: "ACTIVE",
+          returnDueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+        },
+      });
+
+      const result = await callerFor(borrower.id).loans.borrowed();
+      expect(result.items[0].computedStatus).toBe("OVERDUE");
+    });
+
+    it("history returns OVERDUE computed status", async () => {
+      await prisma.loan.create({
+        data: {
+          objectId: object.id,
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          status: "ACTIVE",
+          returnDueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+        },
+      });
+
+      const result = await callerFor(owner.id).loans.history();
+      expect(result.items[0].computedStatus).toBe("OVERDUE");
+    });
+  });
 });
