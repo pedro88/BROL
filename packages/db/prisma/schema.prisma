@@ -154,6 +154,7 @@ model Contact {
 
   user      User  @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
   borrower  User? @relation("ContactBorrower", fields: [borrowerId], references: [id])
+  loansAsBorrowerContact Loan[] @relation("LoanBorrowerContact")
 
   @@index([userId])
   @@index([email])
@@ -169,7 +170,8 @@ model Loan {
   id              String      @id @default(cuid())
   objectId        String
   ownerId         String
-  borrowerId      String
+  borrowerId      String?     // User.id si le contact a un compte Brol
+  borrowerContactId String?   // Contact.id si le contact n'a pas de compte
   status          LoanStatus  @default(ACTIVE)
   lentAt          DateTime    @default(now())
   returnDueDate   DateTime?
@@ -179,12 +181,14 @@ model Loan {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  object   Object @relation(fields: [objectId], references: [id], onDelete: Cascade)
-  owner    User   @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
-  borrower User   @relation("Borrower", fields: [borrowerId], references: [id], onDelete: Cascade)
+  object         Object  @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  owner          User    @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  borrower       User?   @relation("Borrower", fields: [borrowerId], references: [id], onDelete: Cascade)
+  borrowerContact Contact? @relation("LoanBorrowerContact", fields: [borrowerContactId], references: [id], onDelete: Cascade)
 
   @@index([objectId])
   @@index([borrowerId])
+  @@index([borrowerContactId])
   @@index([ownerId])
   @@index([status])
   @@index([returnDueDate])

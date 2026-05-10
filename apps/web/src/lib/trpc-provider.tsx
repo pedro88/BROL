@@ -7,15 +7,10 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
-import { createTRPCReact } from "@trpc/react-query";
 import type { AppRouter } from "@brol/api";
 import { useState } from "react";
 import { getSessionToken } from "./auth-store";
-
-/**
- * Client tRPC standalone.
- */
-export const trpc = createTRPCReact<AppRouter>();
+import { trpc } from "./trpc";
 
 /**
  * Composant Provider qui enveloppent l'app.

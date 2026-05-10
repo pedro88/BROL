@@ -11,6 +11,7 @@ import {
   createTestUser,
   createTestCollection,
   createTestObject,
+  createTestContact,
 } from "../../test/setup";
 
 /** Create a tRPC caller for a given userId */
@@ -21,6 +22,7 @@ function callerFor(userId: string) {
 describe("loansRouter", () => {
   let owner: Awaited<ReturnType<typeof createTestUser>>;
   let borrower: Awaited<ReturnType<typeof createTestUser>>;
+  let contact: Awaited<ReturnType<typeof createTestContact>>;
   let collection: Awaited<ReturnType<typeof createTestCollection>>;
   let object: Awaited<ReturnType<typeof createTestObject>>;
 
@@ -28,12 +30,19 @@ describe("loansRouter", () => {
     await prisma.loan.deleteMany();
     await prisma.object.deleteMany();
     await prisma.collection.deleteMany();
+    await prisma.contact.deleteMany();
     await prisma.user.deleteMany();
 
     owner = await createTestUser({ email: "owner@example.com", name: "Owner" });
     borrower = await createTestUser({ email: "borrower@example.com", name: "Borrower" });
     collection = await createTestCollection(owner.id);
     object = await createTestObject(collection.id, { name: "Loanable Object" });
+    // Contact linked to borrower (has a Brol account)
+    contact = await createTestContact(owner.id, {
+      name: "Test Contact",
+      email: "contact@example.com",
+      borrowerId: borrower.id,
+    });
   });
 
   describe("lentOut", () => {
@@ -87,11 +96,29 @@ describe("loansRouter", () => {
     it("creates a loan for own object", async () => {
       const result = await callerFor(owner.id).loans.create({
         objectId: object.id,
-        borrowerId: borrower.id,
+        contactId: contact.id,
         returnDueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
       });
       expect(result.status).toBe("ACTIVE");
       expect(result.borrowerId).toBe(borrower.id);
+      expect(result.borrowerContactId).toBeNull();
+    });
+
+    it("creates a loan to contact without account", async () => {
+      // Unlink the contact from the borrower
+      const unlinkedContact = await createTestContact(owner.id, {
+        name: "Unlinked Contact",
+        email: "unlinked@example.com",
+        borrowerId: null,
+      });
+      const result = await callerFor(owner.id).loans.create({
+        objectId: object.id,
+        contactId: unlinkedContact.id,
+      });
+      expect(result.status).toBe("ACTIVE");
+      expect(result.borrowerId).toBeNull();
+      expect(result.borrowerContactId).toBe(unlinkedContact.id);
+      expect(result.borrowerContact?.name).toBe("Unlinked Contact");
     });
 
     it("throws for other user's object", async () => {
@@ -100,7 +127,7 @@ describe("loansRouter", () => {
       await expect(
         callerFor(owner.id).loans.create({
           objectId: otherObject.id,
-          borrowerId: borrower.id,
+          contactId: contact.id,
         })
       ).rejects.toThrow("Objet non trouvé");
     });
@@ -117,10 +144,14 @@ describe("loansRouter", () => {
       });
 
       const anotherBorrower = await createTestUser({ email: "another@example.com" });
+      const anotherContact = await createTestContact(owner.id, {
+        name: "Another Contact",
+        borrowerId: anotherBorrower.id,
+      });
       await expect(
         callerFor(owner.id).loans.create({
           objectId: object.id,
-          borrowerId: anotherBorrower.id,
+          contactId: anotherContact.id,
         })
       ).rejects.toThrow("déjà prêté");
     });

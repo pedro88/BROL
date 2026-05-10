@@ -78,7 +78,7 @@ export default function HomePage() {
           </h2>
 
           <QuickAction
-            href="/loans/new"
+            href="/loans"
             title="NOUVEAU PRÊT"
             description="Prêter un objet à un contact"
             variant="primary"

@@ -116,6 +116,32 @@ export async function createTestCollection(ownerId: string, overrides: Partial<{
 }
 
 /**
+ * Create a test contact owned by a user, optionally linked to a borrower User.
+ */
+export async function createTestContact(
+  ownerId: string,
+  overrides: Partial<{
+    name: string;
+    email: string | null;
+    phone: string | null;
+    note: string | null;
+    borrowerId: string | null;
+  }> = {}
+) {
+  return prisma.contact.create({
+    data: {
+      id: generateCuid(),
+      name: overrides.name ?? "Test Contact",
+      email: overrides.email ?? null,
+      phone: overrides.phone ?? null,
+      note: overrides.note ?? null,
+      borrowerId: overrides.borrowerId ?? null,
+      userId: ownerId,
+    },
+  });
+}
+
+/**
  * Create a test object in a collection.
  */
 export async function createTestObject(collectionId: string, overrides: Partial<{

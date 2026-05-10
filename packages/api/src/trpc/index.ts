@@ -82,3 +82,4 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
  */
 export const router = t.router;
 export type Router = typeof router;
+export { TRPCError };

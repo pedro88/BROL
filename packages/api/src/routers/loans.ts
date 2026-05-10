@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure, TRPCError } from "../trpc";
 import {
   createLoanSchema,
   returnLoanSchema,
@@ -15,6 +15,10 @@ import { sendReminderEmail } from "../emails";
 /**
  * Router pour les prêts.
  * Gère la création, le suivi et le retour des prêts.
+ *
+ * borrowerId / borrowerContactId:
+ * - Si le contact a un compte Brol (contact.borrowerId) → borrowerId = contact.borrowerId
+ * - Sinon → borrowerId = null, borrowerContactId = contact.id
  */
 export const loansRouter = router({
   /**
@@ -44,6 +48,13 @@ export const loansRouter = router({
               image: true,
             },
           },
+          borrowerContact: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
         orderBy: [
           { status: "asc" }, // OVERDUE d'abord
@@ -53,7 +64,7 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
-      // Calculer le statut OVERDUE à la volée
+      // Calculer le statut OVERDUE à la volée et dériver le nom de l'emprunteur
       const loansWithComputedStatus = loans.map((loan) => ({
         ...loan,
         computedStatus:
@@ -62,6 +73,9 @@ export const loansRouter = router({
           loan.returnDueDate < now
             ? "OVERDUE"
             : loan.status,
+        // borrowerName: priorise User > Contact (si contact a un compte)
+        borrowerName:
+          loan.borrower?.name ?? loan.borrowerContact?.name ?? "Inconnu",
       }));
 
       return {
@@ -74,6 +88,8 @@ export const loansRouter = router({
 
   /**
    * Liste les objets empruntés par l'utilisateur.
+   * Ne concerne que les prêts où le borrowerId correspond à l'utilisateur connecté.
+   * (Les prêts via borrowerContactId ne sont pas inclus ici — ces contacts n'ont pas de compte.)
    */
   borrowed: protectedProcedure
     .input(paginationSchema.optional())
@@ -104,6 +120,13 @@ export const loansRouter = router({
               image: true,
             },
           },
+          borrowerContact: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
         orderBy: { returnDueDate: "asc" },
         take: input?.limit ?? 20,
@@ -119,6 +142,7 @@ export const loansRouter = router({
           loan.returnDueDate < now
             ? "OVERDUE"
             : loan.status,
+        ownerName: loan.owner.name ?? "Inconnu",
       }));
 
       return {
@@ -158,6 +182,13 @@ export const loansRouter = router({
               image: true,
             },
           },
+          borrowerContact: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
           owner: {
             select: {
               id: true,
@@ -180,6 +211,7 @@ export const loansRouter = router({
           loan.returnDueDate < now
             ? "OVERDUE"
             : loan.status,
+        borrowerName: loan.borrower?.name ?? loan.borrowerContact?.name ?? "Inconnu",
       }));
 
       return {
@@ -192,6 +224,7 @@ export const loansRouter = router({
 
   /**
    * Crée un nouveau prêt.
+   * Résout contactId → borrowerId (si compte) ou borrowerContactId (si pas de compte).
    */
   create: protectedProcedure
     .input(createLoanSchema)
@@ -207,7 +240,7 @@ export const loansRouter = router({
       });
 
       if (!object) {
-        throw new Error("Objet non trouvé");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Objet non trouvé." });
       }
 
       // Vérifier qu'il n'y a pas déjà un prêt actif
@@ -219,31 +252,56 @@ export const loansRouter = router({
       });
 
       if (existingLoan) {
-        throw new Error("Cet objet est déjà prêté");
+        throw new TRPCError({ code: "CONFLICT", message: "Cet objet est déjà prêté." });
       }
 
-      // Vérifier que l'emprunteur existe
-      const borrower = await ctx.prisma.user.findUnique({
-        where: { id: input.borrowerId },
+      // Vérifier que le contact existe et appartient à l'utilisateur
+      const contact = await ctx.prisma.contact.findFirst({
+        where: {
+          id: input.contactId,
+          userId: ctx.userId,
+        },
       });
 
-      if (!borrower) {
-        throw new Error("Emprunteur non trouvé");
+      if (!contact) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Contact non trouvé.",
+        });
+      }
+
+      // Résoudre : si le contact a un borrowerId (compte), utiliser ce compte
+      // Sinon, utiliser borrowerContactId (prêt à un contact sans compte)
+      const borrowerId = contact.borrowerId ?? null;
+      const borrowerContactId = borrowerId ? null : contact.id;
+
+      // Si ni l'un ni l'autre, c'est un contact orphan — avertir (ne devrait pas arriver)
+      if (!borrowerId && !borrowerContactId) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Impossible de déterminer l'emprunteur pour ce contact.",
+        });
       }
 
       return ctx.prisma.loan.create({
         data: {
           objectId: input.objectId,
           ownerId: ctx.userId,
-          borrowerId: input.borrowerId,
+          borrowerId,
+          borrowerContactId,
           returnDueDate: input.returnDueDate,
           notes: input.notes,
           status: "ACTIVE",
         },
         include: {
-          object: true,
+          object: {
+            select: { id: true, name: true, coverImage: true },
+          },
           borrower: {
             select: { id: true, name: true, image: true },
+          },
+          borrowerContact: {
+            select: { id: true, name: true, email: true },
           },
         },
       });
@@ -264,7 +322,10 @@ export const loansRouter = router({
       });
 
       if (!loan) {
-        throw new Error("Prêt non trouvé ou déjà retourné");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Prêt non trouvé ou déjà retourné.",
+        });
       }
 
       return ctx.prisma.loan.update({
@@ -278,7 +339,7 @@ export const loansRouter = router({
 
   /**
    * Envoie un rappel pour un prêt.
-   * @note Pour l'instant, génère juste un log. Intégrer emailing plus tard.
+   * Uniquement si le borrowerId est rempli (email disponible).
    */
   remind: protectedProcedure
     .input(z.object({ loanId: z.string().cuid() }))
@@ -288,6 +349,7 @@ export const loansRouter = router({
           id: input.loanId,
           ownerId: ctx.userId,
           status: { in: ["ACTIVE", "OVERDUE"] },
+          borrowerId: { not: null }, // Uniquement si compte utilisateur
         },
         include: {
           borrower: {
@@ -303,10 +365,12 @@ export const loansRouter = router({
       });
 
       if (!loan) {
-        throw new Error("Prêt non trouvé");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Prêt non trouvé ou emprunteur sans compte (email non disponible).",
+        });
       }
 
-      // Envoyer l'email de rappel
       const emailResult = await sendReminderEmail({
         to: loan.borrower.email ?? "",
         borrowerName: loan.borrower.name ?? "",
@@ -320,7 +384,6 @@ export const loansRouter = router({
         console.error(`[loans.remind] Email failed: ${emailResult.message}`);
       }
 
-      // Marquer le rappel comme envoyé (même si l'email a échoué — on ne renvoie pas à chaque clic)
       await ctx.prisma.loan.update({
         where: { id: input.loanId },
         data: { reminderSentAt: new Date() },
@@ -349,7 +412,10 @@ export const loansRouter = router({
       });
 
       if (!loan) {
-        throw new Error("Prêt non trouvé");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Prêt non trouvé.",
+        });
       }
 
       return ctx.prisma.loan.update({

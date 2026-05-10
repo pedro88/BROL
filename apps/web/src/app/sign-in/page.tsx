@@ -12,6 +12,38 @@ import { signInEmailPassword, signUpEmailPassword } from "@/lib/auth-client";
 import { setSessionToken } from "@/lib/auth-store";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+// Password strength
+// ---------------------------------------------------------------------------
+
+type StrengthLevel = "empty" | "short" | "weak" | "fair" | "strong";
+
+function getPasswordStrength(password: string): StrengthLevel {
+  if (!password) return "empty";
+  if (password.length < 8) return "short";
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasDigit = /\d/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  const score = [hasUpper, hasLower, hasDigit, hasSpecial].filter(Boolean).length;
+  if (score >= 3 && password.length >= 12) return "strong";
+  if (score >= 2) return "fair";
+  return "weak";
+}
+
+const STRENGTH_CONFIG: Record<StrengthLevel, { label: string; color: string; bar: number }> = {
+  empty: { label: "", color: "bg-muted", bar: 0 },
+  short: { label: "Trop court", color: "bg-destructive", bar: 1 },
+  weak: { label: "Faible", color: "bg-orange-500", bar: 2 },
+  fair: { label: "Correct", color: "bg-yellow-500", bar: 3 },
+  strong: { label: "Fort", color: "bg-green-500", bar: 4 },
+};
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function SignInPage() {
   const router = useRouter();
@@ -22,35 +54,56 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // S01: password confirmation + toggle visibility
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+
+  const strength: StrengthLevel = getPasswordStrength(password);
+  const strengthCfg = STRENGTH_CONFIG[strength];
+
+  const confirmMismatch = mode === "signup" && passwordConfirm && password !== passwordConfirm;
+  const isPasswordConfirmInvalid =
+    mode === "signup" && passwordConfirm && confirmMismatch;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // S01: client-side validation before submit
+    if (mode === "signup") {
+      if (password.length < 8) {
+        setError("Le mot de passe doit contenir au moins 8 caractères.");
+        return;
+      }
+      if (password !== passwordConfirm) {
+        setError("Les mots de passe ne correspondent pas.");
+        return;
+      }
+    }
+
     setLoading(true);
 
-    const callbackUrl = typeof window !== "undefined"
-      ? new URL(window.location.href).searchParams.get("callbackUrl") ?? "/"
-      : "/";
+    const callbackUrl =
+      typeof window !== "undefined"
+        ? new URL(window.location.href).searchParams.get("callbackUrl") ?? "/"
+        : "/";
 
     try {
       if (mode === "signin") {
-        const result = await signInEmailPassword(email, password, callbackUrl);
+        const result = await signInEmailPassword(email, password);
         if (result.error) {
           setError(result.error);
         } else {
-          // Extract token from response and sync to global store for tRPC auth
-          // signInEmailPassword uses fetch with credentials:include, so the session
-          // cookie is set. But the token for Bearer auth needs to be synced manually.
-          // Call get-session to extract the token and set it in the store.
           await syncTokenToStore();
           router.push(callbackUrl);
           router.refresh();
         }
       } else {
-        const result = await signUpEmailPassword(email, password, name, callbackUrl);
+        const result = await signUpEmailPassword(email, password, name);
         if (result.error) {
           setError(result.error);
         } else {
-          // Same sync for sign-up
           await syncTokenToStore();
           router.push(callbackUrl);
           router.refresh();
@@ -68,9 +121,22 @@ export default function SignInPage() {
       const token = data?.session?.token ?? data?.token;
       if (token) setSessionToken(token);
     } catch {
-      // Non-critical — cookie auth still works for session management
+      // Non-critical — cookie auth still works
     }
   }
+
+  function toggleMode() {
+    setMode(mode === "signin" ? "signup" : "signin");
+    setError(null);
+    setEmail("");
+    setPassword("");
+    setPasswordConfirm("");
+    setName("");
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -89,9 +155,13 @@ export default function SignInPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name (sign-up only) */}
           {mode === "signup" && (
             <div className="space-y-1">
-              <label className="font-mono text-xs text-muted-foreground uppercase tracking-wider" htmlFor="name">
+              <label
+                className="font-mono text-xs text-muted-foreground uppercase tracking-wider"
+                htmlFor="name"
+              >
                 Nom
               </label>
               <input
@@ -107,8 +177,12 @@ export default function SignInPage() {
             </div>
           )}
 
+          {/* Email */}
           <div className="space-y-1">
-            <label className="font-mono text-xs text-muted-foreground uppercase tracking-wider" htmlFor="email">
+            <label
+              className="font-mono text-xs text-muted-foreground uppercase tracking-wider"
+              htmlFor="email"
+            >
               Email
             </label>
             <input
@@ -123,23 +197,121 @@ export default function SignInPage() {
             />
           </div>
 
+          {/* Password + toggle */}
           <div className="space-y-1">
-            <label className="font-mono text-xs text-muted-foreground uppercase tracking-wider" htmlFor="password">
+            <label
+              className="font-mono text-xs text-muted-foreground uppercase tracking-wider"
+              htmlFor="password"
+            >
               Mot de passe
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              placeholder={mode === "signup" ? "Min. 8 caractères" : "••••••••"}
-              className="w-full px-4 py-3 bg-background border-2 border-primary/30 rounded-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:shadow-[0_0_8px_rgba(var(--primary))] transition-all"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                placeholder={mode === "signup" ? "Min. 8 caractères" : "••••••••"}
+                className="w-full px-4 py-3 pr-12 bg-background border-2 border-primary/30 rounded-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:shadow-[0_0_8px_rgba(var(--primary))] transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+
+            {/* S01: strength indicator (sign-up only) */}
+            {mode === "signup" && password && (
+              <div className="space-y-1">
+                {/* Strength bar */}
+                <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${strengthCfg.color}`}
+                    style={{ width: `${(strengthCfg.bar / 4) * 100}%` }}
+                  />
+                </div>
+                <p
+                  className={`font-mono text-xs ${
+                    strength === "strong"
+                      ? "text-green-500"
+                      : strength === "fair"
+                      ? "text-yellow-500"
+                      : "text-destructive"
+                  }`}
+                >
+                  {strengthCfg.label}
+                  {strength === "weak" && (
+                    <span className="text-muted-foreground">
+                      {" "}— ajoutez une majuscule, un chiffre ou un caractère spécial
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
           </div>
 
+          {/* Password confirmation (sign-up only) */}
+          {mode === "signup" && (
+            <div className="space-y-1">
+              <label
+                className="font-mono text-xs text-muted-foreground uppercase tracking-wider"
+                htmlFor="passwordConfirm"
+              >
+                Confirmer le mot de passe
+              </label>
+              <div className="relative">
+                <input
+                  id="passwordConfirm"
+                  type={showPasswordConfirm ? "text" : "password"}
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Ressayez votre mot de passe"
+                  className={`w-full px-4 py-3 pr-12 bg-background border-2 rounded-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none transition-all ${
+                    isPasswordConfirmInvalid
+                      ? "border-destructive focus:border-destructive"
+                      : "border-primary/30 focus:border-primary focus:shadow-[0_0_8px_rgba(var(--primary))]"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordConfirm((v) => !v)}
+                  aria-label={
+                    showPasswordConfirm ? "Masquer le mot de passe" : "Afficher le mot de passe"
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  {showPasswordConfirm ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              {isPasswordConfirmInvalid && (
+                <div className="flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 text-destructive" />
+                  <p className="font-mono text-xs text-destructive">
+                    Les mots de passe ne correspondent pas
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Global error */}
           {error && (
             <div className="px-4 py-3 border-2 border-destructive/60 rounded-sm bg-destructive/10">
               <p className="font-mono text-xs text-destructive">{error}</p>
@@ -148,7 +320,7 @@ export default function SignInPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !!isPasswordConfirmInvalid}
             className="w-full px-4 py-3 bg-primary text-primary-foreground border-2 border-primary rounded-sm font-display text-xl tracking-wider uppercase hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {loading
@@ -163,13 +335,7 @@ export default function SignInPage() {
         <div className="mt-6 text-center">
           <button
             type="button"
-            onClick={() => {
-              setMode(mode === "signin" ? "signup" : "signin");
-              setError(null);
-              setEmail("");
-              setPassword("");
-              setName("");
-            }}
+            onClick={toggleMode}
             className="font-mono text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
           >
             {mode === "signin"
@@ -180,82 +346,8 @@ export default function SignInPage() {
 
         {/*
           OAuth providers — commented out for future use.
-          Uncomment the buttons below and remove this block to re-enable OAuth.
-        */}
-        {/*
-        <div className="mt-8 space-y-4">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-2 bg-background font-mono text-xs text-muted-foreground">
-                Ou continuer avec
-              </span>
-            </div>
-          </div>
-          <OAuthButton
-            provider="google"
-            label="Google"
-            loading={loading}
-            onClick={handleOAuthSignIn}
-          />
-          <OAuthButton
-            provider="github"
-            label="GitHub"
-            loading={loading}
-            onClick={handleOAuthSignIn}
-          />
-        </div>
         */}
       </div>
     </div>
   );
 }
-
-/*
-  OAuthButton — commented out for future use.
-
-  function OAuthButton({
-    provider,
-    label,
-    loading,
-    onClick,
-  }: {
-    provider: "google" | "github";
-    label: string;
-    loading: boolean;
-    onClick: (p: "google" | "github") => void;
-  }) {
-    const iconPaths: Record<string, string> = {
-      google: "M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z M12 23c2.97 0 5.46-1.97 6.38-4.83H12v-2.77h-.12-.03c-.56.96-1.47 1.74-2.88 1.74-.88 0-1.69-.28-2.35-.78-1.67-1.28-1.47-3.89-.21-5.59l3.74.97-.17.47c-.55 1.52.13 3.19 1.89 3.19.53 0 1.04-.15 1.4-.42z M12 4.36c1.59 0 3.03.55 4.16 1.63L18.15 3.1c-1.53-.96-3.55-1.54-6.15-1.54-4.73 0-8.59 3.84-8.59 8.59 0 2.29.9 4.38 2.38 5.87l3.66-3.66C10.54 9.67 11.23 8.43 12 8.43c.81 0 1.55.31 2.12.82l2.72-2.72c-1.25-1.03-2.83-1.64-4.84-1.64z",
-      github: "M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12",
-    };
-
-    const buttonColors: Record<string, string> = {
-      google: "bg-white hover:bg-gray-100 text-gray-900 border-gray-300",
-      github: "bg-[#24292f] hover:bg-[#3b434b] text-white border-transparent",
-    };
-
-    return (
-      <button
-        onClick={() => onClick(provider)}
-        disabled={loading}
-        className={`
-          w-full flex items-center gap-3 px-4 py-3
-          border-2 rounded-sm font-display text-lg
-          transition-all hover:scale-[1.02] active:scale-[0.98]
-          disabled:opacity-50 disabled:cursor-not-allowed
-          ${buttonColors[provider]}
-        `}
-      >
-        <svg viewBox="0 0 24 24" className="w-6 h-6 flex-shrink-0" fill="currentColor">
-          <path d={iconPaths[provider]} />
-        </svg>
-        <span className="flex-1 text-left">
-          {loading ? "Redirection..." : `Continuer avec ${label}`}
-        </span>
-      </button>
-    );
-  }
-*/

@@ -125,10 +125,12 @@ export type UpdateContactInput = z.infer<typeof updateContactSchema>;
 
 /**
  * Schéma de création d'un prêt.
+ * contactId: ID du Contact à qui prêter (peut avoir ou non un compte Brol).
+ * Le prêt est attaché soit à borrowerId (si le contact a un compte), soit à borrowerContactId.
  */
 export const createLoanSchema = z.object({
   objectId: z.string().cuid(),
-  borrowerId: z.string().cuid(),
+  contactId: z.string().cuid(), // Contact à qui prêter
   returnDueDate: z.coerce.date().optional(),
   notes: z.string().max(1000).optional(),
 });

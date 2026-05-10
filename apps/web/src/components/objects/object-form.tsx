@@ -60,7 +60,10 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
     }
   }, [collectionId, setValue]);
 
-  // Create mutation
+  // Generate QR mutation
+  const generateQrMutation = trpc.qr.generateStock.useMutation({
+    retry: 1,
+  });
   const createMutation = trpc.objects.create.useMutation({
     onSuccess: (data) => {
       utils.objects.list.invalidate({ collectionId: data.collectionId });
@@ -95,8 +98,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       // Handle QR code selection
       if (qrSelection === "create") {
         setCreatingQr(true);
-        // Generate a new QR code first
-        const qrResult = await utils.qr.generateStock.fetch({ count: 1 });
+        const qrResult = await generateQrMutation.mutateAsync({ count: 1 });
         if (qrResult.codes.length > 0) {
           qrStockId = qrResult.codes[0].id;
         }
@@ -111,15 +113,6 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       };
 
       const created = await createMutation.mutateAsync(objectData);
-
-      // If we have a QR but didn't pass it during creation (because the API creates first then marks used),
-      // we need to assign it separately
-      if (qrStockId && !formData.qrStockId) {
-        await utils.qr.assignToObject.mutateAsync({
-          objectId: created.id,
-          qrStockId,
-        });
-      }
     } catch (error) {
       setCreatingQr(false);
       console.error("Failed to create object:", error);
