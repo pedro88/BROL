@@ -22,6 +22,7 @@ export const loansRouter = router({
   lentOut: protectedProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
+      const now = new Date();
       const loans = await ctx.prisma.loan.findMany({
         where: {
           ownerId: ctx.userId,
@@ -51,8 +52,19 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
+      // Calculer le statut OVERDUE à la volée
+      const loansWithComputedStatus = loans.map((loan) => ({
+        ...loan,
+        computedStatus:
+          loan.status === "ACTIVE" &&
+          loan.returnDueDate &&
+          loan.returnDueDate < now
+            ? "OVERDUE"
+            : loan.status,
+      }));
+
       return {
-        items: loans,
+        items: loansWithComputedStatus,
         nextCursor: loans.length === (input?.limit ?? 20)
           ? loans[loans.length - 1]?.id ?? null
           : null,
@@ -65,6 +77,7 @@ export const loansRouter = router({
   borrowed: protectedProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
+      const now = new Date();
       const loans = await ctx.prisma.loan.findMany({
         where: {
           borrowerId: ctx.userId,
@@ -96,8 +109,19 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
+      // Calculer le statut OVERDUE à la volée
+      const loansWithComputedStatus = loans.map((loan) => ({
+        ...loan,
+        computedStatus:
+          loan.status === "ACTIVE" &&
+          loan.returnDueDate &&
+          loan.returnDueDate < now
+            ? "OVERDUE"
+            : loan.status,
+      }));
+
       return {
-        items: loans,
+        items: loansWithComputedStatus,
         nextCursor: loans.length === (input?.limit ?? 20)
           ? loans[loans.length - 1]?.id ?? null
           : null,
@@ -110,6 +134,7 @@ export const loansRouter = router({
   history: protectedProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
+      const now = new Date();
       const loans = await ctx.prisma.loan.findMany({
         where: {
           OR: [
@@ -145,8 +170,19 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
+      // Calculer le statut OVERDUE à la volée
+      const loansWithComputedStatus = loans.map((loan) => ({
+        ...loan,
+        computedStatus:
+          loan.status === "ACTIVE" &&
+          loan.returnDueDate &&
+          loan.returnDueDate < now
+            ? "OVERDUE"
+            : loan.status,
+      }));
+
       return {
-        items: loans,
+        items: loansWithComputedStatus,
         nextCursor: loans.length === (input?.limit ?? 20)
           ? loans[loans.length - 1]?.id ?? null
           : null,

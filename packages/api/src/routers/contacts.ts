@@ -54,7 +54,115 @@ export const contactsRouter = router({
         throw new Error("Contact non trouvé");
       }
 
-      return contact;
+      // Récupérer l'historique des prêts pour ce contact (via borrowerId ou email)
+      const loans = await ctx.prisma.loan.findMany({
+        where: {
+          OR: [
+            { borrowerId: contact.borrowerId ?? "__none__" },
+            contact.email
+              ? { borrower: { email: contact.email } }
+              : {},
+          ],
+        },
+        include: {
+          object: {
+            select: {
+              id: true,
+              name: true,
+              coverImage: true,
+            },
+          },
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      // Calculer le statut OVERDUE à la volée
+      const loansWithComputedStatus = loans.map((loan) => ({
+        ...loan,
+        computedStatus:
+          loan.status === "ACTIVE" &&
+          loan.returnDueDate &&
+          loan.returnDueDate < new Date()
+            ? "OVERDUE"
+            : loan.status,
+      }));
+
+      return {
+        ...contact,
+        loans: loansWithComputedStatus,
+      };
+    }),
+
+  /**
+   * Récupère l'historique des prêts pour un contact.
+   */
+  loansForContact: protectedProcedure
+    .input(z.object({ id: z.string().cuid() }))
+    .query(async ({ ctx, input }) => {
+      const contact = await ctx.prisma.contact.findFirst({
+        where: {
+          id: input.id,
+          userId: ctx.userId,
+        },
+      });
+
+      if (!contact) {
+        throw new Error("Contact non trouvé");
+      }
+
+      const loans = await ctx.prisma.loan.findMany({
+        where: {
+          OR: [
+            { borrowerId: contact.borrowerId ?? "__none__" },
+            contact.email
+              ? { borrower: { email: contact.email } }
+              : {},
+          ],
+        },
+        include: {
+          object: {
+            select: {
+              id: true,
+              name: true,
+              coverImage: true,
+              collection: {
+                select: { name: true },
+              },
+            },
+          },
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      // Calculer le statut OVERDUE à la volée
+      const loansWithComputedStatus = loans.map((loan) => ({
+        ...loan,
+        computedStatus:
+          loan.status === "ACTIVE" &&
+          loan.returnDueDate &&
+          loan.returnDueDate < new Date()
+            ? "OVERDUE"
+            : loan.status,
+      }));
+
+      return {
+        contact,
+        loans: loansWithComputedStatus,
+      };
     }),
 
   /**
