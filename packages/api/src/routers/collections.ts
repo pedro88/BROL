@@ -6,10 +6,41 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import {
-  createCollectionSchema,
-  updateCollectionSchema,
   paginationSchema,
 } from "@brol/shared";
+
+const OBJECT_TYPES = [
+  "BOOK",
+  "BOARD_GAME",
+  "TOOL",
+  "FILM",
+  "MUSIC",
+  "ELECTRONIC",
+  "ELECTRIC",
+  "CLOTHING",
+  "CUSTOM",
+] as const;
+
+// Inline schemas to avoid tsx watch workspace dep caching issue
+const createCollectionSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
+  coverImage: z.string().url().optional(),
+  isPublic: z.boolean().default(false),
+  type: z.enum(OBJECT_TYPES), // required, no default
+  customField1Label: z.string().max(50).optional(),
+  customField2Label: z.string().max(50).optional(),
+});
+
+const updateCollectionSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().max(500).optional(),
+  coverImage: z.string().url().optional(),
+  isPublic: z.boolean().optional(),
+  type: z.enum(OBJECT_TYPES).optional(),
+  customField1Label: z.string().max(50).optional(),
+  customField2Label: z.string().max(50).optional(),
+});
 
 /**
  * Router pour les collections.
