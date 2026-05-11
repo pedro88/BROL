@@ -216,15 +216,55 @@ export const objectsRouter = router({
     }),
 
   /**
-   * Scan un ISBN pour récupérer les métadonnées.
-   * @note Pour l'instant, retourne un résultat vide. Intégrer une API ISBN plus tard.
+   * Lookup ISBN via Open Library API.
+   * Retourne les métadonnées d'un livre (titre, auteur, couverture).
+   * API gratuite: https://openlibrary.org/dev/docs/api/books
    */
   lookupIsbn: protectedProcedure
-    .input(z.object({ isbn: z.string() }))
+    .input(z.object({ isbn: z.string().min(10).max(17) }))
     .query(async ({ input }) => {
-      // TODO: Intégrer une API ISBN (Google Books, Open Library, etc.)
-      // Pour l'instant, on retourne null
-      return null;
+      const { isbn } = input;
+
+      try {
+        const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
+        const response = await fetch(url, {
+          signal: AbortSignal.timeout(8000),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Open Library returned ${response.status}`);
+        }
+
+        const data = await response.json() as Record<string, unknown>;
+        const bookKey = `ISBN:${isbn}`;
+        const book = data[bookKey] as {
+          title?: string;
+          authors?: Array<{ name: string }>;
+          publishers?: Array<{ name: string }>;
+          publish_date?: string;
+          number_of_pages?: number;
+          cover?: { small?: string; medium?: string; large?: string };
+          subjects?: Array<{ name: string }>;
+        } | undefined;
+
+        if (!book) {
+          return null;
+        }
+
+        return {
+          title: book.title ?? null,
+          author: book.authors?.map((a) => a.name).join(", ") ?? null,
+          publisher: book.publishers?.[0]?.name ?? null,
+          publishDate: book.publish_date ?? null,
+          pageCount: book.number_of_pages ?? null,
+          coverUrl: book.cover?.medium ?? book.cover?.small ?? book.cover?.large ?? null,
+          subjects: book.subjects?.slice(0, 5).map((s) => s.name) ?? [],
+        };
+      } catch (err) {
+        // ISBN non trouvé ou erreur réseau — retourne null silencieusement
+        console.warn(`[lookupIsbn] Failed for ISBN ${isbn}:`, err);
+        return null;
+      }
     }),
 });
 

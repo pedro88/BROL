@@ -241,6 +241,25 @@ export const sendOwnerMessageSchema = z.object({
 export type SendOwnerMessageInput = z.infer<typeof sendOwnerMessageSchema>;
 
 // ============================================
+// ISBN LOOKUP
+// ============================================
+
+/**
+ * Résultat du lookup ISBN via Open Library.
+ */
+export const isbnLookupResultSchema = z.object({
+  title: z.string().nullable(),
+  author: z.string().nullable(),
+  publisher: z.string().nullable(),
+  publishDate: z.string().nullable(),
+  pageCount: z.number().int().nullable(),
+  coverUrl: z.string().url().nullable(),
+  subjects: z.array(z.string()),
+});
+
+export type IsbnLookupResult = z.infer<typeof isbnLookupResultSchema>;
+
+// ============================================
 // PAGINATION
 // ============================================
 

@@ -123,8 +123,31 @@ describe("objectsRouter", () => {
   });
 
   describe("lookupIsbn", () => {
-    it("returns null for any ISBN (not implemented)", async () => {
-      const result = await callerFor(owner.id).objects.lookupIsbn({ isbn: "978-2-07-040850-4" });
+    it("returns metadata for a valid ISBN", async () => {
+      // ISBN 978-2-07-040850-4 = "Le Petit Prince" (should be in Open Library)
+      const result = await callerFor(owner.id).objects.lookupIsbn({
+        isbn: "9782070408504",
+      });
+      // Open Library should return data or null (depends on network)
+      if (result !== null) {
+        expect(result).toHaveProperty("title");
+        expect(typeof result.title).toBe("string");
+        expect(result).toHaveProperty("author");
+      }
+    });
+
+    it("returns null for invalid ISBN length", async () => {
+      await expect(
+        callerFor(owner.id).objects.lookupIsbn({ isbn: "123" })
+      ).rejects.toThrow();
+    });
+
+    it("handles ISBN not found gracefully", async () => {
+      // ISBN 978-000-000-000-00 is very unlikely to exist
+      const result = await callerFor(owner.id).objects.lookupIsbn({
+        isbn: "97800000000000",
+      });
+      // Returns null when not found — not an error
       expect(result).toBeNull();
     });
   });

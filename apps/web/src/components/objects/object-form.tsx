@@ -3,9 +3,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createObjectSchema, type CreateObjectInput, OBJECT_CONDITIONS, OBJECT_TYPES } from "@brol/shared";
-import { BookOpen, QrCode } from "lucide-react";
+import { BookOpen, QrCode, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -130,6 +130,59 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   const [qrSelection, setQrSelection] = useState<"none" | "existing" | "create">("none");
   const [selectedQrId, setSelectedQrId] = useState<string>("");
   const [creatingQr, setCreatingQr] = useState(false);
+
+  // ISBN lookup state
+  const [isbnQuery, setIsbnQuery] = useState("");
+  const [isbnForLookup, setIsbnForLookup] = useState("");
+  const [isbnStatus, setIsbnStatus] = useState<"idle" | "loading" | "found" | "not_found">("idle");
+  const isbnDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const lookupQuery = trpc.objects.lookupIsbn.useQuery(
+    { isbn: isbnForLookup },
+    {
+      enabled: isbnForLookup.length >= 10,
+      staleTime: 10 * 60 * 1000, // Cache 10 min — metadata doesn't change
+      retry: 1,
+    }
+  );
+
+  // Auto-fill when lookup resolves
+  useEffect(() => {
+    if (!lookupQuery.isFetching && lookupQuery.data !== undefined) {
+      if (lookupQuery.data) {
+        setIsbnStatus("found");
+        if (lookupQuery.data.title) setValue("name", lookupQuery.data.title, { shouldDirty: true });
+        if (lookupQuery.data.author) setValue("author", lookupQuery.data.author, { shouldDirty: true });
+        if (lookupQuery.data.coverUrl) setValue("coverImage", lookupQuery.data.coverUrl, { shouldDirty: true });
+      } else {
+        setIsbnStatus("not_found");
+      }
+    }
+  }, [lookupQuery.isFetching, lookupQuery.data, setValue]);
+
+  // Debounced ISBN lookup
+  const handleIsbnChange = useCallback((isbn: string) => {
+    setIsbnQuery(isbn);
+    if (isbnDebounceRef.current) clearTimeout(isbnDebounceRef.current);
+
+    const cleanIsbn = isbn.replace(/[-\s]/g, "");
+
+    if (cleanIsbn.length < 10) {
+      setIsbnStatus("idle");
+      setIsbnForLookup("");
+      return;
+    }
+
+    // Don't re-trigger if already looked up this ISBN
+    if (cleanIsbn === isbnForLookup && lookupQuery.data !== undefined) {
+      return;
+    }
+
+    setIsbnStatus("loading");
+    isbnDebounceRef.current = setTimeout(() => {
+      setIsbnForLookup(cleanIsbn);
+    }, 700); // Debounce 700ms
+  }, [isbnForLookup, lookupQuery.data]);
 
   const generateQrMutation = trpc.qr.generateStock.useMutation({ retry: 1 });
   const createMutation = trpc.objects.create.useMutation({
@@ -335,11 +388,41 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           <Label htmlFor="isbn" className="font-mono text-xs uppercase">
             ISBN
           </Label>
-          <Input
-            id="isbn"
-            placeholder="978-2-07-040850-4"
-            {...register("isbn")}
-          />
+          <div className="relative">
+            <Input
+              id="isbn"
+              placeholder="978-2-07-040850-4"
+              value={isbnQuery}
+              onChange={(e) => handleIsbnChange(e.target.value)}
+              className="pr-20"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              {isbnStatus === "loading" && (
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              )}
+              {isbnStatus === "found" && (
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+              )}
+              {isbnStatus === "not_found" && (
+                <XCircle className="w-4 h-4 text-orange-500" />
+              )}
+            </div>
+          </div>
+          {isbnStatus === "found" && (
+            <p className="font-mono text-xs text-green-400">
+              ✓ Métadonnées récupérées — vérifiez et ajustez si nécessaire
+            </p>
+          )}
+          {isbnStatus === "not_found" && isbnQuery.length >= 10 && (
+            <p className="font-mono text-xs text-orange-400">
+              ISBN non trouvé — remplissez manuellement
+            </p>
+          )}
+          {isbnStatus === "idle" && isbnQuery.length === 0 && (
+            <p className="font-mono text-xs text-muted-foreground">
+              Saisie automatique via Open Library
+            </p>
+          )}
         </div>
       )}
 
