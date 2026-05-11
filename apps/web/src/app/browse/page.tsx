@@ -23,7 +23,7 @@ export default function BrowsePage() {
     staleTime: 30_000,
   });
 
-  const collections = data?.items ?? [];
+  const collections: typeof data extends { items: infer T } ? T : never[] = data?.items ?? [];
 
   return (
     <div className="min-h-screen pb-20">
