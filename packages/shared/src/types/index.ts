@@ -55,7 +55,7 @@ export interface Photo {
   objectId: string;
   url: string;
   position: number;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface PresignedUpload {

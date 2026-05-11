@@ -10,6 +10,7 @@ import { trpc } from "../../../lib/trpc";
 import { AssignQrDialog } from "../../../components/qr/assign-qr-dialog";
 import { QrCodeImage, useQrDownload } from "../../../components/qr/qr-code-image";
 import { CreateLoanDialog } from "../../../components/loans/create-loan-dialog";
+import { PhotoGallery } from "../../../components/photos/photo-gallery";
 
 /**
  * Page de détail d'un objet.
@@ -146,6 +147,11 @@ export default function ObjectDetailPage() {
               {conditionLabels[object.condition] ?? object.condition}
             </span>
           </div>
+        </div>
+
+        {/* Photo gallery */}
+        <div className="mt-6">
+          <PhotoGallery objectId={objectId} coverImage={object.coverImage} />
         </div>
 
         {/* Details */}

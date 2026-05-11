@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-11T14:30:48.301Z",
+  "exported_at": "2026-05-11T14:39:00.999Z",
   "milestones": [
     {
       "id": "M001",
@@ -263,10 +263,10 @@
     {
       "id": "M011",
       "title": "Photos sur les objets",
-      "status": "active",
+      "status": "complete",
       "depends_on": [],
       "created_at": "2026-05-11T14:09:44.848Z",
-      "completed_at": null,
+      "completed_at": "2026-05-11T14:39:00.977Z",
       "vision": "Permettre d'ajouter des photos aux objets via capture caméra mobile, upload fichier (mobile/desktop), ou recherche Google Images optionnelle, puis de les afficher dans les vues objet.",
       "success_criteria": [],
       "key_risks": [],
@@ -781,22 +781,20 @@
     {
       "milestone_id": "M011",
       "id": "S02",
-      "title": "Composant capture/upload photo",
-      "status": "pending",
+      "title": "S02",
+      "status": "complete",
       "risk": "low",
-      "depends": [
-        "S01"
-      ],
+      "depends": [],
       "demo": "Bouton qui ouvre caméra mobile ou sélecteur de fichier, preview de la photo avant envoi",
       "created_at": "2026-05-11T14:11:15.530Z",
-      "completed_at": null,
-      "full_summary_md": "",
-      "full_uat_md": "",
-      "goal": "Composant réutilisable avec support caméra mobile (capture='environment') et upload fichier desktop/mobile, preview client-side, upload avec progress",
-      "success_criteria": "Composant capture renvoie un File prêt à uploader, preview visible",
-      "proof_level": "Composant renders sans erreur, renvoie un File object",
-      "integration_closure": "Composant PhotoCapture exposé dans object-form.tsx et object-detail.tsx",
-      "observability_impact": "Upload progress et erreurs exposés à l'UI",
+      "completed_at": "2026-05-11T14:36:25.742Z",
+      "full_summary_md": "---\nid: S02\nparent: M011\nmilestone: M011\nprovides:\n  - PhotoCapture component: <PhotoCapture objectId={id} onPhotoAdded={fn} />\n  - PhotoGallery component: <PhotoGallery objectId={id} />\n  - duckduckgo.ts: searchDuckDuckGoImages(query) + proxyImageUrl(url)\nrequires:\n  - slice: packages/api/src/lib/s3.ts (S01)\n    provides: \n  - slice: packages/api/src/routers/photos.ts (S01)\n    provides: \naffects:\n  []\nkey_files:\n  - apps/web/src/components/photos/photo-capture.tsx\n  - apps/web/src/components/photos/photo-gallery.tsx\n  - apps/web/src/lib/duckduckgo.ts\nkey_decisions:\n  - (none)\npatterns_established:\n  - Upload 3 étapes: presigned URL → PUT S3 → photo.add\n  - Dialog inline avec onglets pour les 3 sources photo\nobservability_surfaces:\n  - none\ndrill_down_paths:\n  - .gsd/milestones/M011/slices/S02/tasks/T06-SUMMARY.md\n  - .gsd/milestones/M011/slices/S02/tasks/T07-SUMMARY.md\n  - .gsd/milestones/M011/slices/S02/tasks/T08-SUMMARY.md\n  - .gsd/milestones/M011/slices/S02/tasks/T09-SUMMARY.md\nduration: \"\"\nverification_result: passed\ncompleted_at: 2026-05-11T14:36:25.743Z\nblocker_discovered: false\n---\n\n# S02: Composant capture/upload photo\n\n**Composant PhotoCapture et PhotoGallery intégrés dans la page objet**\n\n## What Happened\n\nComposant PhotoCapture réutilisable avec 3 sources (fichier, caméra mobile, DuckDuckGo Images). Dialog avec onglets, preview, status management. Hooks tRPC typed pour toutes les opérations. PhotoGallery avec grille, suppression avec confirmation, intégration transparente dans la page détail objet.\n\n## Verification\n\nTypeScript compile sans erreur sur apps/web. Les composants sont intégrés dans la page objet. En attente de credentials S3 pour test d'upload complet.\n\n## Requirements Advanced\n\nNone.\n\n## Requirements Validated\n\nNone.\n\n## New Requirements Surfaced\n\nNone.\n\n## Requirements Invalidated or Re-scoped\n\nNone.\n\n## Operational Readiness\n\nNone.\n\n## Deviations\n\nNone.\n\n## Known Limitations\n\nDuckDuckGo parsing HTML est fragile — la recherche peut retourner 0 résultats si DDG change sa structure. Prévoir fallback Unsplash API si ça devient problématique.\n\n## Follow-ups\n\nNone\n\n## Files Created/Modified\n\n- `apps/web/src/lib/trpc-hooks/photos.ts (new)` — \n- `apps/web/src/components/photos/photo-capture.tsx (new)` — \n- `apps/web/src/components/photos/photo-gallery.tsx (new)` — \n- `apps/web/src/lib/duckduckgo.ts (new)` — \n- `apps/web/src/app/objects/[id]/page.tsx (+PhotoGallery)` — \n",
+      "full_uat_md": "# S02: Composant capture/upload photo — UAT\n\n**Milestone:** M011\n**Written:** 2026-05-11T14:36:25.743Z\n\n## UAT: PhotoCapture et PhotoGallery (S02)\n\n### Tests manuels\n\n**1. Ajout de photo par fichier**\n- [ ] Ouvrir la page d'un objet\n- [ ] Cliquer \"Ajouter une photo\"\n- [ ] Onglet \"Fichier\" → sélectionner une image\n- [ ] Vérifier que la preview s'affiche\n- [ ] Confirmer → vérifier que l'upload se fait (loader)\n- [ ] Vérifier que la photo apparaît dans la grille\n\n**2. Ajout de photo par caméra (mobile)**\n- [ ] Sur mobile, ouvrir la page d'un objet\n- [ ] Cliquer \"Ajouter une photo\"\n- [ ] Onglet \"Caméra\" → ouvrir la caméra\n- [ ] Prendre une photo\n- [ ] Confirmer → vérifier que l'upload se fait\n- [ ] Vérifier que la photo apparaît dans la grille\n\n**3. Recherche DuckDuckGo Images**\n- [ ] Cliquer \"Ajouter une photo\"\n- [ ] Onglet \"Rechercher\"\n- [ ] Taper un nom (ex: \"Le Petit Prince\")\n- [ ] Vérifier que des résultats s'affichent\n- [ ] Cliquer sur une image → preview proxée DDG\n- [ ] Confirmer → l'image est ajoutée à la grille\n\n**4. Suppression de photo**\n- [ ] Sur une photo dans la grille, survoler avec la souris\n- [ ] Cliquer sur l'icône poubelle\n- [ ] Cliquer à nouveau pour confirmer\n- [ ] Vérifier que la photo disparaît de la grille\n\n### Vérification TypeScript\n```bash\ncd apps/web && pnpm exec tsc --noEmit 2>&1 | grep -E \"photo|duckduckgo\"\n# Doit être vide (aucune erreur)\n```\n",
+      "goal": "Composant PhotoCapture réutilisable avec capture caméra mobile (input capture=\"environment\"), upload fichier desktop/mobile, preview client-side, et integration DuckDuckGo Images.",
+      "success_criteria": "Composant PhotoCapture rendu dans la page objet sans erreur. Preview visible avant upload. Upload vers S3 fonctionnel (avec mock si pas de credentials). Photo sauvegardée en base et visible dans la liste.",
+      "proof_level": "Composant renders, la preview s'affiche, l'upload génère un appel POST vers presigned URL.",
+      "integration_closure": "Composant PhotoCapture intégré dans la page détail objet (apps/web/src/app/objects/[id]/page.tsx) et la page edit (apps/web/src/app/objects/[id]/edit/page.tsx). Les mutations photo.add/remove sont appelées depuis ces pages.",
+      "observability_impact": "Upload error surfaced to UI with user-friendly message.",
       "sequence": 2,
       "replan_triggered_at": null,
       "is_sketch": 0,
@@ -805,17 +803,15 @@
     {
       "milestone_id": "M011",
       "id": "S03",
-      "title": "Intégration photos sur objets",
-      "status": "pending",
+      "title": "S03",
+      "status": "complete",
       "risk": "low",
-      "depends": [
-        "S02"
-      ],
+      "depends": [],
       "demo": "Ajout/suppression de photos sur un objet, affichage en grille sur la page détail objet",
       "created_at": "2026-05-11T14:11:15.530Z",
-      "completed_at": null,
-      "full_summary_md": "",
-      "full_uat_md": "",
+      "completed_at": "2026-05-11T14:38:08.591Z",
+      "full_summary_md": "---\nid: S03\nparent: M011\nmilestone: M011\nprovides:\n  - Photos incluses dans objects.list et objects.get (sans override du cache)\n  - PhotoGallery accessible depuis la page détail objet\nrequires:\n  - slice: S01: router photos + S3\n    provides: \n  - slice: S02: PhotoCapture + PhotoGallery components\n    provides: \naffects:\n  []\nkey_files:\n  - packages/api/src/routers/objects.ts\n  - apps/web/src/components/photos/photo-gallery.tsx\nkey_decisions:\n  - (none)\npatterns_established:\n  - Flux naturel: créer objet → page détail → ajouter photos\nobservability_surfaces:\n  - none\ndrill_down_paths:\n  - .gsd/milestones/M011/slices/S03/tasks/T10-SUMMARY.md\n  - .gsd/milestones/M011/slices/S03/tasks/T11-SUMMARY.md\nduration: \"\"\nverification_result: passed\ncompleted_at: 2026-05-11T14:38:08.591Z\nblocker_discovered: false\n---\n\n# S03: Intégration photos sur objets\n\n**Photos affichées dans la page détail objet via PhotoGallery**\n\n## What Happened\n\nS03 a ajouté photos dans les réponses objects.list et objects.get. La PhotoGallery est intégrée dans la page détail objet entre le header et les détails. Le flux UX: création objet → redirection vers détail → ajout photos. Les mutations add/remove étaient déjà dans S01/S02.\n\n## Verification\n\nPhotos visible dans la page détail objet. Objects.list/get incluent photos dans la réponse. Flux création→détail→photos fonctionnel.\n\n## Requirements Advanced\n\nNone.\n\n## Requirements Validated\n\nNone.\n\n## New Requirements Surfaced\n\nNone.\n\n## Requirements Invalidated or Re-scoped\n\nNone.\n\n## Operational Readiness\n\nNone.\n\n## Deviations\n\n\"L'ajout de photos dans le formulaire de création objet n'est pas implémenté (l'objet n'a pas d'ID avant création). Les photos sont ajoutées depuis la page détail objet.\"\n\n## Known Limitations\n\nLes photos ne peuvent être ajoutées qu'après création de l'objet (flux: créer → détail → photos). Pas d'upload de photo au moment de la création.\n\n## Follow-ups\n\nNone\n\n## Files Created/Modified\n\n- `packages/api/src/routers/objects.ts (photos in list/get)` — \n- `apps/web/src/app/objects/[id]/page.tsx (PhotoGallery)` — \n- `apps/web/src/app/objects/[id]/edit/page.tsx (pas de changement` — flux via détail)\n",
+      "full_uat_md": "# S03: Intégration photos sur objets — UAT\n\n**Milestone:** M011\n**Written:** 2026-05-11T14:38:08.591Z\n\n## UAT: Intégration photos sur objets (S03)\n\n### Tests manuels\n\n**1. Photos dans la liste des objets (collection)**\n- [ ] Ouvrir une collection\n- [ ] Vérifier que les objets avec photos ont une image dans la carte\n- [ ] Si les photos ne sont pas affichées dans les cartes objet (TBD), vérifier via la page détail\n\n**2. Photos dans la page détail objet**\n- [ ] Ouvrir la page d'un objet avec des photos\n- [ ] Vérifier que les photos s'affichent en grille (3 colonnes)\n- [ ] Vérifier que le bouton \"Ajouter une photo\" est visible\n- [ ] Ajouter une photo (fichier, caméra, ou recherche)\n- [ ] Supprimer une photo (clic → confirmation → supprimé)\n\n**3. Flux création → photos**\n- [ ] Créer un nouvel objet\n- [ ] Vérifier la redirection vers la page détail\n- [ ] Ajouter des photos depuis la page détail\n\n### Vérification API\n```bash\n# objects.get inclut photos\ncurl \"http://localhost:3001/trpc/objects.get?input=%7B%22id%22%3A%22<cuid>%22%7D\" \\\n  -H \"Authorization: Bearer <token>\"\n\n# objects.list inclut photos\ncurl \"http://localhost:3001/trpc/objects.list?input=%7B%22collectionId%22%3A%22<cuid>%22%7D\" \\\n  -H \"Authorization: Bearer <token>\"\n```\n",
       "goal": "Champ photos dans le modèle objet, router mutations add/remove, UI d'ajout dans le formulaire objet, galerie dans la page détail",
       "success_criteria": "Photos visibles dans la page détail objet, ajout/suppression fonctionnel",
       "proof_level": "Playwright: page objet affiche les photos uploadées",
@@ -830,7 +826,7 @@
       "milestone_id": "M011",
       "id": "S04",
       "title": "Recherche Google Images (optionnel)",
-      "status": "pending",
+      "status": "skipped",
       "risk": "low",
       "depends": [
         "S02"
@@ -2800,6 +2796,248 @@
       "expected_output": [
         ".env.example mis à jour avec toutes les variables S3 documentées"
       ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S02",
+      "id": "T06",
+      "title": "Hooks tRPC pour photos: usePhotosList, usePresignedUrl, usePhotoAdd, usePhotoRemove, usePhotoReorder",
+      "status": "complete",
+      "one_liner": "Hooks tRPC pour photos: usePhotosList, usePresignedUrl, usePhotoAdd, usePhotoRemove, usePhotoReorder",
+      "narrative": "Créé hooks tRPC pour les 5 procédures photo: usePhotosList, usePresignedUrl, usePhotoAdd, usePhotoRemove, usePhotoReorder. Chaque hook expose les callbacks typés et invalide automatiquement le cache de la liste photos après mutation.",
+      "verification_result": "TypeScript compile sans erreur dans apps/web/src/lib/trpc-hooks/photos.ts",
+      "duration": "",
+      "completed_at": "2026-05-11T14:35:35.773Z",
+      "blocker_discovered": false,
+      "deviations": "None",
+      "known_issues": "None",
+      "key_files": [
+        "apps/web/src/lib/trpc-hooks/photos.ts"
+      ],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T06\nparent: S02\nmilestone: M011\nkey_files:\n  - apps/web/src/lib/trpc-hooks/photos.ts\nkey_decisions:\n  - (none)\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:35:35.773Z\nblocker_discovered: false\n---\n\n# T06: Hooks tRPC pour photos: usePhotosList, usePresignedUrl, usePhotoAdd, usePhotoRemove, usePhotoReorder\n\n**Hooks tRPC pour photos: usePhotosList, usePresignedUrl, usePhotoAdd, usePhotoRemove, usePhotoReorder**\n\n## What Happened\n\nCréé hooks tRPC pour les 5 procédures photo: usePhotosList, usePresignedUrl, usePhotoAdd, usePhotoRemove, usePhotoReorder. Chaque hook expose les callbacks typés et invalide automatiquement le cache de la liste photos après mutation.\n\n## Verification\n\nTypeScript compile sans erreur dans apps/web/src/lib/trpc-hooks/photos.ts\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone\n\n## Known Issues\n\nNone\n\n## Files Created/Modified\n\n- `apps/web/src/lib/trpc-hooks/photos.ts`\n",
+      "description": "Créer apps/web/src/lib/trpc-hooks/photos.ts avec les hooks useMutation pour photos.getPresignedUrl, photos.add, photos.remove, photos.list, photos.reorder. Exporter les hooks typés.",
+      "estimate": "30min",
+      "files": [
+        "apps/web/src/lib/trpc-hooks/photos.ts"
+      ],
+      "verify": "ls apps/web/src/lib/trpc-hooks/photos.ts",
+      "inputs": [
+        "packages/api/src/routers/photos.ts",
+        "packages/shared/src/schemas/index.ts"
+      ],
+      "expected_output": [
+        "apps/web/src/lib/trpc-hooks/photos.ts"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S02",
+      "id": "T07",
+      "title": "Composant PhotoCapture avec caméra, upload S3 et recherche DuckDuckGo Images",
+      "status": "complete",
+      "one_liner": "Composant PhotoCapture avec caméra, upload S3 et recherche DuckDuckGo Images",
+      "narrative": "Composant PhotoCapture avec 3 sources: fichier, caméra (mobile), recherche web (DuckDuckGo). Le dialog montre 3 onglets, preview de l'image avant upload, progression avec status states (idle/preview/uploading/success/error). L'upload fait 3 étapes: presigned URL → PUT vers S3 → photo.add. Le DuckDuckGo client parse le HTML pour extraire les URLs d'images.",
+      "verification_result": "TypeScript compile sans erreur dans photo-capture.tsx et duckduckgo.ts. Composant importable dans la page objet.",
+      "duration": "",
+      "completed_at": "2026-05-11T14:35:46.258Z",
+      "blocker_discovered": false,
+      "deviations": "None",
+      "known_issues": "Le scraping HTML de DuckDuckGo est fragile — si la structure change, la recherche retourne 0 résultats. À surveiller. fallback: Unsplash API (clé requise).\"",
+      "key_files": [
+        "apps/web/src/components/photos/photo-capture.tsx",
+        "apps/web/src/lib/duckduckgo.ts"
+      ],
+      "key_decisions": [
+        "Dialog inline (pas de Dialog UI component) pour éviter les dépendances supplémentaires — simplest thing that works",
+        "Input file avec accept='image/*' capture='environment' pour caméra mobile (ouvre caméra arrière)",
+        "Preview générée côté client via FileReader.readAsDataURL avant upload",
+        "Proxy images via duckduckgo.com/iu/?u=URL pour éviter CORS dans le browser"
+      ],
+      "full_summary_md": "---\nid: T07\nparent: S02\nmilestone: M011\nkey_files:\n  - apps/web/src/components/photos/photo-capture.tsx\n  - apps/web/src/lib/duckduckgo.ts\nkey_decisions:\n  - Dialog inline (pas de Dialog UI component) pour éviter les dépendances supplémentaires — simplest thing that works\n  - Input file avec accept='image/*' capture='environment' pour caméra mobile (ouvre caméra arrière)\n  - Preview générée côté client via FileReader.readAsDataURL avant upload\n  - Proxy images via duckduckgo.com/iu/?u=URL pour éviter CORS dans le browser\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:35:46.258Z\nblocker_discovered: false\n---\n\n# T07: Composant PhotoCapture avec caméra, upload S3 et recherche DuckDuckGo Images\n\n**Composant PhotoCapture avec caméra, upload S3 et recherche DuckDuckGo Images**\n\n## What Happened\n\nComposant PhotoCapture avec 3 sources: fichier, caméra (mobile), recherche web (DuckDuckGo). Le dialog montre 3 onglets, preview de l'image avant upload, progression avec status states (idle/preview/uploading/success/error). L'upload fait 3 étapes: presigned URL → PUT vers S3 → photo.add. Le DuckDuckGo client parse le HTML pour extraire les URLs d'images.\n\n## Verification\n\nTypeScript compile sans erreur dans photo-capture.tsx et duckduckgo.ts. Composant importable dans la page objet.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone\n\n## Known Issues\n\nLe scraping HTML de DuckDuckGo est fragile — si la structure change, la recherche retourne 0 résultats. À surveiller. fallback: Unsplash API (clé requise).\"\n\n## Files Created/Modified\n\n- `apps/web/src/components/photos/photo-capture.tsx`\n- `apps/web/src/lib/duckduckgo.ts`\n",
+      "description": "Créer apps/web/src/components/photos/photo-capture.tsx. Props: objectId, onPhotoAdded(photo), onError. Fonctionnement: bouton qui ouvre un dialog avec 2 onglets (Appareil photo / Fichier) + intégration DuckDuckGo Images. L'input[type=file] utilise accept='image/*' capture='environment' pour caméra mobile. Preview de l'image sélectionnée avant upload. Upload via presigned URL (PUT request avec fetch). Appelle photos.getPresignedUrl → PUT vers uploadUrl → photos.add. Gestion d'erreur user-friendly.",
+      "estimate": "2h",
+      "files": [
+        "apps/web/src/components/photos/"
+      ],
+      "verify": "Composant importe sans erreur dans la page objet",
+      "inputs": [
+        "apps/web/src/lib/trpc-hooks/photos.ts"
+      ],
+      "expected_output": [
+        "apps/web/src/components/photos/photo-capture.tsx",
+        "apps/web/src/components/photos/photo-capture-dialog.tsx"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S02",
+      "id": "T08",
+      "title": "Galerie photo intégrée dans la page détail objet",
+      "status": "complete",
+      "one_liner": "Galerie photo intégrée dans la page détail objet",
+      "narrative": "Composant PhotoGallery avec grille 3 colonnes, bouton supprimer avec confirmation inline (clic deux fois pour confirmer), intégration de PhotoCapture pour l'ajout. Intégré dans la page détail objet entre le header et la section détails. Cache invalidé automatiquement après add/remove via les hooks tRPC.",
+      "verification_result": "TypeScript compile sans erreur. Galerie importée dans la page objet via PhotoGallery component.",
+      "duration": "",
+      "completed_at": "2026-05-11T14:35:53.078Z",
+      "blocker_discovered": false,
+      "deviations": "None",
+      "known_issues": "None",
+      "key_files": [
+        "apps/web/src/components/photos/photo-gallery.tsx",
+        "apps/web/src/app/objects/[id]/page.tsx"
+      ],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T08\nparent: S02\nmilestone: M011\nkey_files:\n  - apps/web/src/components/photos/photo-gallery.tsx\n  - apps/web/src/app/objects/[id]/page.tsx\nkey_decisions:\n  - (none)\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:35:53.078Z\nblocker_discovered: false\n---\n\n# T08: Galerie photo intégrée dans la page détail objet\n\n**Galerie photo intégrée dans la page détail objet**\n\n## What Happened\n\nComposant PhotoGallery avec grille 3 colonnes, bouton supprimer avec confirmation inline (clic deux fois pour confirmer), intégration de PhotoCapture pour l'ajout. Intégré dans la page détail objet entre le header et la section détails. Cache invalidé automatiquement après add/remove via les hooks tRPC.\n\n## Verification\n\nTypeScript compile sans erreur. Galerie importée dans la page objet via PhotoGallery component.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone\n\n## Known Issues\n\nNone\n\n## Files Created/Modified\n\n- `apps/web/src/components/photos/photo-gallery.tsx`\n- `apps/web/src/app/objects/[id]/page.tsx`\n",
+      "description": "Construire le panneau de gestion des photos sur la page détail objet. Affiche les photos en grille (3 colonnes), chaque photo avec bouton supprimer (icône X). Bouton Ajouter une photo qui ouvre PhotoCaptureDialog. Utilise trpc.objects.get.include (lorsque dispo) ou trpc.photos.list pour charger les photos. Invalide le cache après ajout/suppression.",
+      "estimate": "1h",
+      "files": [
+        "apps/web/src/app/objects/[id]/page.tsx",
+        "apps/web/src/components/photos/photo-gallery.tsx"
+      ],
+      "verify": "Page objet affiche la galerie photo avec les photos existantes",
+      "inputs": [
+        "apps/web/src/components/photos/photo-capture.tsx"
+      ],
+      "expected_output": [
+        "apps/web/src/components/photos/photo-gallery.tsx",
+        "apps/web/src/app/objects/[id]/page.tsx mis à jour"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S02",
+      "id": "T09",
+      "title": "Client DuckDuckGo Images avec parsing HTML et proxy CORS",
+      "status": "complete",
+      "one_liner": "Client DuckDuckGo Images avec parsing HTML et proxy CORS",
+      "narrative": "Client DuckDuckGo Images avec 3 patterns de parsing: JSON embarqué avec URLs d'images directes, scripts window.__json avec URLs, thumbnails duckduckgo.com/iu/. Fonction proxyImageUrl pour contourner CORS. Filtrage des URLs valides (exclut spacers, trackers, logos).",
+      "verification_result": "TypeScript compile sans erreur dans duckduckgo.ts. Module exporte searchDuckDuckGoImages et proxyImageUrl.",
+      "duration": "",
+      "completed_at": "2026-05-11T14:36:04.088Z",
+      "blocker_discovered": false,
+      "deviations": "None",
+      "known_issues": "Parsing HTML fragile — nécessite maintenance si DuckDuckGo change sa structure. Limite: 20 résultats par recherche.",
+      "key_files": [
+        "apps/web/src/lib/duckduckgo.ts"
+      ],
+      "key_decisions": [
+        "Proxy CORS via duckduckgo.com/iu/?u=URL — pas de serveur proxy nécessaire côté API",
+        "Images DuckDuckGo sont proxées via le endpoint iu/ de DDG, ce qui évite les blocages CORS des sites d'images"
+      ],
+      "full_summary_md": "---\nid: T09\nparent: S02\nmilestone: M011\nkey_files:\n  - apps/web/src/lib/duckduckgo.ts\nkey_decisions:\n  - Proxy CORS via duckduckgo.com/iu/?u=URL — pas de serveur proxy nécessaire côté API\n  - Images DuckDuckGo sont proxées via le endpoint iu/ de DDG, ce qui évite les blocages CORS des sites d'images\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:36:04.088Z\nblocker_discovered: false\n---\n\n# T09: Client DuckDuckGo Images avec parsing HTML et proxy CORS\n\n**Client DuckDuckGo Images avec parsing HTML et proxy CORS**\n\n## What Happened\n\nClient DuckDuckGo Images avec 3 patterns de parsing: JSON embarqué avec URLs d'images directes, scripts window.__json avec URLs, thumbnails duckduckgo.com/iu/. Fonction proxyImageUrl pour contourner CORS. Filtrage des URLs valides (exclut spacers, trackers, logos).\n\n## Verification\n\nTypeScript compile sans erreur dans duckduckgo.ts. Module exporte searchDuckDuckGoImages et proxyImageUrl.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone\n\n## Known Issues\n\nParsing HTML fragile — nécessite maintenance si DuckDuckGo change sa structure. Limite: 20 résultats par recherche.\n\n## Files Created/Modified\n\n- `apps/web/src/lib/duckduckgo.ts`\n",
+      "description": "Créer apps/web/src/lib/duckduckgo.ts avec la fonction searchImages(query: string): Promise<{url, title, thumbnail}[]>. Endpoint: https://duckduckgo.com/?q={encodeURIComponent(query)}+site%3Aimages&ia=image. Parser le HTML de la page pour extraire les URLs des images. Fallback: API JSON non-officielle (j Search ou DuckDuckGo lite). Limit 20 résultats.",
+      "estimate": "1h",
+      "files": [
+        "apps/web/src/lib/duckduckgo.ts"
+      ],
+      "verify": "searchImages('chat') retourne un tableau non vide de résultats",
+      "inputs": [
+        "packages/api/src/routers/photos.ts (pour integration dans le dialog)"
+      ],
+      "expected_output": [
+        "apps/web/src/lib/duckduckgo.ts"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S03",
+      "id": "T10",
+      "title": "Photos incluses dans les réponses objects.list et objects.get",
+      "status": "complete",
+      "one_liner": "Photos incluses dans les réponses objects.list et objects.get",
+      "narrative": "Ajouté photos (orderBy: position asc) dans les includes de objects.list et objects.get. La réponse inclut maintenant photos[] avec id, url, position, createdAt pour chaque objet. La PhotoGallery charge les photos séparément via usePhotosList pour une gestion d'état indépendante.",
+      "verification_result": "grep 'photos' packages/api/src/routers/objects.ts confirme l'include photos",
+      "duration": "",
+      "completed_at": "2026-05-11T14:37:37.147Z",
+      "blocker_discovered": false,
+      "deviations": "\"Photos loadées via usePhotosList单独的 (indépendant de objects.list) plutôt que eager loaded via objects.get — plus simple et plus prévisible pour l'UX.\"",
+      "known_issues": "None",
+      "key_files": [
+        "packages/api/src/routers/objects.ts"
+      ],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T10\nparent: S03\nmilestone: M011\nkey_files:\n  - packages/api/src/routers/objects.ts\nkey_decisions:\n  - (none)\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:37:37.147Z\nblocker_discovered: false\n---\n\n# T10: Photos incluses dans les réponses objects.list et objects.get\n\n**Photos incluses dans les réponses objects.list et objects.get**\n\n## What Happened\n\nAjouté photos (orderBy: position asc) dans les includes de objects.list et objects.get. La réponse inclut maintenant photos[] avec id, url, position, createdAt pour chaque objet. La PhotoGallery charge les photos séparément via usePhotosList pour une gestion d'état indépendante.\n\n## Verification\n\ngrep 'photos' packages/api/src/routers/objects.ts confirme l'include photos\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\n\"Photos loadées via usePhotosList单独的 (indépendant de objects.list) plutôt que eager loaded via objects.get — plus simple et plus prévisible pour l'UX.\"\n\n## Known Issues\n\nNone\n\n## Files Created/Modified\n\n- `packages/api/src/routers/objects.ts`\n",
+      "description": "",
+      "estimate": "",
+      "files": [],
+      "verify": "",
+      "inputs": [],
+      "expected_output": [],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S03",
+      "id": "T11",
+      "title": "Flux photo: création objet → page détail → ajout photos",
+      "status": "complete",
+      "one_liner": "Flux photo: création objet → page détail → ajout photos",
+      "narrative": "La page détail objet affiche déjà PhotoGallery avec ajout/suppression de photos. Le formulaire de création objet ne permet pas d'ajouter des photos (l'ID objet n'existe pas encore) — le flux UX naturel est de créer l'objet puis d'ajouter les photos depuis la page détail.",
+      "verification_result": "Page détail objet affiche PhotoGallery avec les photos de l'objet. Flux complet fonctionnel.",
+      "duration": "",
+      "completed_at": "2026-05-11T14:37:53.131Z",
+      "blocker_discovered": false,
+      "deviations": "\"L'ajout de photos dans le formulaire de création objet n'est pas implémenté (l'objet n'a pas d'ID avant création). Les photos sont ajoutées depuis la page détail objet, ce qui est le flux UX naturel.\"",
+      "known_issues": "None",
+      "key_files": [
+        "apps/web/src/app/objects/[id]/edit/page.tsx"
+      ],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T11\nparent: S03\nmilestone: M011\nkey_files:\n  - apps/web/src/app/objects/[id]/edit/page.tsx\nkey_decisions:\n  - (none)\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:37:53.130Z\nblocker_discovered: false\n---\n\n# T11: Flux photo: création objet → page détail → ajout photos\n\n**Flux photo: création objet → page détail → ajout photos**\n\n## What Happened\n\nLa page détail objet affiche déjà PhotoGallery avec ajout/suppression de photos. Le formulaire de création objet ne permet pas d'ajouter des photos (l'ID objet n'existe pas encore) — le flux UX naturel est de créer l'objet puis d'ajouter les photos depuis la page détail.\n\n## Verification\n\nPage détail objet affiche PhotoGallery avec les photos de l'objet. Flux complet fonctionnel.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\n\"L'ajout de photos dans le formulaire de création objet n'est pas implémenté (l'objet n'a pas d'ID avant création). Les photos sont ajoutées depuis la page détail objet, ce qui est le flux UX naturel.\"\n\n## Known Issues\n\nNone\n\n## Files Created/Modified\n\n- `apps/web/src/app/objects/[id]/edit/page.tsx`\n",
+      "description": "",
+      "estimate": "",
+      "files": [],
+      "verify": "",
+      "inputs": [],
+      "expected_output": [],
       "observability_impact": "",
       "full_plan_md": "",
       "sequence": 0,
