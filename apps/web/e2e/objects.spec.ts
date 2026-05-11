@@ -9,6 +9,7 @@ import {
   signIn,
   createUserAPI,
   cleanupUser,
+  clearSession,
   uniqueEmail,
 } from "./helpers/auth";
 

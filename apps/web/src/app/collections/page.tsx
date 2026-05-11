@@ -81,6 +81,7 @@ export default function CollectionsPage() {
                 description={collection.description}
                 coverImage={collection.coverImage}
                 objectCount={collection.objectCount}
+                type={collection.type}
               />
             ))}
 

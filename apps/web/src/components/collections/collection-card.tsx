@@ -17,8 +17,22 @@ export interface CollectionCardProps {
   description?: string | null;
   coverImage?: string | null;
   objectCount: number;
+  type?: string | null;
   onDelete?: (id: string) => void;
 }
+
+// Type labels for display
+const typeLabels: Record<string, string> = {
+  BOOK: "Livres",
+  BOARD_GAME: "Jeux",
+  TOOL: "Outils",
+  FILM: "Films",
+  MUSIC: "Musique",
+  ELECTRONIC: "Électronique",
+  ELECTRIC: "Électrique",
+  CLOTHING: "Vêtements",
+  CUSTOM: "Custom",
+};
 
 /**
  * Carte de collection avec style VHS retro.
@@ -29,6 +43,7 @@ export function CollectionCard({
   description,
   coverImage,
   objectCount,
+  type,
   onDelete,
 }: CollectionCardProps) {
   return (
@@ -50,9 +65,16 @@ export function CollectionCard({
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-transparent to-transparent" />
         
-        {/* Object count badge */}
-        <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground px-2 py-1 font-mono text-xs">
-          {objectCount} {objectCount === 1 ? "objet" : "objets"}
+        {/* Object count + type badges */}
+        <div className="absolute top-2 right-2 flex gap-1">
+          {type && (
+            <span className="bg-secondary/90 text-secondary-foreground px-2 py-1 font-mono text-xs">
+              {typeLabels[type] ?? type}
+            </span>
+          )}
+          <span className="bg-primary/90 text-primary-foreground px-2 py-1 font-mono text-xs">
+            {objectCount} {objectCount === 1 ? "objet" : "objets"}
+          </span>
         </div>
       </div>
 

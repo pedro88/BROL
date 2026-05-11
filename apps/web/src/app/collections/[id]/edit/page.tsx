@@ -10,6 +10,22 @@ import { Input } from "../../../../components/ui/input";
 import { Label } from "../../../../components/ui/label";
 import { Switch } from "../../../../components/ui/switch";
 import { trpc } from "../../../../lib/trpc";
+import { OBJECT_TYPES } from "@brol/shared";
+
+// Type labels
+const typeLabels: Record<string, string> = {
+  BOOK: "Livres",
+  BOARD_GAME: "Jeux de société",
+  TOOL: "Outils",
+  FILM: "Films / DVD",
+  MUSIC: "Musique / CD",
+  ELECTRONIC: "Électronique",
+  ELECTRIC: "Outillage électrique",
+  CLOTHING: "Vêtements",
+  CUSTOM: "Personnalisé",
+};
+
+type ObjectType = "BOOK" | "BOARD_GAME" | "TOOL" | "FILM" | "MUSIC" | "ELECTRONIC" | "ELECTRIC" | "CLOTHING" | "CUSTOM";
 
 /**
  * Page d'édition d'une collection.
@@ -27,13 +43,19 @@ export default function EditCollectionPage() {
 
   // Local state for isPublic (initialized from collection data)
   const [isPublic, setIsPublic] = useState(false);
+  const [collectionType, setCollectionType] = useState<ObjectType>("BOOK");
+  const [customField1Label, setCustomField1Label] = useState("Champ libre 1");
+  const [customField2Label, setCustomField2Label] = useState("Champ libre 2");
 
-  // Sync isPublic when collection loads
+  // Sync state when collection loads
   useEffect(() => {
-    if (collection?.isPublic !== undefined) {
-      setIsPublic(collection.isPublic);
+    if (collection) {
+      setIsPublic(collection.isPublic ?? false);
+      setCollectionType((collection.type as ObjectType) ?? "BOOK");
+      setCustomField1Label(collection.customField1Label ?? "Champ libre 1");
+      setCustomField2Label(collection.customField2Label ?? "Champ libre 2");
     }
-  }, [collection?.isPublic]);
+  }, [collection]);
 
   // Update mutation
   const updateMutation = trpc.collections.update.useMutation({
@@ -51,6 +73,9 @@ export default function EditCollectionPage() {
         name: formData.get("name") as string,
         description: formData.get("description") as string || undefined,
         isPublic,
+        type: collectionType,
+        customField1Label: collectionType === "CUSTOM" ? customField1Label : undefined,
+        customField2Label: collectionType === "CUSTOM" ? customField2Label : undefined,
       },
     });
   };
@@ -108,6 +133,58 @@ export default function EditCollectionPage() {
                 defaultValue={collection.description ?? ""}
               />
             </div>
+
+            {/* Type selector */}
+            <div className="space-y-2">
+              <Label htmlFor="type" className="font-mono text-xs uppercase">
+                Type d&apos;objets
+              </Label>
+              <select
+                id="type"
+                value={collectionType}
+                onChange={(e) => setCollectionType(e.target.value as ObjectType)}
+                className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+              >
+                {OBJECT_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {typeLabels[t] ?? t}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Custom field labels — only for CUSTOM type */}
+            {collectionType === "CUSTOM" && (
+              <div className="space-y-2 border border-dashed border-border p-3">
+                <p className="font-mono text-xs text-muted-foreground">
+                  Définissez les labels pour les champs libres
+                </p>
+                <div className="space-y-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="customField1Label" className="font-mono text-xs uppercase">
+                      Champ libre 1
+                    </Label>
+                    <Input
+                      id="customField1Label"
+                      value={customField1Label}
+                      onChange={(e) => setCustomField1Label(e.target.value)}
+                      placeholder="Champ libre 1"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="customField2Label" className="font-mono text-xs uppercase">
+                      Champ libre 2
+                    </Label>
+                    <Input
+                      id="customField2Label"
+                      value={customField2Label}
+                      onChange={(e) => setCustomField2Label(e.target.value)}
+                      placeholder="Champ libre 2"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* isPublic toggle */}
             <div className="flex items-center justify-between">
