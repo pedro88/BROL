@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-11T14:24:56Z | Files: 138 | Described: 0/138
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T14:24:56Z","fingerprint":"b3a6016e73f08bcf55d75a6c1e83d2c3f1e25d67","fileCount":138,"truncated":false} -->
+Generated: 2026-05-11T15:03:30Z | Files: 146 | Described: 0/146
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T15:03:30Z","fingerprint":"123d89cd238dfe5021487dfa5d1aac12a0fd32e0","fileCount":146,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -139,6 +139,10 @@ Generated: 2026-05-11T14:24:56Z | Files: 138 | Described: 0/138
 - `apps/web/src/components/objects/object-card.tsx`
 - `apps/web/src/components/objects/object-form.tsx`
 
+### apps/web/src/components/photos/
+- `apps/web/src/components/photos/photo-capture.tsx`
+- `apps/web/src/components/photos/photo-gallery.tsx`
+
 ### apps/web/src/components/qr/
 - `apps/web/src/components/qr/assign-qr-dialog.tsx`
 - `apps/web/src/components/qr/qr-code-image.tsx`
@@ -157,9 +161,13 @@ Generated: 2026-05-11T14:24:56Z | Files: 138 | Described: 0/138
 - `apps/web/src/lib/auth-client.ts`
 - `apps/web/src/lib/auth-session-syncer.tsx`
 - `apps/web/src/lib/auth-store.ts`
+- `apps/web/src/lib/duckduckgo.ts`
 - `apps/web/src/lib/trpc-provider.tsx`
 - `apps/web/src/lib/trpc.ts`
 - `apps/web/src/lib/utils.ts`
+
+### apps/web/src/lib/trpc-hooks/
+- `apps/web/src/lib/trpc-hooks/photos.ts`
 
 ### packages/api/
 - `packages/api/package.json`
@@ -177,11 +185,15 @@ Generated: 2026-05-11T14:24:56Z | Files: 138 | Described: 0/138
 - `packages/api/src/emails/index.ts`
 - `packages/api/src/emails/reminder.tsx`
 
+### packages/api/src/lib/
+- `packages/api/src/lib/s3.ts`
+
 ### packages/api/src/routers/
 - `packages/api/src/routers/collections.ts`
 - `packages/api/src/routers/contacts.ts`
 - `packages/api/src/routers/loans.ts`
 - `packages/api/src/routers/objects.ts`
+- `packages/api/src/routers/photos.ts`
 - `packages/api/src/routers/qr.ts`
 
 ### packages/api/src/routers/__tests__/
@@ -189,6 +201,7 @@ Generated: 2026-05-11T14:24:56Z | Files: 138 | Described: 0/138
 - `packages/api/src/routers/__tests__/contacts.test.ts`
 - `packages/api/src/routers/__tests__/loans.test.ts`
 - `packages/api/src/routers/__tests__/objects.test.ts`
+- `packages/api/src/routers/__tests__/photos.test.ts`
 - `packages/api/src/routers/__tests__/qr.test.ts`
 
 ### packages/api/src/test/
@@ -209,6 +222,9 @@ Generated: 2026-05-11T14:24:56Z | Files: 138 | Described: 0/138
 
 ### packages/db/prisma/migrations/20260511072136_init_object_types/
 - `packages/db/prisma/migrations/20260511072136_init_object_types/migration.sql`
+
+### packages/db/prisma/migrations/20260511120000_add_photos/
+- `packages/db/prisma/migrations/20260511120000_add_photos/migration.sql`
 
 ### packages/db/src/
 - `packages/db/src/client.ts`
