@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-11T15:03:30Z | Files: 146 | Described: 0/146
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T15:03:30Z","fingerprint":"123d89cd238dfe5021487dfa5d1aac12a0fd32e0","fileCount":146,"truncated":false} -->
+Generated: 2026-05-11T15:08:39Z | Files: 147 | Described: 0/147
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T15:08:39Z","fingerprint":"d45c486092ca8eeff25de0d32c8422601bc680f8","fileCount":147,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -80,6 +80,9 @@ Generated: 2026-05-11T15:03:30Z | Files: 146 | Described: 0/146
 
 ### apps/web/src/app/api/auth/[...all]/
 - `apps/web/src/app/api/auth/[...all]/route.ts`
+
+### apps/web/src/app/api/search-images/
+- `apps/web/src/app/api/search-images/route.ts`
 
 ### apps/web/src/app/browse/
 - `apps/web/src/app/browse/page.tsx`

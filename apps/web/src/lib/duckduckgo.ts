@@ -41,7 +41,7 @@ export async function searchDuckDuckGoImages(
     });
 
     const response = await fetch(`${apiBase}/api/search-images?${params}`, {
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(30000), // 30s — le scraping peut être lent
     });
 
     if (!response.ok) {

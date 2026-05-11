@@ -1,6 +1,5 @@
 /**
  * Proxy API pour la recherche d'images via DuckDuckGo.
- * Le fetch est fait côté serveur pour éviter les blocages CORS du browser.
  * @package @brol/web
  */
 
@@ -11,63 +10,79 @@ export interface ImageResult {
   title: string;
 }
 
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-
 /**
- * Filtre les URLs d'images valides.
+ * Cherche des images via l'API JSON de DuckDuckGo.
+ * Endpoint: https://duckduckgo.com/ (version JSON lite)
+ *
+ * Stratégie:
+ * 1. Fetch la page HTML de DuckDuckGo avec le paramètre ia=json
+ * 2. Parse le JSON embarqué pour extraire les URLs d'images
+ * 3. Retourne un tableau d'images
  */
-function isValidImageUrl(url: string): boolean {
-  if (url.length < 50) return false;
-  const excluded = [
-    /duckduckgo\.com\/assets\//i,
-    /\/spacer\//i,
-    /\/transparent\.gif/i,
-    /data:image\//i,
-    /localhost/i,
-    /\.ico$/i,
-    /favicon/i,
-    /logo/i,
-  ];
-  if (excluded.some((p) => p.test(url))) return false;
-  return true;
-}
+async function searchViaJson(query: string, limit: number): Promise<ImageResult[]> {
+  const encodedQuery = encodeURIComponent(query);
+  const url = `https://duckduckgo.com/?q=${encodedQuery}&ia=web&iaimages=image&format=json`;
 
-/**
- * Parse le HTML de DuckDuckGo pour extraire les URLs d'images.
- */
-function extractImages(html: string, limit: number): ImageResult[] {
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      Accept: "application/json, text/javascript, */*; q=0.01",
+      "Accept-Language": "en-US,en;q=0.5",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    signal: AbortSignal.timeout(20000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`DuckDuckGo returned ${response.status}`);
+  }
+
+  const html = await response.text();
+
+  // DuckDuckGo embeds JSON data in a script tag
+  // Pattern: window.__duckduckgo_favicons = {...}
+  const faviconsMatch = html.match(/window\.__duckduckgo_favicons\s*=\s*(\[[^\]]+\]);/);
+
+  if (faviconsMatch) {
+    try {
+      const favicons = JSON.parse(faviconsMatch[1]) as Array<{ u: string; n: string }>;
+      return favicons
+        .slice(0, limit)
+        .filter((f) => f.u && f.u.startsWith("http"))
+        .map((f) => ({
+          url: f.u,
+          title: f.n || query,
+        }));
+    } catch {
+      // JSON parse failed — fall through
+    }
+  }
+
+  // Fallback: extraire les URLs d'images depuis le HTML via les scripts de résultats
   const results: ImageResult[] = [];
   const seen = new Set<string>();
 
-  // Pattern 1: JSON embarqué avec URLs d'images
-  const patterns = [
-    /"image":"(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp|gif))"/gi,
-    /"src":"(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp|gif))"/gi,
-    /data-src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp|gif))"/gi,
-    // Thumbnails DuckDuckGo
-    /i\.duckduckgo\.com\/iu\/\?u=(https?[^&"]+)/gi,
-  ];
+  // Pattern: les résultats d'images sont dans des blocs de données JSON dans le HTML
+  // Cherche les URLs qui ressemblent à des images dans les scripts
+  const imgPattern =
+    /https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp|gif)(?:\?[^\s"'<>]*)?/gi;
+  const matches = html.match(imgPattern) ?? [];
 
-  for (const pattern of patterns) {
-    let match: RegExpExecArray | null;
-    while ((match = pattern.exec(html)) !== null) {
-      let url = match[1];
-      // Decode URL if it's a DDG thumbnail
-      if (url.includes("i.duckduckgo.com")) {
-        try {
-          url = decodeURIComponent(url);
-        } catch {
-          continue;
-        }
-      }
-      if (!seen.has(url) && isValidImageUrl(url)) {
-        seen.add(url);
-        results.push({ url, title: "" });
-        if (results.length >= limit) break;
-      }
+  for (const url of matches) {
+    if (
+      !seen.has(url) &&
+      url.length > 50 &&
+      !url.includes("duckduckgo.com/assets") &&
+      !url.includes("spacer") &&
+      !url.includes("transparent") &&
+      !url.includes("favicon") &&
+      !url.includes("logo")
+    ) {
+      seen.add(url);
+      results.push({ url, title: query });
+      if (results.length >= limit) break;
     }
-    if (results.length >= limit) break;
   }
 
   return results;
@@ -85,36 +100,16 @@ export async function GET(request: NextRequest) {
   }
 
   const limit = Math.min(Number(searchParams.get("limit")) || 20, 50);
-  const encodedQuery = encodeURIComponent(query);
-  const url = `https://duckduckgo.com/?q=${encodedQuery}&ia=web&iaimages=image`;
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": USER_AGENT,
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-      },
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!response.ok) {
-      console.error(`[search-images] DuckDuckGo HTTP ${response.status} for: ${query}`);
-      return NextResponse.json([], { status: 200 });
-    }
-
-    const html = await response.text();
-    const results = extractImages(html, limit);
-
+    const results = await searchViaJson(query, limit);
     return NextResponse.json(results, {
       headers: {
-        // Cache 5 minutes — évite de re-scraper à chaque frappe
         "Cache-Control": "private, max-age=300",
       },
     });
   } catch (err) {
     console.error("[search-images] Failed:", err);
-    return NextResponse.json([], { status: 200 }); // Retourne vide silencieusement
+    return NextResponse.json([], { status: 200 });
   }
 }
