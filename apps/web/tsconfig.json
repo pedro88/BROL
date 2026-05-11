@@ -22,9 +22,11 @@
     "paths": {
       "@/*": ["./src/*"],
       "@brol/shared": ["./../../packages/shared/src"],
-      "@brol/shared/*": ["./../../packages/shared/src/*"]
+      "@brol/shared/*": ["./../../packages/shared/src/*"],
+      "@brol/db": ["./../../packages/db/src"],
+      "@brol/db/*": ["./../../packages/db/src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "e2e"]
 }
