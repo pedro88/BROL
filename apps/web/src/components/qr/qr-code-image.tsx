@@ -7,6 +7,12 @@ interface QrCodeImageProps {
   code: string;
   size?: number;
   className?: string;
+  /**
+   * URL de base à encoder dans le QR code.
+   * Ex: http://192.168.1.x:3000 → le QR encode {baseUrl}/qr/{code}
+   * Si absent, seul le code brut est encodé (comportement par défaut).
+   */
+  baseUrl?: string;
 }
 
 type QrErrorCorrectionLevel = "L" | "M" | "Q" | "H";
@@ -14,16 +20,21 @@ type QrErrorCorrectionLevel = "L" | "M" | "Q" | "H";
 /**
  * Composant qui génère et affiche un QR code.
  * Utilise la lib qrcode pour générer le data URI.
+ * Si `baseUrl` est fourni, le QR encode {baseUrl}/qr/{code} (pour scan via navigateur).
+ * Sinon, seul le code brut est encodé.
  */
-export function QrCodeImage({ code, size = 200, className = "" }: QrCodeImageProps) {
+export function QrCodeImage({ code, size = 200, className = "", baseUrl }: QrCodeImageProps) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // QR data: full URL if baseUrl provided, else raw code
+  const qrData = baseUrl ? `${baseUrl}/qr/${code}` : code;
 
   useEffect(() => {
     if (!code) return;
 
     QRCode.toDataURL(
-      code,
+      qrData,
       {
         width: size,
         margin: 2,
@@ -41,13 +52,13 @@ export function QrCodeImage({ code, size = 200, className = "" }: QrCodeImagePro
         setDataUrl(url);
       }
     );
-  }, [code, size]);
+  }, [qrData, code, size]);
 
   // Also draw to canvas for print support
   useEffect(() => {
     if (!code || !canvasRef.current) return;
 
-    QRCode.toCanvas(canvasRef.current, code, {
+    QRCode.toCanvas(canvasRef.current, qrData, {
       width: size,
       margin: 2,
       color: {
@@ -58,7 +69,7 @@ export function QrCodeImage({ code, size = 200, className = "" }: QrCodeImagePro
     }).catch((err) => {
       console.error("Failed to draw QR to canvas:", err);
     });
-  }, [code, size]);
+  }, [qrData, code, size]);
 
   if (!dataUrl) {
     return (
@@ -92,11 +103,18 @@ export function QrCodeImage({ code, size = 200, className = "" }: QrCodeImagePro
 
 /**
  * Hook pour télécharger le QR code en PNG.
+ * @param baseUrl - URL de base pour encoder l'URL complète dans le QR. Ex: http://192.168.1.x:3000
  */
-export function useQrDownload() {
+export function useQrDownload(baseUrl?: string) {
+  /**
+   * Télécharge le QR code en PNG.
+   * Le QR encode {baseUrl}/qr/{code} si baseUrl fourni, sinon le code brut.
+   */
   const downloadPng = async (code: string, objectName: string) => {
+    const qrData = baseUrl ? `${baseUrl}/qr/${code}` : code;
+
     try {
-      const dataUrl = await QRCode.toDataURL(code, {
+      const dataUrl = await QRCode.toDataURL(qrData, {
         width: 400,
         margin: 2,
         color: {
@@ -117,9 +135,15 @@ export function useQrDownload() {
     }
   };
 
+  /**
+   * Ouvre une fenêtre d'impression avec le QR code.
+   * Le QR encode {baseUrl}/qr/{code} si baseUrl fourni, sinon le code brut.
+   */
   const printQr = async (code: string, objectName: string) => {
+    const qrData = baseUrl ? `${baseUrl}/qr/${code}` : code;
+
     try {
-      const dataUrl = await QRCode.toDataURL(code, {
+      const dataUrl = await QRCode.toDataURL(qrData, {
         width: 300,
         margin: 4,
         color: {

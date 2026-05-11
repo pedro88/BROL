@@ -27,7 +27,7 @@ export default function ObjectDetailPage() {
 
   const [assignQrOpen, setAssignQrOpen] = useState(false);
   const [loanDialogOpen, setLoanDialogOpen] = useState(false);
-  const { downloadPng, printQr } = useQrDownload();
+  const { downloadPng, printQr } = useQrDownload(process.env.NEXT_PUBLIC_APP_URL);
 
   const deleteMutation = trpc.objects.delete.useMutation({
     onSuccess: () => {
@@ -237,7 +237,7 @@ export default function ObjectDetailPage() {
               QR Code
             </h2>
             <div className="card-vhs p-4 flex flex-col items-center gap-4">
-              <QrCodeImage code={object.qrStock.code} size={180} />
+              <QrCodeImage code={object.qrStock.code} size={180} baseUrl={process.env.NEXT_PUBLIC_APP_URL} />
               <div className="w-full space-y-2">
                 <div className="flex gap-2">
                   <Button

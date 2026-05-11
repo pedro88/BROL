@@ -175,6 +175,7 @@ export default function QrStockPage() {
                 <QrCodeImage
                   code={qr.code}
                   size={80}
+                  baseUrl={process.env.NEXT_PUBLIC_APP_URL}
                   className="shrink-0"
                 />
                 <div className="w-full text-center">
