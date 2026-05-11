@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T12:31:57Z","fingerprint":"6d9668f458d6a8e9992b895501e740959f56dab9","fileCount":137,"truncated":false} -->
+Generated: 2026-05-11T14:24:56Z | Files: 138 | Described: 0/138
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T14:24:56Z","fingerprint":"b3a6016e73f08bcf55d75a6c1e83d2c3f1e25d67","fileCount":138,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -251,3 +251,4 @@ Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
 - `scripts/e2e-servers.sh`
 - `scripts/e2e-start-servers.sh`
 - `scripts/e2e-stop-servers.sh`
+- `scripts/get-local-ip.js`

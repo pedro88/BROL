@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-11T07:34:07.776Z",
+  "exported_at": "2026-05-11T14:30:48.301Z",
   "milestones": [
     {
       "id": "M001",
@@ -201,6 +201,73 @@
       "created_at": "2026-05-11T07:12:50.153Z",
       "completed_at": "2026-05-11T07:34:07.758Z",
       "vision": "Chaque collection a un type (Livre, Jeu, Outil, Film, Musique, Électronique, Autre). Le formulaire de création d'objet s'adapte aux champs de la catégorie — plus de champs inutiles, plus de pertinence.",
+      "success_criteria": [],
+      "key_risks": [],
+      "proof_strategy": [],
+      "verification_contract": "",
+      "verification_integration": "",
+      "verification_operational": "",
+      "verification_uat": "",
+      "definition_of_done": [],
+      "requirement_coverage": "Not provided.",
+      "boundary_map_markdown": "Not provided.",
+      "sequence": 0
+    },
+    {
+      "id": "M010",
+      "title": "QR codes with local network URLs",
+      "status": "complete",
+      "depends_on": [],
+      "created_at": "2026-05-11T12:40:35.944Z",
+      "completed_at": "2026-05-11T12:47:02.441Z",
+      "vision": "QR codes encodes a full URL (e.g. http://192.168.1.x:3000/qr/CODE) instead of just the raw code, enabling direct scan-to-navigate from any phone on the same local network without tunnel tools.",
+      "success_criteria": [
+        "QR codes encode full URL when NEXT_PUBLIC_QR_BASE_URL is set",
+        "QR codes fall back to raw code when env var is absent (no regression)",
+        "Phone on same WiFi can scan and open the object page via local IP",
+        "get-local-ip.js script works and prints the correct value"
+      ],
+      "key_risks": [
+        {
+          "risk": "Dynamic LAN IP changes if router reassigns DHCP lease",
+          "whyItMatters": "User would need to update .env.local after IP change — should document this"
+        },
+        {
+          "risk": "Public QR codes in prod need a real domain",
+          "whyItMatters": "NEXT_PUBLIC_QR_BASE_URL defaults to empty; in prod this must be set to brol.app or similar"
+        }
+      ],
+      "proof_strategy": [
+        {
+          "riskOrUnknown": "QR encodes full URL vs raw code",
+          "retireIn": "S01",
+          "whatWillBeProven": "E2E test opens object with QR, inspects the img src attribute"
+        }
+      ],
+      "verification_contract": "Run E2E tests: `pnpm --filter @brol/web e2e`. All tests pass. Manual: scan QR with phone on same WiFi, verify page opens.\"",
+      "verification_integration": "No backend changes. tRPC API unchanged.\"",
+      "verification_operational": "No new env vars required in production (defaults to raw code). Local dev needs NEXT_PUBLIC_QR_BASE_URL set.\"",
+      "verification_uat": "1. Set NEXT_PUBLIC_QR_BASE_URL=http://192.168.x.x:3000 in .env.local\\n2. Start dev server\\n3. Assign QR to an object\\n4. Open object detail page\\n5. Inspect QR img — src should be data URL encoding the full URL\\n6. Scan with phone browser on same WiFi — should open the object page\\n7. Unset env var — QR reverts to raw code (no regression)\"",
+      "definition_of_done": [
+        "QrCodeImage encodes `${baseUrl}/qr/${code}` when baseUrl prop provided",
+        "useQrDownload also encodes full URL in downloaded/printed QR",
+        "Object detail and QR stock pages pass baseUrl from env var",
+        "get-local-ip.js script exists and works",
+        "next.config.js configured for 0.0.0.0 bind",
+        "Documentation added to KNOWLEDGE.md"
+      ],
+      "requirement_coverage": "QR code scanning is part of the primary user loop (R003 / M001). This milestone makes it functional in local dev without tunnel tools.\"",
+      "boundary_map_markdown": "```\\npackages/shared/src/utils/index.ts\\n  ↳ generateScanCode() — unchanged\\n  ↳ getObjectScanUrl() — exists but unused, not touched\\n\\napps/web/src/components/qr/qr-code-image.tsx  [S01]\\n  ↳ QrCodeImage — add baseUrl prop, encode full URL\\n  ↳ useQrDownload — encode full URL\\n\\napps/web/src/app/objects/[id]/page.tsx  [S01]\\n  ↳ passes baseUrl to QrCodeImage + useQrDownload\\n\\napps/web/src/app/qr/page.tsx  [S01]\\n  ↳ passes baseUrl to QrCodeImage\\n\\nscripts/get-local-ip.js  [S02]\\n  ↳ auto-detect LAN IP\\n\\napps/web/next.config.js  [S03]\\n  ↳ set hostname: '0.0.0.0'\\n\\napps/web/.env.example  [S01]\\n  ↳ document NEXT_PUBLIC_QR_BASE_URL\\n\\n.gsd/KNOWLEDGE.md  [S03]\\n  ↳ document local QR testing workflow\\n```\"",
+      "sequence": 0
+    },
+    {
+      "id": "M011",
+      "title": "Photos sur les objets",
+      "status": "active",
+      "depends_on": [],
+      "created_at": "2026-05-11T14:09:44.848Z",
+      "completed_at": null,
+      "vision": "Permettre d'ajouter des photos aux objets via capture caméra mobile, upload fichier (mobile/desktop), ou recherche Google Images optionnelle, puis de les afficher dans les vues objet.",
       "success_criteria": [],
       "key_risks": [],
       "proof_strategy": [],
@@ -618,6 +685,166 @@
       "proof_level": "playwright test --project=chromium",
       "integration_closure": "N/A - finale",
       "observability_impact": "N/A",
+      "sequence": 4,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M010",
+      "id": "S01",
+      "title": "S01",
+      "status": "complete",
+      "risk": "low",
+      "depends": [],
+      "demo": "QR codes embed `NEXT_PUBLIC_QR_BASE_URL/qr/CODE` — phones can open it directly.",
+      "created_at": "2026-05-11T12:42:06.218Z",
+      "completed_at": "2026-05-11T12:46:14.334Z",
+      "full_summary_md": "---\nid: S01\nparent: M010\nmilestone: M010\nprovides:\n  - QrCodeImage accepts baseUrl prop\n  - useQrDownload accepts baseUrl parameter\n  - Object detail and QR stock pages pass NEXT_PUBLIC_APP_URL\n  - .env.example documents NEXT_PUBLIC_APP_URL usage\nrequires:\n  []\naffects:\n  []\nkey_files:\n  - apps/web/src/components/qr/qr-code-image.tsx\n  - apps/web/src/app/objects/[id]/page.tsx\n  - apps/web/src/app/qr/page.tsx\n  - .env.example\nkey_decisions:\n  - (none)\npatterns_established:\n  - (none)\nobservability_surfaces:\n  - none\ndrill_down_paths:\n  []\nduration: \"\"\nverification_result: passed\ncompleted_at: 2026-05-11T12:46:14.336Z\nblocker_discovered: false\n---\n\n# S01: QR encodes full URL via NEXT_PUBLIC_APP_URL\n\n**QrCodeImage encodes full URL when baseUrl prop set, falls back to raw code otherwise**\n\n## What Happened\n\nModified QrCodeImage to accept optional `baseUrl` prop. When provided, the QR encodes `{baseUrl}/qr/{code}` — enabling direct browser navigation from scan. Falls back to raw code when absent (no regression). Updated useQrDownload hook to also encode full URLs in downloaded/printed QR codes. Object detail page and QR stock page now pass `process.env.NEXT_PUBLIC_APP_URL` as baseUrl.\n\n## Verification\n\nAll 5 tasks verified via grep. grep -n 'baseUrl' confirms changes in all 3 files. grep -A3 'QR' .env.example confirms documentation.\n\n## Requirements Advanced\n\nNone.\n\n## Requirements Validated\n\nNone.\n\n## New Requirements Surfaced\n\nNone.\n\n## Requirements Invalidated or Re-scoped\n\nNone.\n\n## Operational Readiness\n\nNone.\n\n## Deviations\n\nNone.\n\n## Known Limitations\n\nNone.\n\n## Follow-ups\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "full_uat_md": "# S01: QR encodes full URL via NEXT_PUBLIC_APP_URL — UAT\n\n**Milestone:** M010\n**Written:** 2026-05-11T12:46:14.336Z\n\n1. Set `NEXT_PUBLIC_APP_URL=\"http://192.168.x.x:3000\"` in `apps/web/.env.local`\n2. Start dev server: `pnpm --filter @brol/web dev`\n3. Navigate to an object with a QR code assigned\n4. Inspect the QR img `src` attribute → verify it encodes a URL like `http://192.168.x.x:3000/qr/BR0LABC123XY`\n5. Click \"Télécharger PNG\" → verify the PNG QR also encodes the full URL (scan test with phone)\n6. Unset `NEXT_PUBLIC_APP_URL` → QR reverts to raw code only (no regression)\n",
+      "goal": "QrCodeImage encode une URL complète `${NEXT_PUBLIC_APP_URL}/qr/${code}` au lieu du code brut, permettant au scanner du téléphone d'ouvrir directement la page.",
+      "success_criteria": "- QrCodeImage accepte un prop optionnel `baseUrl` (string | undefined)\\n- Quand `baseUrl` est fourni, le QR encode `{baseUrl}/qr/{code}`\\n- Quand `baseUrl` est absent, le QR encode le code brut (pas de régression)\\n- useQrDownload encode aussi l'URL complète\\n- La page détail objet et la page stock QR passent `process.env.NEXT_PUBLIC_APP_URL` comme baseUrl",
+      "proof_level": "e2e: navigate to object with QR, inspect img src attribute, verify it encodes full URL",
+      "integration_closure": "Aucun changement backend. API tRPC inchangée.",
+      "observability_impact": "Aucun.",
+      "sequence": 1,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M010",
+      "id": "S02",
+      "title": "S02",
+      "status": "complete",
+      "risk": "medium",
+      "depends": [],
+      "demo": "User can run `node scripts/get-local-ip.js` to get their LAN IP instantly.",
+      "created_at": "2026-05-11T12:42:06.218Z",
+      "completed_at": "2026-05-11T12:46:27.088Z",
+      "full_summary_md": "---\nid: S02\nparent: M010\nmilestone: M010\nprovides:\n  - scripts/get-local-ip.js — zero-dep LAN IP detection\nrequires:\n  []\naffects:\n  []\nkey_files:\n  - scripts/get-local-ip.js\nkey_decisions:\n  - (none)\npatterns_established:\n  - (none)\nobservability_surfaces:\n  - none\ndrill_down_paths:\n  []\nduration: \"\"\nverification_result: passed\ncompleted_at: 2026-05-11T12:46:27.088Z\nblocker_discovered: false\n---\n\n# S02: Local IP detection helper\n\n**get-local-ip.js script created and tested — outputs LAN IP and full URL**\n\n## What Happened\n\nCreated scripts/get-local-ip.js — pure Node.js script (no external deps) that detects the machine's LAN IP address by scanning os.networkInterfaces(). Filters out loopback (127.x), link-local (169.254.x), and Docker bridge (172.17.x). Prioritizes Wi-Fi/en0/wlan interfaces. Outputs all detected LAN IPs with the recommended one marked, plus the full URL to paste into .env.local.\n\n## Verification\n\nnode scripts/get-local-ip.js exits 0 and prints a valid LAN IP\n\n## Requirements Advanced\n\nNone.\n\n## Requirements Validated\n\nNone.\n\n## New Requirements Surfaced\n\nNone.\n\n## Requirements Invalidated or Re-scoped\n\nNone.\n\n## Operational Readiness\n\nNone.\n\n## Deviations\n\nNone.\n\n## Known Limitations\n\nNone.\n\n## Follow-ups\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "full_uat_md": "# S02: Local IP detection helper — UAT\n\n**Milestone:** M010\n**Written:** 2026-05-11T12:46:27.088Z\n\n1. Run `node scripts/get-local-ip.js`\n2. Verify it outputs at least one IP in the 10.x.x.x, 192.168.x.x, or 172.16-31.x.x ranges\n3. Verify the suggested URL matches the detected IP and port 3000\n4. Copy the NEXT_PUBLIC_APP_URL line into apps/web/.env.local\n5. Try pinging the IP from another device on the same network\n",
+      "goal": "Script Node.js autonome qui détecte l'IP locale LAN et affiche l'URL complète à coller dans .env.local.",
+      "success_criteria": "- scripts/get-local-ip.js s'exécute sans dépendances npm\\n- Affiche l'IP LAN likely (192.168.x.x / 10.x.x.x / 172.16-31.x.x)\\n- Affiche l'URL complète prête à copier dans .env.local\"",
+      "proof_level": "manuel: lancer le script et vérifier que l'IP est joignable depuis le navigateur du téléphone.",
+      "integration_closure": "Script autonome, aucune intégration nécessaire.",
+      "observability_impact": "Aucun.",
+      "sequence": 2,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M010",
+      "id": "S03",
+      "title": "S03",
+      "status": "complete",
+      "risk": "low",
+      "depends": [],
+      "demo": "npm run dev binds to 0.0.0.0 so phone can reach it.",
+      "created_at": "2026-05-11T12:42:06.218Z",
+      "completed_at": "2026-05-11T12:46:43.508Z",
+      "full_summary_md": "---\nid: S03\nparent: M010\nmilestone: M010\nprovides:\n  - dev:lan npm script for LAN-bound dev server\n  - KNOWLEDGE.md section on QR local testing workflow\nrequires:\n  []\naffects:\n  []\nkey_files:\n  - apps/web/package.json\n  - .gsd/KNOWLEDGE.md\nkey_decisions:\n  - (none)\npatterns_established:\n  - (none)\nobservability_surfaces:\n  - none\ndrill_down_paths:\n  []\nduration: \"\"\nverification_result: passed\ncompleted_at: 2026-05-11T12:46:43.508Z\nblocker_discovered: false\n---\n\n# S03: Dev server starts on LAN IP\n\n**dev:lan script added and QR workflow documented in KNOWLEDGE.md**\n\n## What Happened\n\nAdded dev:lan npm script that binds Next.js to 0.0.0.0, enabling LAN access. Added documentation section in KNOWLEDGE.md covering the full QR testing workflow.\n\n## Verification\n\ngrep -A1 'dev:lan' apps/web/package.json && grep -i 'qr' .gsd/KNOWLEDGE.md\n\n## Requirements Advanced\n\nNone.\n\n## Requirements Validated\n\nNone.\n\n## New Requirements Surfaced\n\nNone.\n\n## Requirements Invalidated or Re-scoped\n\nNone.\n\n## Operational Readiness\n\nNone.\n\n## Deviations\n\nNone.\n\n## Known Limitations\n\nNone.\n\n## Follow-ups\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "full_uat_md": "# S03: Dev server starts on LAN IP — UAT\n\n**Milestone:** M010\n**Written:** 2026-05-11T12:46:43.508Z\n\n1. Run `node scripts/get-local-ip.js` → copy URL\n2. Paste into `apps/web/.env.local`: `NEXT_PUBLIC_APP_URL=\"http://<ip>:3000\"`\n3. Start server: `pnpm --filter @brol/web dev:lan`\n4. From phone browser on same WiFi, navigate to `http://<ip>:3000`\n5. Verify page loads\n6. Assign a QR to an object and scan it — verify it opens the object page\n",
+      "goal": "Configurer le serveur Next.js pour écouter sur toutes les interfaces (0.0.0.0) afin que les téléphones sur le même WiFi puisse y accéder.",
+      "success_criteria": "- Le dev server écoute sur 0.0.0.0:3000 (pas 127.0.0.1:3000)\\n- next.config.js est configuré\\n- Documentation ajoutée à KNOWLEDGE.md\"",
+      "proof_level": "manuel: démarrer le serveur, ouvrir http://<ip-lan>:3000 depuis le téléphone.",
+      "integration_closure": "Aucun changement runtime en production.",
+      "observability_impact": "Aucun.",
+      "sequence": 3,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M011",
+      "id": "S01",
+      "title": "S01",
+      "status": "complete",
+      "risk": "medium",
+      "depends": [],
+      "demo": "Un provider S3/Cloudinary configuré, l'upload API fonctionne, les photos sont servies publiquement",
+      "created_at": "2026-05-11T14:11:15.530Z",
+      "completed_at": "2026-05-11T14:30:48.272Z",
+      "full_summary_md": "---\nid: S01\nparent: M011\nmilestone: M011\nprovides:\n  - packages/api/src/lib/s3.ts - client S3 prêt à l'emploi\n  - packages/api/src/routers/photos.ts - router tRPC avec procedures add/remove/list/reorder/getPresignedUrl\n  - packages/shared/src/schemas/index.ts - schemas Zod photoAddSchema, photoRemoveSchema, etc.\n  - packages/shared/src/types/index.ts - types Photo, PresignedUpload pour le client\nrequires:\n  []\naffects:\n  []\nkey_files:\n  - packages/api/src/lib/s3.ts\n  - packages/api/src/routers/photos.ts\n  - packages/db/prisma/schema.prisma\nkey_decisions:\n  - (none)\npatterns_established:\n  - Upload presigned URL: le serveur génère l'URL signée, le client fait le PUT direct vers S3\n  - Suppression en 2 étapes: d'abord le fichier S3, puis le record en base (ou inversement avec error handling tolerant)\nobservability_surfaces:\n  - none\ndrill_down_paths:\n  - .gsd/milestones/M011/slices/S01/tasks/T01-SUMMARY.md\n  - .gsd/milestones/M011/slices/S01/tasks/T02-SUMMARY.md\n  - .gsd/milestones/M011/slices/S01/tasks/T03-SUMMARY.md\n  - .gsd/milestones/M011/slices/S01/tasks/T04-SUMMARY.md\n  - .gsd/milestones/M011/slices/S01/tasks/T05-SUMMARY.md\nduration: \"\"\nverification_result: passed\ncompleted_at: 2026-05-11T14:30:48.273Z\nblocker_discovered: false\n---\n\n# S01: Infrastructure stockage photos\n\n**Infrastructure S3 + router photos avec presigned URLs, 12 tests passent**\n\n## What Happened\n\nInfrastructure photo complète pour S01: modèle Prisma Photo (id, objectId, url, position, createdAt) avec FK cascade, migration SQL créée, client S3 avec presigned URLs (PutObject presigned, upload direct client→S3), router tRPC photos avec 5 procédures (getPresignedUrl, add, remove, list, reorder), schémas Zod et types TypeScript dans shared package, 12 tests vitest passent, .env.example documenté. Le pattern presigned URL permet d'uploader depuis le browser sans passer par le serveur (meilleure perf, moins de charge).\n\n## Verification\n\n12/12 tests vitest photosRouter passent. TypeScript compile sans erreur sur les nouveaux fichiers. Prisma schema sync: \"No pending migrations\". Le pattern presigned URL est opérationnel — en attente des credentials S3 pour test d'upload réel.\n\n## Requirements Advanced\n\nNone.\n\n## Requirements Validated\n\nNone.\n\n## New Requirements Surfaced\n\nNone.\n\n## Requirements Invalidated or Re-scoped\n\nNone.\n\n## Operational Readiness\n\nNone.\n\n## Deviations\n\nNone\n\n## Known Limitations\n\nSans credentials S3 réels, l'upload ne fonctionnera pas en prod. Les presigned URLs seront générées mais le PUT vers S3 échouera si les credentials sont manquants ou incorrects.\n\n## Follow-ups\n\nNone\n\n## Files Created/Modified\n\n- `packages/db/prisma/schema.prisma (+Photo model)` — \n- `packages/db/prisma/migrations/20260511120000_add_photos/migration.sql (new)` — \n- `packages/api/src/lib/s3.ts (new)` — \n- `packages/api/src/routers/photos.ts (new)` — \n- `packages/api/src/routers/__tests__/photos.test.ts (new)` — \n- `packages/api/src/router.ts (+photos router)` — \n- `packages/shared/src/schemas/index.ts (+photo schemas)` — \n- `packages/shared/src/types/index.ts (+Photo types)` — \n- `.env.example (S3 vars)` — \n",
+      "full_uat_md": "# S01: Infrastructure stockage photos — UAT\n\n**Milestone:** M011\n**Written:** 2026-05-11T14:30:48.274Z\n\n## UAT: Infrastructure stockage photos (S01)\n\n### Setup\n- Configurer les variables S3 dans `.env.local` (S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET)\n- S'assurer que le bucket est accessible en écriture\n\n### Tests manuels\n\n**1. Upload photo (via tRPC)**\n```bash\n# Demander une presigned URL\ncurl -X POST http://localhost:3001/trpc/photos.getPresignedUrl \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"0\":{\"objectId\":\"<cuid>\",\"filename\":\"test.jpg\",\"contentType\":\"image/jpeg\",\"fileSize\":1024}}'\n\n# Upload direct vers S3 avec la presigned URL (PUT request)\ncurl -X PUT \"<presigned_url>\" \\\n  -H \"Content-Type: image/jpeg\" \\\n  --data-binary @test.jpg\n\n# Ajouter la photo en base\ncurl -X POST http://localhost:3001/trpc/photos.add \\\n  -d '{\"0\":{\"objectId\":\"<cuid>\",\"url\":\"<public_url>\",\"position\":0}}'\n```\n\n**2. Liste des photos**\n```bash\ncurl \"http://localhost:3001/trpc/photos.list?input=%7B%22objectId%22%3A%22<cuid>%22%7D\"\n```\n\n**3. Suppression photo**\n```bash\ncurl -X POST http://localhost:3001/trpc/photos.remove \\\n  -d '{\"0\":{\"objectId\":\"<cuid>\",\"photoId\":\"<cuid>\"}}'\n```\n\n**4. Réordonnancement**\n```bash\ncurl -X POST http://localhost:3001/trpc/photos.reorder \\\n  -d '{\"0\":{\"objectId\":\"<cuid>\",\"positions\":{\"<photoId1>\":1,\"<photoId2>\":0}}}'\n```\n\n### Vérification\n- [ ] `photos.getPresignedUrl` retourne une URL signée (uploadUrl) et une URL publique\n- [ ] Le fichier uploadé via PUT est accessible à l'URL publique\n- [ ] `photos.list` retourne les photos triées par position\n- [ ] `photos.remove` supprime le fichier S3 et l'entrée en base\n- [ ] Les procédures rejettent les appels pour des objets d'un autre utilisateur\n",
+      "goal": "Infrastructure S3 opérationnelle avec presigned URLs pour upload direct client→S3, et modèle Photo en base.",
+      "success_criteria": "",
+      "proof_level": "",
+      "integration_closure": "",
+      "observability_impact": "",
+      "sequence": 1,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M011",
+      "id": "S02",
+      "title": "Composant capture/upload photo",
+      "status": "pending",
+      "risk": "low",
+      "depends": [
+        "S01"
+      ],
+      "demo": "Bouton qui ouvre caméra mobile ou sélecteur de fichier, preview de la photo avant envoi",
+      "created_at": "2026-05-11T14:11:15.530Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Composant réutilisable avec support caméra mobile (capture='environment') et upload fichier desktop/mobile, preview client-side, upload avec progress",
+      "success_criteria": "Composant capture renvoie un File prêt à uploader, preview visible",
+      "proof_level": "Composant renders sans erreur, renvoie un File object",
+      "integration_closure": "Composant PhotoCapture exposé dans object-form.tsx et object-detail.tsx",
+      "observability_impact": "Upload progress et erreurs exposés à l'UI",
+      "sequence": 2,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M011",
+      "id": "S03",
+      "title": "Intégration photos sur objets",
+      "status": "pending",
+      "risk": "low",
+      "depends": [
+        "S02"
+      ],
+      "demo": "Ajout/suppression de photos sur un objet, affichage en grille sur la page détail objet",
+      "created_at": "2026-05-11T14:11:15.530Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Champ photos dans le modèle objet, router mutations add/remove, UI d'ajout dans le formulaire objet, galerie dans la page détail",
+      "success_criteria": "Photos visibles dans la page détail objet, ajout/suppression fonctionnel",
+      "proof_level": "Playwright: page objet affiche les photos uploadées",
+      "integration_closure": "Photos affichées dans object-card.tsx et object detail page, supprimables via UI",
+      "observability_impact": "Mutation add/remove photo logged",
+      "sequence": 3,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M011",
+      "id": "S04",
+      "title": "Recherche Google Images (optionnel)",
+      "status": "pending",
+      "risk": "low",
+      "depends": [
+        "S02"
+      ],
+      "demo": "Champ de Recherche qui affiche des résultats Google Images, sélection d'une image pour l'ajouter",
+      "created_at": "2026-05-11T14:11:15.530Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Intégration Google Images API (ou alternative) pour rechercher et sélectionner une image par nom d'objet, avec preview avant ajout",
+      "success_criteria": "Recherche retourne des résultats, sélection ajoute l'image à l'objet",
+      "proof_level": "Recherche retourne des résultats visuellement vérifiable",
+      "integration_closure": "Résultat sélectionné ajouté via même mutation que S03",
+      "observability_impact": "Recherche échouée loggée, pas de crash",
       "sequence": 4,
       "replan_triggered_at": null,
       "is_sketch": 0,
@@ -2053,6 +2280,534 @@
       "escalation_awaiting_review": 0,
       "escalation_artifact_path": null,
       "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M010",
+      "slice_id": "S01",
+      "id": "T01",
+      "title": "QrCodeImage accepts baseUrl, encodes full URL when provided",
+      "status": "complete",
+      "one_liner": "QrCodeImage accepts baseUrl, encodes full URL when provided",
+      "narrative": "Added optional `baseUrl?: string` prop to QrCodeImageProps interface. Modified QRCode.toDataURL and QRCode.toCanvas calls to use `qrData = baseUrl ? \\`${baseUrl}/qr/${code}\\` : code` instead of raw code. Updated JSDoc comments to document the new behavior.",
+      "verification_result": "grep -n 'baseUrl' apps/web/src/components/qr/qr-code-image.tsx shows baseUrl in interface, props destructuring, and qrData computation",
+      "duration": "",
+      "completed_at": "2026-05-11T12:45:42.653Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T01\nparent: S01\nmilestone: M010\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\nduration: \nverification_result: passed\ncompleted_at: 2026-05-11T12:45:42.652Z\nblocker_discovered: false\n---\n\n# T01: QrCodeImage accepts baseUrl, encodes full URL when provided\n\n**QrCodeImage accepts baseUrl, encodes full URL when provided**\n\n## What Happened\n\nAdded optional `baseUrl?: string` prop to QrCodeImageProps interface. Modified QRCode.toDataURL and QRCode.toCanvas calls to use `qrData = baseUrl ? \\`${baseUrl}/qr/${code}\\` : code` instead of raw code. Updated JSDoc comments to document the new behavior.\n\n## Verification\n\ngrep -n 'baseUrl' apps/web/src/components/qr/qr-code-image.tsx shows baseUrl in interface, props destructuring, and qrData computation\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `grep -n 'baseUrl' apps/web/src/components/qr/qr-code-image.tsx` | 0 | ✅ pass | 12ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "description": "Ajouter un prop optionnel `baseUrl?: string` au composant `QrCodeImage`. Modifier `QRCode.toDataURL` et `QRCode.toCanvas` pour encoder `{baseUrl}/qr/{code}` quand baseUrl est fourni, sinon le code brut.",
+      "estimate": "15min",
+      "files": [
+        "apps/web/src/components/qr/qr-code-image.tsx"
+      ],
+      "verify": "grep -n 'baseUrl' apps/web/src/components/qr/qr-code-image.tsx",
+      "inputs": [
+        "qr-code-image.tsx",
+        ".env.example"
+      ],
+      "expected_output": [
+        "apps/web/src/components/qr/qr-code-image.tsx modifié"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M010",
+      "slice_id": "S01",
+      "id": "T02",
+      "title": "useQrDownload encodes full URL in downloaded/printed QR codes",
+      "status": "complete",
+      "one_liner": "useQrDownload encodes full URL in downloaded/printed QR codes",
+      "narrative": "Added `baseUrl?: string` parameter to useQrDownload hook. Both downloadPng and printQr now compute `qrData = baseUrl ? \\`${baseUrl}/qr/${code}\\` : code` before generating the QR. This ensures downloaded and printed QR codes also encode the full URL.",
+      "verification_result": "grep -n 'baseUrl\\\\|qrData' apps/web/src/components/qr/qr-code-image.tsx | grep -E 'downloadPng|printQr'",
+      "duration": "",
+      "completed_at": "2026-05-11T12:45:49.492Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T02\nparent: S01\nmilestone: M010\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\nduration: \nverification_result: passed\ncompleted_at: 2026-05-11T12:45:49.491Z\nblocker_discovered: false\n---\n\n# T02: useQrDownload encodes full URL in downloaded/printed QR codes\n\n**useQrDownload encodes full URL in downloaded/printed QR codes**\n\n## What Happened\n\nAdded `baseUrl?: string` parameter to useQrDownload hook. Both downloadPng and printQr now compute `qrData = baseUrl ? \\`${baseUrl}/qr/${code}\\` : code` before generating the QR. This ensures downloaded and printed QR codes also encode the full URL.\n\n## Verification\n\ngrep -n 'baseUrl\\\\|qrData' apps/web/src/components/qr/qr-code-image.tsx | grep -E 'downloadPng|printQr'\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `grep -n 'baseUrl\\|qrData' apps/web/src/components/qr/qr-code-image.tsx | grep -E 'downloadPng|printQr'` | 0 | ✅ pass | 14ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "description": "Modifier `downloadPng` et `printQr` dans `useQrDownload` pour qu'ils encodent aussi l'URL complète (même logique que QrCodeImage).",
+      "estimate": "10min",
+      "files": [
+        "apps/web/src/components/qr/qr-code-image.tsx"
+      ],
+      "verify": "grep -n 'downloadPng\\|printQr' apps/web/src/components/qr/qr-code-image.tsx",
+      "inputs": [
+        "qr-code-image.tsx"
+      ],
+      "expected_output": [
+        "apps/web/src/components/qr/qr-code-image.tsx modifié"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M010",
+      "slice_id": "S01",
+      "id": "T03",
+      "title": "Object detail page passes NEXT_PUBLIC_APP_URL as baseUrl",
+      "status": "complete",
+      "one_liner": "Object detail page passes NEXT_PUBLIC_APP_URL as baseUrl",
+      "narrative": "Updated object detail page to pass `baseUrl={process.env.NEXT_PUBLIC_APP_URL}` to both the QrCodeImage component (display) and the useQrDownload hook (download/print actions).",
+      "verification_result": "grep -n 'baseUrl' apps/web/src/app/objects/[id]/page.tsx",
+      "duration": "",
+      "completed_at": "2026-05-11T12:45:55.312Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T03\nparent: S01\nmilestone: M010\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\nduration: \nverification_result: passed\ncompleted_at: 2026-05-11T12:45:55.311Z\nblocker_discovered: false\n---\n\n# T03: Object detail page passes NEXT_PUBLIC_APP_URL as baseUrl\n\n**Object detail page passes NEXT_PUBLIC_APP_URL as baseUrl**\n\n## What Happened\n\nUpdated object detail page to pass `baseUrl={process.env.NEXT_PUBLIC_APP_URL}` to both the QrCodeImage component (display) and the useQrDownload hook (download/print actions).\n\n## Verification\n\ngrep -n 'baseUrl' apps/web/src/app/objects/[id]/page.tsx\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `grep -n 'baseUrl' apps/web/src/app/objects/[id]/page.tsx` | 0 | ✅ pass | 10ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "description": "Dans apps/web/src/app/objects/[id]/page.tsx, passer baseUrl={process.env.NEXT_PUBLIC_APP_URL} à QrCodeImage et aux fonctions de download/print.",
+      "estimate": "10min",
+      "files": [
+        "apps/web/src/app/objects/[id]/page.tsx"
+      ],
+      "verify": "grep -n 'baseUrl' apps/web/src/app/objects/[id]/page.tsx",
+      "inputs": [
+        "objects/[id]/page.tsx"
+      ],
+      "expected_output": [
+        "apps/web/src/app/objects/[id]/page.tsx modifié"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M010",
+      "slice_id": "S01",
+      "id": "T04",
+      "title": "QR stock page passes NEXT_PUBLIC_APP_URL as baseUrl",
+      "status": "complete",
+      "one_liner": "QR stock page passes NEXT_PUBLIC_APP_URL as baseUrl",
+      "narrative": "Updated QR stock page to pass `baseUrl={process.env.NEXT_PUBLIC_APP_URL}` to QrCodeImage in the stock listing grid.",
+      "verification_result": "grep -n 'baseUrl' apps/web/src/app/qr/page.tsx",
+      "duration": "",
+      "completed_at": "2026-05-11T12:45:59.302Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T04\nparent: S01\nmilestone: M010\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\nduration: \nverification_result: passed\ncompleted_at: 2026-05-11T12:45:59.301Z\nblocker_discovered: false\n---\n\n# T04: QR stock page passes NEXT_PUBLIC_APP_URL as baseUrl\n\n**QR stock page passes NEXT_PUBLIC_APP_URL as baseUrl**\n\n## What Happened\n\nUpdated QR stock page to pass `baseUrl={process.env.NEXT_PUBLIC_APP_URL}` to QrCodeImage in the stock listing grid.\n\n## Verification\n\ngrep -n 'baseUrl' apps/web/src/app/qr/page.tsx\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `grep -n 'baseUrl' apps/web/src/app/qr/page.tsx` | 0 | ✅ pass | 8ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "description": "Dans apps/web/src/app/qr/page.tsx, passer baseUrl={process.env.NEXT_PUBLIC_APP_URL} à QrCodeImage pour le rendu des QR dans la liste de stock.",
+      "estimate": "10min",
+      "files": [
+        "apps/web/src/app/qr/page.tsx"
+      ],
+      "verify": "grep -n 'baseUrl' apps/web/src/app/qr/page.tsx",
+      "inputs": [
+        "qr/page.tsx"
+      ],
+      "expected_output": [
+        "apps/web/src/app/qr/page.tsx modifié"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M010",
+      "slice_id": "S01",
+      "id": "T05",
+      "title": "NEXT_PUBLIC_APP_URL documented in .env.example",
+      "status": "complete",
+      "one_liner": "NEXT_PUBLIC_APP_URL documented in .env.example",
+      "narrative": "Updated .env.example to add documentation for NEXT_PUBLIC_APP_URL in the APP section, explaining how to configure it for local QR scanning (with LAN IP) and production (with real domain).",
+      "verification_result": "grep -A3 'QR' .env.example",
+      "duration": "",
+      "completed_at": "2026-05-11T12:46:06.174Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T05\nparent: S01\nmilestone: M010\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\nduration: \nverification_result: passed\ncompleted_at: 2026-05-11T12:46:06.174Z\nblocker_discovered: false\n---\n\n# T05: NEXT_PUBLIC_APP_URL documented in .env.example\n\n**NEXT_PUBLIC_APP_URL documented in .env.example**\n\n## What Happened\n\nUpdated .env.example to add documentation for NEXT_PUBLIC_APP_URL in the APP section, explaining how to configure it for local QR scanning (with LAN IP) and production (with real domain).\n\n## Verification\n\ngrep -A3 'QR' .env.example\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `grep -A3 'QR' .env.example` | 0 | ✅ pass | 9ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "description": "Ajouter dans .env.example une section \"QR Codes\" documentant NEXT_PUBLIC_APP_URL et son utilisation pour les QR codes.",
+      "estimate": "5min",
+      "files": [
+        ".env.example"
+      ],
+      "verify": "grep -A2 'QR' .env.example",
+      "inputs": [
+        ".env.example"
+      ],
+      "expected_output": [
+        ".env.example mis à jour"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M010",
+      "slice_id": "S02",
+      "id": "T06",
+      "title": "get-local-ip.js detects LAN IP and prints full URL for .env.local",
+      "status": "complete",
+      "one_liner": "get-local-ip.js detects LAN IP and prints full URL for .env.local",
+      "narrative": "Created scripts/get-local-ip.js as a pure Node.js script (no npm deps). Uses os.networkInterfaces() to enumerate all interfaces, filters LAN ranges (10.x.x.x, 192.168.x.x, 172.16-31.x.x), excludes loopback/ link-local/ Docker. Prints all found IPs with the recommended one marked with arrow, and the full URL ready to copy.",
+      "verification_result": "node scripts/get-local-ip.js → exit 0, outputs IP and URL",
+      "duration": "",
+      "completed_at": "2026-05-11T12:46:20.613Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T06\nparent: S02\nmilestone: M010\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\nduration: \nverification_result: passed\ncompleted_at: 2026-05-11T12:46:20.613Z\nblocker_discovered: false\n---\n\n# T06: get-local-ip.js detects LAN IP and prints full URL for .env.local\n\n**get-local-ip.js detects LAN IP and prints full URL for .env.local**\n\n## What Happened\n\nCreated scripts/get-local-ip.js as a pure Node.js script (no npm deps). Uses os.networkInterfaces() to enumerate all interfaces, filters LAN ranges (10.x.x.x, 192.168.x.x, 172.16-31.x.x), excludes loopback/ link-local/ Docker. Prints all found IPs with the recommended one marked with arrow, and the full URL ready to copy.\n\n## Verification\n\nnode scripts/get-local-ip.js → exit 0, outputs IP and URL\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `node scripts/get-local-ip.js` | 0 | ✅ pass | 30ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "description": "Créer scripts/get-local-ip.js qui utilise os.networkInterfaces() pour lister les interfaces réseau, filtre les IPs LAN (192.168.x.x, 10.x.x.x, 172.16-31.x.x), et affiche l'URL. Exclut loopback (127.x) et link-local.",
+      "estimate": "15min",
+      "files": [
+        "scripts/get-local-ip.js"
+      ],
+      "verify": "node scripts/get-local-ip.js",
+      "inputs": [],
+      "expected_output": [
+        "scripts/get-local-ip.js créé"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M010",
+      "slice_id": "S03",
+      "id": "T07",
+      "title": "dev:lan script added to apps/web/package.json",
+      "status": "complete",
+      "one_liner": "dev:lan script added to apps/web/package.json",
+      "narrative": "Added `dev:lan` npm script in apps/web/package.json that runs `next dev --turbo -H 0.0.0.0`. This makes Next.js listen on all network interfaces instead of just localhost, enabling phones on the same WiFi to reach the dev server.",
+      "verification_result": "grep -A1 '\"dev:lan\"' apps/web/package.json",
+      "duration": "",
+      "completed_at": "2026-05-11T12:46:31.713Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T07\nparent: S03\nmilestone: M010\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\nduration: \nverification_result: passed\ncompleted_at: 2026-05-11T12:46:31.712Z\nblocker_discovered: false\n---\n\n# T07: dev:lan script added to apps/web/package.json\n\n**dev:lan script added to apps/web/package.json**\n\n## What Happened\n\nAdded `dev:lan` npm script in apps/web/package.json that runs `next dev --turbo -H 0.0.0.0`. This makes Next.js listen on all network interfaces instead of just localhost, enabling phones on the same WiFi to reach the dev server.\n\n## Verification\n\ngrep -A1 '\"dev:lan\"' apps/web/package.json\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `grep -A1 '\"dev:lan\"' apps/web/package.json` | 0 | ✅ pass | 10ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "description": "Modifier apps/web/package.json pour ajouter `dev` script qui exécute `next dev -H 0.0.0.0`. Ajouter une entrée `default` qui exécute `next dev` sans le -H pour ne pas changer le comportement par défaut des autres devs.",
+      "estimate": "10min",
+      "files": [
+        "apps/web/package.json"
+      ],
+      "verify": "grep -A3 '\"dev\"' apps/web/package.json",
+      "inputs": [
+        "apps/web/package.json"
+      ],
+      "expected_output": [
+        "apps/web/package.json modifié"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M010",
+      "slice_id": "S03",
+      "id": "T08",
+      "title": "QR testing workflow documented in KNOWLEDGE.md",
+      "status": "complete",
+      "one_liner": "QR testing workflow documented in KNOWLEDGE.md",
+      "narrative": "Added a \"QR Code — Test local avec téléphone\" section to .gsd/KNOWLEDGE.md documenting the full workflow: run get-local-ip.js, set NEXT_PUBLIC_APP_URL in .env.local, start with dev:lan, and the caveat about DHCP lease changes.",
+      "verification_result": "grep -i 'qr\\|get-local-ip' .gsd/KNOWLEDGE.md",
+      "duration": "",
+      "completed_at": "2026-05-11T12:46:36.254Z",
+      "blocker_discovered": false,
+      "deviations": "None.",
+      "known_issues": "None.",
+      "key_files": [],
+      "key_decisions": [],
+      "full_summary_md": "---\nid: T08\nparent: S03\nmilestone: M010\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\nduration: \nverification_result: passed\ncompleted_at: 2026-05-11T12:46:36.254Z\nblocker_discovered: false\n---\n\n# T08: QR testing workflow documented in KNOWLEDGE.md\n\n**QR testing workflow documented in KNOWLEDGE.md**\n\n## What Happened\n\nAdded a \"QR Code — Test local avec téléphone\" section to .gsd/KNOWLEDGE.md documenting the full workflow: run get-local-ip.js, set NEXT_PUBLIC_APP_URL in .env.local, start with dev:lan, and the caveat about DHCP lease changes.\n\n## Verification\n\ngrep -i 'qr\\|get-local-ip' .gsd/KNOWLEDGE.md\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `grep -i 'qr\\|get-local-ip' .gsd/KNOWLEDGE.md` | 0 | ✅ pass | 8ms |\n\n## Deviations\n\nNone.\n\n## Known Issues\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "description": "Ajouter une section dans .gsd/KNOWLEDGE.md décrivant le workflow de test des QR codes en local: détection IP, configuration .env.local, démarrage du serveur.",
+      "estimate": "5min",
+      "files": [
+        ".gsd/KNOWLEDGE.md"
+      ],
+      "verify": "grep -i 'qr\\|get-local-ip' .gsd/KNOWLEDGE.md",
+      "inputs": [
+        ".gsd/KNOWLEDGE.md"
+      ],
+      "expected_output": [
+        ".gsd/KNOWLEDGE.md mis à jour"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S01",
+      "id": "T01",
+      "title": "Modèle Photo ajouté au schéma Prisma avec migration créée",
+      "status": "complete",
+      "one_liner": "Modèle Photo ajouté au schéma Prisma avec migration créée",
+      "narrative": "Ajouté le modèle Photo au schema.prisma avec les champs id, objectId (FK→Object), url, position, createdAt. Index composites sur (objectId) et (objectId, position). Migration SQL créée dans packages/db/prisma/migrations/20260511120000_add_photos/. Le schéma a été poussé en base via db push --accept-data-loss et la table de tracking _prisma_migrations initialisée manuellement.",
+      "verification_result": "prisma migrate deploy: \"No pending migrations\". Photos table exists in DB with FK sur objects.id ON DELETE CASCADE. 12 tests photos passent.",
+      "duration": "",
+      "completed_at": "2026-05-11T14:29:57.730Z",
+      "blocker_discovered": false,
+      "deviations": "None",
+      "known_issues": "La migration a dû être marquée comme appliquée manuellement (prisma db push ne crée pas la table _prisma_migrations). next dev devra run prisma migrate deploy au lieu de migrate dev si drift.",
+      "key_files": [
+        "packages/db/prisma/schema.prisma",
+        "packages/db/prisma/migrations/20260511120000_add_photos/migration.sql"
+      ],
+      "key_decisions": [
+        "Modèle Photo simple: url stocke l'URL publique complète, pas de stockage de métadonnées complexes (EXIF, dimensions). Position Int pour ordonnancement simple."
+      ],
+      "full_summary_md": "---\nid: T01\nparent: S01\nmilestone: M011\nkey_files:\n  - packages/db/prisma/schema.prisma\n  - packages/db/prisma/migrations/20260511120000_add_photos/migration.sql\nkey_decisions:\n  - Modèle Photo simple: url stocke l'URL publique complète, pas de stockage de métadonnées complexes (EXIF, dimensions). Position Int pour ordonnancement simple.\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:29:57.729Z\nblocker_discovered: false\n---\n\n# T01: Modèle Photo ajouté au schéma Prisma avec migration créée\n\n**Modèle Photo ajouté au schéma Prisma avec migration créée**\n\n## What Happened\n\nAjouté le modèle Photo au schema.prisma avec les champs id, objectId (FK→Object), url, position, createdAt. Index composites sur (objectId) et (objectId, position). Migration SQL créée dans packages/db/prisma/migrations/20260511120000_add_photos/. Le schéma a été poussé en base via db push --accept-data-loss et la table de tracking _prisma_migrations initialisée manuellement.\n\n## Verification\n\nprisma migrate deploy: \"No pending migrations\". Photos table exists in DB with FK sur objects.id ON DELETE CASCADE. 12 tests photos passent.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone\n\n## Known Issues\n\nLa migration a dû être marquée comme appliquée manuellement (prisma db push ne crée pas la table _prisma_migrations). next dev devra run prisma migrate deploy au lieu de migrate dev si drift.\n\n## Files Created/Modified\n\n- `packages/db/prisma/schema.prisma`\n- `packages/db/prisma/migrations/20260511120000_add_photos/migration.sql`\n",
+      "description": "Ajouter le modèle Photo dans Prisma avec les champs : id, objectId (FK), url, position, createdAt. Le champ url stockera l'URL publique complète du fichier sur S3.",
+      "estimate": "30min",
+      "files": [
+        "packages/db/prisma/schema.prisma"
+      ],
+      "verify": "npx prisma migrate dev --name add_photos && npx prisma db push",
+      "inputs": [
+        "packages/db/prisma/schema.prisma"
+      ],
+      "expected_output": [
+        "packages/db/prisma/schema.prisma mis à jour avec modèle Photo",
+        "Migration Prisma créée et appliquée"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S01",
+      "id": "T02",
+      "title": "Client S3 avec presigned URLs et helpers créé",
+      "status": "complete",
+      "one_liner": "Client S3 avec presigned URLs et helpers créé",
+      "narrative": "Créé packages/api/src/lib/s3.ts avec client S3 singleton, getPresignedUploadUrl (génère PUT presigned URL + URL publique), deleteS3Object, extractKeyFromUrl, validateContentType, validateFileSize. Le client S3 est configuré pour endpoint custom (Backblaze B2/MinIO compatible) avec forcePathStyle: true. Les credentials S3 sont validés au premier usage (pas au démarrage).",
+      "verification_result": "ls packages/api/src/lib/s3.ts && pnpm exec tsc --noEmit (0 erreurs TS sur s3.ts)",
+      "duration": "",
+      "completed_at": "2026-05-11T14:30:06.682Z",
+      "blocker_discovered": false,
+      "deviations": "None",
+      "known_issues": "None",
+      "key_files": [
+        "packages/api/src/lib/s3.ts"
+      ],
+      "key_decisions": [
+        "Upload direct client→S3 via presigned URL (PutObject) — le client fait le PUT, le serveur ne proxy pas le fichier",
+        "S3 endpoint configuré comme path-style (forcePathStyle: true) pour compatibilité Backblaze B2/MinIO",
+        "Cache-Control: public, max-age=31536000, immutable sur les fichiers uploadés",
+        "Validation content-type et taille côté serveur AVANT de générer la presigned URL (Zod côté client aussi)"
+      ],
+      "full_summary_md": "---\nid: T02\nparent: S01\nmilestone: M011\nkey_files:\n  - packages/api/src/lib/s3.ts\nkey_decisions:\n  - Upload direct client→S3 via presigned URL (PutObject) — le client fait le PUT, le serveur ne proxy pas le fichier\n  - S3 endpoint configuré comme path-style (forcePathStyle: true) pour compatibilité Backblaze B2/MinIO\n  - Cache-Control: public, max-age=31536000, immutable sur les fichiers uploadés\n  - Validation content-type et taille côté serveur AVANT de générer la presigned URL (Zod côté client aussi)\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:30:06.682Z\nblocker_discovered: false\n---\n\n# T02: Client S3 avec presigned URLs et helpers créé\n\n**Client S3 avec presigned URLs et helpers créé**\n\n## What Happened\n\nCréé packages/api/src/lib/s3.ts avec client S3 singleton, getPresignedUploadUrl (génère PUT presigned URL + URL publique), deleteS3Object, extractKeyFromUrl, validateContentType, validateFileSize. Le client S3 est configuré pour endpoint custom (Backblaze B2/MinIO compatible) avec forcePathStyle: true. Les credentials S3 sont validés au premier usage (pas au démarrage).\n\n## Verification\n\nls packages/api/src/lib/s3.ts && pnpm exec tsc --noEmit (0 erreurs TS sur s3.ts)\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone\n\n## Known Issues\n\nNone\n\n## Files Created/Modified\n\n- `packages/api/src/lib/s3.ts`\n",
+      "description": "Créer le client S3 avec @aws-sdk/client-s3 et @aws-sdk/s3-request-presigner. Exposer getPresignedUploadUrl(objectId, filename, contentType) qui retourne { uploadUrl, publicUrl }. Valider les variables S3 (endpoint, region, bucket, access key, secret key) au démarrage.",
+      "estimate": "1h",
+      "files": [
+        "packages/api/src/lib/s3.ts"
+      ],
+      "verify": "ls packages/api/src/lib/s3.ts && head -30 packages/api/src/lib/s3.ts",
+      "inputs": [
+        ".env.example (S3 vars)"
+      ],
+      "expected_output": [
+        "packages/api/src/lib/s3.ts avec fonctions getPresignedUploadUrl et deleteObject"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S01",
+      "id": "T03",
+      "title": "Router photos tRPC avec 5 procédures créé",
+      "status": "complete",
+      "one_liner": "Router photos tRPC avec 5 procédures créé",
+      "narrative": "Créé packages/api/src/routers/photos.ts avec les procédures: getPresignedUrl (demande presigned URL pour upload), add (enregistre la photo après upload), remove (supprime S3 + base), list (photos d'un objet, ordonnées par position), reorder (réordonne). Toutes les procédures vérifient l'ownership via collection.userId. Router enregistré dans appRouter sous 'photos'.",
+      "verification_result": "12/12 tests photos passent. grep 'photos' packages/api/src/router.ts confirme l'enregistrement.",
+      "duration": "",
+      "completed_at": "2026-05-11T14:30:14.832Z",
+      "blocker_discovered": false,
+      "deviations": "None",
+      "known_issues": "None",
+      "key_files": [
+        "packages/api/src/routers/photos.ts",
+        "packages/api/src/router.ts"
+      ],
+      "key_decisions": [
+        "Suppression S3 synchrone dans remove (le fichier est supprimé avant de retourner), mais erreurs S3 ne bloquent pas la suppression en base",
+        "Presigned URL expire dans 15 minutes (PRESIGNED_URL_EXPIRES_IN = 900s)",
+        "Réordonnancement transactionnel (toutes les positions updatées en une transaction)"
+      ],
+      "full_summary_md": "---\nid: T03\nparent: S01\nmilestone: M011\nkey_files:\n  - packages/api/src/routers/photos.ts\n  - packages/api/src/router.ts\nkey_decisions:\n  - Suppression S3 synchrone dans remove (le fichier est supprimé avant de retourner), mais erreurs S3 ne bloquent pas la suppression en base\n  - Presigned URL expire dans 15 minutes (PRESIGNED_URL_EXPIRES_IN = 900s)\n  - Réordonnancement transactionnel (toutes les positions updatées en une transaction)\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:30:14.832Z\nblocker_discovered: false\n---\n\n# T03: Router photos tRPC avec 5 procédures créé\n\n**Router photos tRPC avec 5 procédures créé**\n\n## What Happened\n\nCréé packages/api/src/routers/photos.ts avec les procédures: getPresignedUrl (demande presigned URL pour upload), add (enregistre la photo après upload), remove (supprime S3 + base), list (photos d'un objet, ordonnées par position), reorder (réordonne). Toutes les procédures vérifient l'ownership via collection.userId. Router enregistré dans appRouter sous 'photos'.\n\n## Verification\n\n12/12 tests photos passent. grep 'photos' packages/api/src/router.ts confirme l'enregistrement.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone\n\n## Known Issues\n\nNone\n\n## Files Created/Modified\n\n- `packages/api/src/routers/photos.ts`\n- `packages/api/src/router.ts`\n",
+      "description": "Ajouter les procédures tRPC : photo.add (url + position, protège que l'objet appartient à l'user), photo.remove (protège ownership), photo.list (url, position, createdAt). Créer packages/api/src/routers/photos.ts.",
+      "estimate": "1h",
+      "files": [
+        "packages/api/src/routers/photos.ts",
+        "packages/api/src/router.ts"
+      ],
+      "verify": "grep -r 'photo' packages/api/src/router.ts",
+      "inputs": [
+        "packages/api/src/lib/s3.ts",
+        "packages/api/src/routers/objects.ts"
+      ],
+      "expected_output": [
+        "packages/api/src/routers/photos.ts avec add/remove/list",
+        "packages/api/src/router.ts mis à jour avec photosRouter"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S01",
+      "id": "T04",
+      "title": "Schémas Zod et types TypeScript photo ajoutés au shared package",
+      "status": "complete",
+      "one_liner": "Schémas Zod et types TypeScript photo ajoutés au shared package",
+      "narrative": "Ajouté les schémas Zod photoPresignedUrlSchema, photoAddSchema, photoRemoveSchema, photoReorderSchema et les types TypeScript correspondants dans packages/shared/src/schemas/index.ts. Ajouté l'interface Photo et PresignedUpload dans packages/shared/src/types/index.ts. Tous les types sont ré-exportés pour consommation par apps/web.",
+      "verification_result": "grep -r 'PhotoAdd\\|PhotoRemove\\|PhotoPresigned\\|PhotoReorder' packages/shared/src/ confirme la présence des schémas.",
+      "duration": "",
+      "completed_at": "2026-05-11T14:30:21.834Z",
+      "blocker_discovered": false,
+      "deviations": "None",
+      "known_issues": "None",
+      "key_files": [
+        "packages/shared/src/schemas/index.ts",
+        "packages/shared/src/types/index.ts"
+      ],
+      "key_decisions": [
+        "Le type PresignedUpload est défini dans types/index.ts (côté shared) pour que le client puisse typer la réponse tRPC",
+        "Re-exports des types photoInput dans shared pour consommation par le client web"
+      ],
+      "full_summary_md": "---\nid: T04\nparent: S01\nmilestone: M011\nkey_files:\n  - packages/shared/src/schemas/index.ts\n  - packages/shared/src/types/index.ts\nkey_decisions:\n  - Le type PresignedUpload est défini dans types/index.ts (côté shared) pour que le client puisse typer la réponse tRPC\n  - Re-exports des types photoInput dans shared pour consommation par le client web\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:30:21.833Z\nblocker_discovered: false\n---\n\n# T04: Schémas Zod et types TypeScript photo ajoutés au shared package\n\n**Schémas Zod et types TypeScript photo ajoutés au shared package**\n\n## What Happened\n\nAjouté les schémas Zod photoPresignedUrlSchema, photoAddSchema, photoRemoveSchema, photoReorderSchema et les types TypeScript correspondants dans packages/shared/src/schemas/index.ts. Ajouté l'interface Photo et PresignedUpload dans packages/shared/src/types/index.ts. Tous les types sont ré-exportés pour consommation par apps/web.\n\n## Verification\n\ngrep -r 'PhotoAdd\\|PhotoRemove\\|PhotoPresigned\\|PhotoReorder' packages/shared/src/ confirme la présence des schémas.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone\n\n## Known Issues\n\nNone\n\n## Files Created/Modified\n\n- `packages/shared/src/schemas/index.ts`\n- `packages/shared/src/types/index.ts`\n",
+      "description": "Ajouter les schémas Zod pour les mutations photo (addInput, removeInput) et types TypeScript correspondants dans packages/shared/src/schemas/index.ts et packages/shared/src/types/index.ts.",
+      "estimate": "30min",
+      "files": [
+        "packages/shared/src/schemas/index.ts",
+        "packages/shared/src/types/index.ts"
+      ],
+      "verify": "grep -r 'photo' packages/shared/src/",
+      "inputs": [
+        "packages/shared/src/schemas/index.ts (ref)"
+      ],
+      "expected_output": [
+        "Schémas photo dans packages/shared/src/schemas/index.ts",
+        "Types Photo dans packages/shared/src/types/index.ts"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
+    },
+    {
+      "milestone_id": "M011",
+      "slice_id": "S01",
+      "id": "T05",
+      "title": "Variables S3 documentées dans .env.example",
+      "status": "complete",
+      "one_liner": "Variables S3 documentées dans .env.example",
+      "narrative": "Mis à jour .env.example avec S3_MAX_FILE_SIZE_MB=10 et S3_ALLOWED_TYPES listant les 4 types MIME supportés. Commentaire ajouté pour clarifier que Hetzner/Backblaze/AWS/MinIO sont tous compatibles.",
+      "verification_result": "grep -A3 'S3_MAX_FILE_SIZE' .env.example confirme les nouvelles variables.",
+      "duration": "",
+      "completed_at": "2026-05-11T14:30:27.216Z",
+      "blocker_discovered": false,
+      "deviations": "None",
+      "known_issues": "None",
+      "key_files": [
+        ".env.example"
+      ],
+      "key_decisions": [
+        "Commenté les options de stockage (Hetzner, Backblaze, AWS, MinIO) pour guider la configuration"
+      ],
+      "full_summary_md": "---\nid: T05\nparent: S01\nmilestone: M011\nkey_files:\n  - .env.example\nkey_decisions:\n  - Commenté les options de stockage (Hetzner, Backblaze, AWS, MinIO) pour guider la configuration\nduration: \nverification_result: untested\ncompleted_at: 2026-05-11T14:30:27.216Z\nblocker_discovered: false\n---\n\n# T05: Variables S3 documentées dans .env.example\n\n**Variables S3 documentées dans .env.example**\n\n## What Happened\n\nMis à jour .env.example avec S3_MAX_FILE_SIZE_MB=10 et S3_ALLOWED_TYPES listant les 4 types MIME supportés. Commentaire ajouté pour clarifier que Hetzner/Backblaze/AWS/MinIO sont tous compatibles.\n\n## Verification\n\ngrep -A3 'S3_MAX_FILE_SIZE' .env.example confirme les nouvelles variables.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| — | No verification commands discovered | — | — | — |\n\n## Deviations\n\nNone\n\n## Known Issues\n\nNone\n\n## Files Created/Modified\n\n- `.env.example`\n",
+      "description": "Définir dans .env.example les variables S3 manquantes : S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET. Ajouter S3_MAX_FILE_SIZE_MB=10 et S3_ALLOWED_TYPES=image/jpeg,image/png,image/webp,image/gif.",
+      "estimate": "15min",
+      "files": [
+        ".env.example"
+      ],
+      "verify": "grep -A5 'S3' .env.example",
+      "inputs": [
+        ".env.example"
+      ],
+      "expected_output": [
+        ".env.example mis à jour avec toutes les variables S3 documentées"
+      ],
+      "observability_impact": "",
+      "full_plan_md": "",
+      "sequence": 0,
+      "blocker_source": "",
+      "escalation_pending": 0,
+      "escalation_awaiting_review": 0,
+      "escalation_artifact_path": null,
+      "escalation_override_applied_at": null
     }
   ],
   "decisions": [
@@ -2092,6 +2847,45 @@
       "rationale": "BetterAuth v1.6 utilise scrypt (noble/hashes) plutôt que bcrypt. Scrypt est moderne, resistant GPU/ASIC, et recommandé pour les passwords. Le plan original mentionnait bcrypt mais BA utilise scrypt nativement — pas la peine de changer.",
       "revisable": "Yes",
       "made_by": "agent",
+      "source": "discussion",
+      "superseded_by": null
+    },
+    {
+      "seq": 4,
+      "id": "D004",
+      "when_context": "",
+      "scope": "architecture",
+      "decision": "Provider de stockage pour les photos des objets",
+      "choice": "S3 (AWS S3 ou compatible MinIO/Backblaze)",
+      "rationale": "Standard industriel, durable, pas de lock-in. Compatible avec presigned URLs pour upload direct client→S3. Non configuré actuellement — la structure et l'upload API seront prêts, les credentials viendraient après.",
+      "revisable": "Yes",
+      "made_by": "collaborative",
+      "source": "discussion",
+      "superseded_by": null
+    },
+    {
+      "seq": 5,
+      "id": "D005",
+      "when_context": "",
+      "scope": "architecture",
+      "decision": "API pour recherche d'images",
+      "choice": "Unsplash API (gratuite)",
+      "rationale": "Alternative gratuite à Google Images. 50 req/heure en free tier, photos de qualité, API bien documentée. Nécessite une clé API Unsplash (gratuit à créer sur unsplash.com/developers). fallback: Pexels ou DuckDuckGo Images si Unsplash ne convient pas.",
+      "revisable": "Yes",
+      "made_by": "collaborative",
+      "source": "discussion",
+      "superseded_by": null
+    },
+    {
+      "seq": 6,
+      "id": "D006",
+      "when_context": "",
+      "scope": "architecture",
+      "decision": "API pour recherche d'images",
+      "choice": "DuckDuckGo Images API",
+      "rationale": "API simple (GET request, JSON, pas de clé requise), stable, pas de lock-in, gratuit. Endpoint: https://duckduckgo.com/iu/?u={url} pour proxier les images. Alternative: Unsplash API si DuckDuckGo ne suffit pas (clé gratuite sur unsplash.com/developers).",
+      "revisable": "Yes",
+      "made_by": "collaborative",
       "source": "discussion",
       "superseded_by": null
     }
@@ -2492,6 +3286,94 @@
       "verdict": "⚠️ 56/76 passés (74%)",
       "duration_ms": 78000,
       "created_at": "2026-05-05T08:07:13.945Z"
+    },
+    {
+      "id": 37,
+      "task_id": "T01",
+      "slice_id": "S01",
+      "milestone_id": "M010",
+      "command": "grep -n 'baseUrl' apps/web/src/components/qr/qr-code-image.tsx",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 12,
+      "created_at": "2026-05-11T12:45:42.653Z"
+    },
+    {
+      "id": 38,
+      "task_id": "T02",
+      "slice_id": "S01",
+      "milestone_id": "M010",
+      "command": "grep -n 'baseUrl\\|qrData' apps/web/src/components/qr/qr-code-image.tsx | grep -E 'downloadPng|printQr'",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 14,
+      "created_at": "2026-05-11T12:45:49.492Z"
+    },
+    {
+      "id": 39,
+      "task_id": "T03",
+      "slice_id": "S01",
+      "milestone_id": "M010",
+      "command": "grep -n 'baseUrl' apps/web/src/app/objects/[id]/page.tsx",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 10,
+      "created_at": "2026-05-11T12:45:55.312Z"
+    },
+    {
+      "id": 40,
+      "task_id": "T04",
+      "slice_id": "S01",
+      "milestone_id": "M010",
+      "command": "grep -n 'baseUrl' apps/web/src/app/qr/page.tsx",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 8,
+      "created_at": "2026-05-11T12:45:59.302Z"
+    },
+    {
+      "id": 41,
+      "task_id": "T05",
+      "slice_id": "S01",
+      "milestone_id": "M010",
+      "command": "grep -A3 'QR' .env.example",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 9,
+      "created_at": "2026-05-11T12:46:06.174Z"
+    },
+    {
+      "id": 42,
+      "task_id": "T06",
+      "slice_id": "S02",
+      "milestone_id": "M010",
+      "command": "node scripts/get-local-ip.js",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 30,
+      "created_at": "2026-05-11T12:46:20.613Z"
+    },
+    {
+      "id": 43,
+      "task_id": "T07",
+      "slice_id": "S03",
+      "milestone_id": "M010",
+      "command": "grep -A1 '\"dev:lan\"' apps/web/package.json",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 10,
+      "created_at": "2026-05-11T12:46:31.713Z"
+    },
+    {
+      "id": 44,
+      "task_id": "T08",
+      "slice_id": "S03",
+      "milestone_id": "M010",
+      "command": "grep -i 'qr\\|get-local-ip' .gsd/KNOWLEDGE.md",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 8,
+      "created_at": "2026-05-11T12:46:36.254Z"
     }
   ]
 }

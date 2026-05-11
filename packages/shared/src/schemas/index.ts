@@ -260,6 +260,50 @@ export const isbnLookupResultSchema = z.object({
 export type IsbnLookupResult = z.infer<typeof isbnLookupResultSchema>;
 
 // ============================================
+// PHOTOS
+// ============================================
+
+/**
+ * Schéma de demande de presigned URL pour upload photo.
+ */
+export const photoPresignedUrlSchema = z.object({
+  objectId: z.string().cuid(),
+  filename: z.string().min(1).max(255),
+  contentType: z.string().min(1).max(100),
+  fileSize: z.number().int().min(1),
+});
+
+/**
+ * Schéma d'ajout d'une photo (après upload vers S3).
+ */
+export const photoAddSchema = z.object({
+  objectId: z.string().cuid(),
+  url: z.string().url(),
+  position: z.number().int().min(0).default(0),
+});
+
+/**
+ * Schéma de suppression d'une photo.
+ */
+export const photoRemoveSchema = z.object({
+  objectId: z.string().cuid(),
+  photoId: z.string().cuid(),
+});
+
+/**
+ * Schéma de réordonnancement des photos.
+ */
+export const photoReorderSchema = z.object({
+  objectId: z.string().cuid(),
+  positions: z.record(z.string().cuid(), z.number().int().min(0)),
+});
+
+export type PhotoPresignedUrlInput = z.infer<typeof photoPresignedUrlSchema>;
+export type PhotoAddInput = z.infer<typeof photoAddSchema>;
+export type PhotoRemoveInput = z.infer<typeof photoRemoveSchema>;
+export type PhotoReorderInput = z.infer<typeof photoReorderSchema>;
+
+// ============================================
 // PAGINATION
 // ============================================
 

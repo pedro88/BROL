@@ -154,10 +154,25 @@ model Object {
   loans      Loan[]
   qrStock    QrStock?   @relation(fields: [qrStockId], references: [id])
   qrStockId  String?    @unique
+  photos     Photo[]
 
   @@index([collectionId])
   @@index([isbn])
   @@map("objects")
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  objectId  String
+  url       String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  object Object @relation(fields: [objectId], references: [id], onDelete: Cascade)
+
+  @@index([objectId])
+  @@index([objectId, position])
+  @@map("photos")
 }
 
 enum ObjectCondition {
