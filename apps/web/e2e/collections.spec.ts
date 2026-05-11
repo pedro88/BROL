@@ -236,7 +236,7 @@ test.describe("create collection dialog", () => {
     const col = await createCollectionAPI(testToken, "Public Col E2E", true);
     await page.goto(`${WEB_BASE}/collections`);
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/Public Col E2E/i)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/Public Col E2E/i).first()).toBeVisible({ timeout: 8000 });
   });
 });
 

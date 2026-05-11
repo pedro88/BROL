@@ -171,7 +171,7 @@ export async function signIn(page: Page, email: string, password: string): Promi
     await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"), {
       timeout: 10000,
     });
-    // Give AuthSessionSyncer time to sync the token to the store (100ms)
+    // Give AuthSessionSyncer time to sync the token to the store
     await page.waitForTimeout(500);
   } catch {
     const errorText = await page.locator(".text-destructive, [role=alert]").first().textContent().catch(() => "(no error message)");
@@ -216,8 +216,9 @@ export async function signUp(
 }
 
 /**
- * Clears the current session by calling the sign-out endpoint from the browser.
- * This works regardless of whether a sign-out button exists in the UI.
+ * Clears the current session by calling the sign-out endpoint from the browser
+ * AND wiping all cookies.  This works regardless of whether a sign-out button
+ * exists in the UI.
  */
 export async function clearSession(page: Page): Promise<void> {
   try {
@@ -237,6 +238,9 @@ export async function clearSession(page: Page): Promise<void> {
     // Sign-out endpoint may fail if session already expired — that's OK
     console.warn(`clearSession: fetch failed (${String(err)}), session may already be cleared`);
   }
+  // Wipe all cookies so the session is gone even if the API call succeeded
+  // but did not delete the cookie (BetterAuth quirk).
+  await page.context().clearCookies();
 }
 
 /**

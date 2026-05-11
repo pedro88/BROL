@@ -2,11 +2,13 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Header, Navigation } from "../../../../components/navigation";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import { Label } from "../../../../components/ui/label";
+import { Switch } from "../../../../components/ui/switch";
 import { trpc } from "../../../../lib/trpc";
 
 /**
@@ -23,6 +25,16 @@ export default function EditCollectionPage() {
     { enabled: !!collectionId }
   );
 
+  // Local state for isPublic (initialized from collection data)
+  const [isPublic, setIsPublic] = useState(false);
+
+  // Sync isPublic when collection loads
+  useEffect(() => {
+    if (collection?.isPublic !== undefined) {
+      setIsPublic(collection.isPublic);
+    }
+  }, [collection?.isPublic]);
+
   // Update mutation
   const updateMutation = trpc.collections.update.useMutation({
     onSuccess: () => {
@@ -38,6 +50,7 @@ export default function EditCollectionPage() {
       data: {
         name: formData.get("name") as string,
         description: formData.get("description") as string || undefined,
+        isPublic,
       },
     });
   };
@@ -93,6 +106,23 @@ export default function EditCollectionPage() {
                 id="description"
                 name="description"
                 defaultValue={collection.description ?? ""}
+              />
+            </div>
+
+            {/* isPublic toggle */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="isPublic" className="font-mono text-xs uppercase">
+                  Collection publique
+                </Label>
+                <p className="font-mono text-xs text-muted-foreground">
+                  Visible par tous sans connexion
+                </p>
+              </div>
+              <Switch
+                id="isPublic"
+                checked={isPublic}
+                onCheckedChange={setIsPublic}
               />
             </div>
 

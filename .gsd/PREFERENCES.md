@@ -2,7 +2,7 @@
 version: 1
 mode: solo
 git:
-  isolation: worktree
+  isolation: none
   main_branch: main
   auto_push: true
 always_use_skills: []

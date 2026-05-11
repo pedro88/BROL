@@ -45,16 +45,16 @@
 
 ## Slices
 
-- [ ] **S01: Stock QR — génération, liste, suppression** `risk:medium` `depends:[]`
+- [x] **S01: Stock QR — génération, liste, suppression** `risk:medium` `depends:[]`
   > After this: L'utilisateur peut générer N codes vierges, voir la liste avec leur statut (utilisé/libre), et supprimer un code non assigné.
 
-- [ ] **S02: Assignation QR → Objet** `risk:medium` `depends:[S01]`
+- [x] **S02: Assignation QR → Objet** `risk:medium` `depends:[S01]`
   > After this: Depuis la page d'un objet, on peut assigner un QR disponible. Le formulaire de création d'objet propose aussi de sélectionner ou créer un QR.
 
-- [ ] **S03: Affichage et download QR** `risk:low` `depends:[S02]`
+- [x] **S03: Affichage et download QR** `risk:low` `depends:[S02]`
   > After this: Le QR code est affiché visuellement sur la page objet avec bouton Télécharger (PNG) et Imprimer. Export batch ZIP depuis /qr.
 
-- [ ] **S04: Tests unitaires et E2E** `risk:medium` `depends:[S03]`
+- [x] **S04: Tests unitaires et E2E** `risk:medium` `depends:[S03]`
   > After this: Les routes QR sont couvertes par des tests unitaires. Le flow complet (générer → assigner → afficher → download) est couvert par des tests E2E Playwright.
 
 ## Boundary Map

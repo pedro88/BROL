@@ -150,15 +150,25 @@ export async function getSession(request: Request): Promise<BetterAuthSession | 
     });
     if (cookieSession) return cookieSession as unknown as BetterAuthSession;
 
-    // Fall back to Bearer token (used by tRPC client from web app)
+    // Fall back to Bearer token (used by tRPC client from web app AND E2E tests)
     const authHeader = request.headers.get("authorization");
     if (authHeader?.toLowerCase().startsWith("bearer ")) {
       const token = authHeader.slice(7).trim();
       if (token) {
-        const dbSession = await prisma.session.findUnique({
-          where: { token },
+        // BetterAuth stores the signed token in session.token and the raw ID in session.id.
+        // The /sign-up /sign-in API returns data.token = session.id (raw).
+        // Try looking up by session.id first (E2E tests use raw token),
+        // then by session.token (web app uses signed token).
+        let dbSession = await prisma.session.findUnique({
+          where: { id: token },
           include: { user: true },
         });
+        if (!dbSession) {
+          dbSession = await prisma.session.findUnique({
+            where: { token },
+            include: { user: true },
+          });
+        }
         if (dbSession && dbSession.expiresAt > new Date()) {
           return {
             session: {

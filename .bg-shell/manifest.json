@@ -1,16 +1,1 @@
-[
-  {
-    "id": "f32fcd91",
-    "label": "cd /home/piet/Projets/webDev/BROL && pnpm dev 2>&1",
-    "command": "cd /home/piet/Projets/webDev/BROL && pnpm dev 2>&1",
-    "cwd": "/home/piet/Projets/webDev/BROL",
-    "ownerSessionFile": "/home/piet/.gsd/sessions/--home-piet-Projets-webDev-BROL--/2026-05-09T06-48-50-916Z_a17640f4-3680-449a-a841-754a6b31179b.jsonl",
-    "persistAcrossSessions": true,
-    "startedAt": 1778340501259,
-    "processType": "server",
-    "group": "brol-stack",
-    "readyPattern": null,
-    "readyPort": null,
-    "pid": 349480
-  }
-]
+[]
