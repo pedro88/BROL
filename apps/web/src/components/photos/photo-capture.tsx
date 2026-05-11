@@ -19,7 +19,7 @@ import { useCallback, useRef, useState } from "react";
 import { Camera, Upload, Search, X, CheckCircle, Loader2, AlertCircle, Image } from "lucide-react";
 import { Button } from "../ui/button";
 import { usePresignedUrl, usePhotoAdd } from "../../lib/trpc-hooks/photos";
-import { searchDuckDuckGoImages, type ImageResult, proxyImageUrl } from "../../lib/duckduckgo";
+import { searchImages, type ImageResult, proxyImageUrl } from "../../lib/duckduckgo";
 import type { Photo } from "@brol/shared";
 
 interface PhotoCaptureProps {
@@ -209,7 +209,7 @@ export function PhotoCapture({
     setSearchLoading(true);
     setSearchResults([]);
     try {
-      const results = await searchDuckDuckGoImages(searchQuery.trim(), { limit: 20 });
+      const results = await searchImages(searchQuery.trim(), { limit: 20 });
       setSearchResults(results);
     } catch {
       setSearchResults([]);
