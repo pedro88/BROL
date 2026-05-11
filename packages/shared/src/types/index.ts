@@ -18,6 +18,10 @@ import type {
   AssignQrStockInput,
   PaginationInput,
   SendOwnerMessageInput,
+  PhotoPresignedUrlInput,
+  PhotoAddInput,
+  PhotoRemoveInput,
+  PhotoReorderInput,
 } from "../schemas";
 
 // Ré-export des types depuis les schémas
@@ -36,7 +40,29 @@ export type {
   AssignQrStockInput,
   PaginationInput,
   SendOwnerMessageInput,
+  PhotoPresignedUrlInput,
+  PhotoAddInput,
+  PhotoRemoveInput,
+  PhotoReorderInput,
 };
+
+// ============================================
+// TYPES PHOTO
+// ============================================
+
+export interface Photo {
+  id: string;
+  objectId: string;
+  url: string;
+  position: number;
+  createdAt: Date | string;
+}
+
+export interface PresignedUpload {
+  uploadUrl: string;
+  publicUrl: string;
+  key: string;
+}
 
 // ============================================
 // TYPES UTILISATEUR

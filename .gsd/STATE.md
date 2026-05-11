@@ -12,6 +12,8 @@
 - ⬜ **M004:** Fix & stabilisation des tests E2E et unitaires
 - ⬜ **M006:** M006
 - ✅ **M009:** Object Enhancement — Typage des collections par catégorie d'objet
+- ✅ **M010:** QR codes with local network URLs
+- ✅ **M011:** Photos sur les objets
 
 ## Recent Decisions
 - None recorded

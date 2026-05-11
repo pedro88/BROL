@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T12:31:57Z","fingerprint":"6d9668f458d6a8e9992b895501e740959f56dab9","fileCount":137,"truncated":false} -->
+Generated: 2026-05-11T18:29:15Z | Files: 147 | Described: 0/147
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T18:29:15Z","fingerprint":"d45c486092ca8eeff25de0d32c8422601bc680f8","fileCount":147,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -81,6 +81,9 @@ Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
 ### apps/web/src/app/api/auth/[...all]/
 - `apps/web/src/app/api/auth/[...all]/route.ts`
 
+### apps/web/src/app/api/search-images/
+- `apps/web/src/app/api/search-images/route.ts`
+
 ### apps/web/src/app/browse/
 - `apps/web/src/app/browse/page.tsx`
 
@@ -139,6 +142,10 @@ Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
 - `apps/web/src/components/objects/object-card.tsx`
 - `apps/web/src/components/objects/object-form.tsx`
 
+### apps/web/src/components/photos/
+- `apps/web/src/components/photos/photo-capture.tsx`
+- `apps/web/src/components/photos/photo-gallery.tsx`
+
 ### apps/web/src/components/qr/
 - `apps/web/src/components/qr/assign-qr-dialog.tsx`
 - `apps/web/src/components/qr/qr-code-image.tsx`
@@ -157,9 +164,13 @@ Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
 - `apps/web/src/lib/auth-client.ts`
 - `apps/web/src/lib/auth-session-syncer.tsx`
 - `apps/web/src/lib/auth-store.ts`
+- `apps/web/src/lib/duckduckgo.ts`
 - `apps/web/src/lib/trpc-provider.tsx`
 - `apps/web/src/lib/trpc.ts`
 - `apps/web/src/lib/utils.ts`
+
+### apps/web/src/lib/trpc-hooks/
+- `apps/web/src/lib/trpc-hooks/photos.ts`
 
 ### packages/api/
 - `packages/api/package.json`
@@ -177,11 +188,15 @@ Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
 - `packages/api/src/emails/index.ts`
 - `packages/api/src/emails/reminder.tsx`
 
+### packages/api/src/lib/
+- `packages/api/src/lib/s3.ts`
+
 ### packages/api/src/routers/
 - `packages/api/src/routers/collections.ts`
 - `packages/api/src/routers/contacts.ts`
 - `packages/api/src/routers/loans.ts`
 - `packages/api/src/routers/objects.ts`
+- `packages/api/src/routers/photos.ts`
 - `packages/api/src/routers/qr.ts`
 
 ### packages/api/src/routers/__tests__/
@@ -189,6 +204,7 @@ Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
 - `packages/api/src/routers/__tests__/contacts.test.ts`
 - `packages/api/src/routers/__tests__/loans.test.ts`
 - `packages/api/src/routers/__tests__/objects.test.ts`
+- `packages/api/src/routers/__tests__/photos.test.ts`
 - `packages/api/src/routers/__tests__/qr.test.ts`
 
 ### packages/api/src/test/
@@ -209,6 +225,9 @@ Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
 
 ### packages/db/prisma/migrations/20260511072136_init_object_types/
 - `packages/db/prisma/migrations/20260511072136_init_object_types/migration.sql`
+
+### packages/db/prisma/migrations/20260511120000_add_photos/
+- `packages/db/prisma/migrations/20260511120000_add_photos/migration.sql`
 
 ### packages/db/src/
 - `packages/db/src/client.ts`
@@ -251,3 +270,4 @@ Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
 - `scripts/e2e-servers.sh`
 - `scripts/e2e-start-servers.sh`
 - `scripts/e2e-stop-servers.sh`
+- `scripts/get-local-ip.js`

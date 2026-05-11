@@ -58,6 +58,10 @@ export const objectsRouter = router({
           qrStock: {
             select: { code: true, used: true },
           },
+          photos: {
+            orderBy: { position: "asc" as const },
+            select: { id: true, url: true, position: true, createdAt: true },
+          },
         },
         orderBy: { createdAt: "desc" },
         take: input.limit ?? 20,
@@ -107,6 +111,9 @@ export const objectsRouter = router({
             orderBy: { lentAt: "desc" },
           },
           qrStock: true,
+          photos: {
+            orderBy: { position: "asc" as const },
+          },
         },
       });
 

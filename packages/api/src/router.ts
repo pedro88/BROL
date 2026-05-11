@@ -9,6 +9,7 @@ import { objectsRouter } from "./routers/objects";
 import { loansRouter } from "./routers/loans";
 import { contactsRouter } from "./routers/contacts";
 import { qrRouter } from "./routers/qr";
+import { photosRouter } from "./routers/photos";
 import { auth } from "./auth";
 
 /**
@@ -41,6 +42,7 @@ export const appRouter = router({
   loans: loansRouter,
   contacts: contactsRouter,
   qr: qrRouter,
+  photos: photosRouter,
 
   /**
    * Endpoint de santé pour vérifier que l'API est alive.
