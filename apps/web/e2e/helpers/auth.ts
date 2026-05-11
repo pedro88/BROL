@@ -162,8 +162,8 @@ export async function signIn(page: Page, email: string, password: string): Promi
     }
   }
 
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/mot de passe/i).fill(password);
+  await page.locator("#email").fill(email);
+  await page.locator("#password").fill(password);
   await page.getByRole("button", { name: /se connecter/i }).click();
 
   // Wait for navigation away from sign-in (BetterAuth redirect)
@@ -198,9 +198,10 @@ export async function signUp(
     timeout: 3000,
   });
 
-  await page.getByLabel(/nom/i).fill(name ?? email.split("@")[0]);
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/mot de passe/i).fill(password);
+  await page.locator("#name").fill(name ?? email.split("@")[0]);
+  await page.locator("#email").fill(email);
+  await page.locator("#password").fill(password);
+  await page.locator("#passwordConfirm").fill(password);
   await page.getByRole("button", { name: /créer mon compte/i }).click();
 
   try {
@@ -255,3 +256,4 @@ export async function signOut(page: Page): Promise<void> {
 export async function hasActiveSession(page: Page): Promise<boolean> {
   return !page.url().includes("/sign-in");
 }
+

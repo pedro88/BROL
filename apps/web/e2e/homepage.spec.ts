@@ -83,6 +83,6 @@ test.describe("homepage responsive", () => {
     // Must use a public page for anonymous responsive test
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto(`${WEB_BASE}/sign-in`);
-    await expect(page.getByLabel(/email/i)).toBeVisible();
+    await expect(page.locator("#email")).toBeVisible();
   });
 });
