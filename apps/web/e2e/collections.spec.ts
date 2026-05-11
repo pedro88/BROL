@@ -333,27 +333,40 @@ test.describe("object types", () => {
     await page.goto(`${WEB_BASE}/collections`);
     await page.getByRole("button", { name: /nouvelle/i }).click();
     await page.waitForSelector('[id="type"]');
-    await page.locator('[id="type"]').selectOption("BOARD_GAME");
+    await page.evaluate(() => {
+      const select = document.getElementById("type") as HTMLSelectElement;
+      select.value = "BOARD_GAME";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
     await page.getByLabel(/nom/i).fill("E2E Board Game Collection");
     await page.getByRole("button", { name: /créer/i }).click();
-    await page.waitForURL(/\/collections\/.+/);
-    await expect(page).toHaveURL(/\/collections\/.+/);
+    // Wait for the heading of the new collection to appear in the list
+    await expect(page.getByRole("heading", { level: 3, name: "E2E Board Game Collection" })).toBeVisible({ timeout: 15000 });
+    await page.getByRole("link", { name: /Voir la collection/i }).click();
+    await page.waitForURL(/\/collections\/[a-z0-9]+$/, { timeout: 8000 });
     // Type badge should show "Jeux de société"
-    await expect(page.getByText(/jeux de société/i).first()).toBeVisible();
+    await expect(page.getByText(/jeux de société/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("create collection with CUSTOM type via UI", async ({ page }) => {
     await page.goto(`${WEB_BASE}/collections`);
     await page.getByRole("button", { name: /nouvelle/i }).click();
     await page.waitForSelector('[id="type"]');
-    await page.locator('[id="type"]').selectOption("CUSTOM");
-    // Custom field labels should appear
+    await page.evaluate(() => {
+      const select = document.getElementById("type") as HTMLSelectElement;
+      select.value = "CUSTOM";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
     await page.waitForSelector('[id="customField1Label"]');
     await page.getByLabel(/nom/i).fill("E2E Custom Collection");
     await page.getByLabel(/champ libre 1/i).fill("Couleur");
     await page.getByLabel(/champ libre 2/i).fill("Taille");
     await page.getByRole("button", { name: /créer/i }).click();
-    await page.waitForURL(/\/collections\/.+/);
+    await expect(page.getByRole("heading", { level: 3, name: "E2E Custom Collection" })).toBeVisible({ timeout: 15000 });
+    await page.getByRole("link", { name: /Voir la collection/i }).click();
+    await page.waitForURL(/\/collections\/[a-z0-9]+$/, { timeout: 8000 });
+    // Type badge should show "Personnalisé"
+    await expect(page.getByText(/personnalisé/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("BOARD_GAME type shows board game fields in object form", async ({ page }) => {

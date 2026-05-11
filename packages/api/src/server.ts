@@ -118,6 +118,37 @@ async function handleGetToken(email: string): Promise<{ token: string | null }> 
 }
 
 /**
+ * Wrap a Node.js handler to add CORS headers for cross-origin requests.
+ * Required when the web app (port 3000) makes requests to the API (port 3001).
+ */
+function withCors(
+  handler: (req: IncomingMessage, res: { statusCode: number; setHeader: (k: string, v: string) => void; end: (data?: string) => void }) => void,
+) {
+  return (req: IncomingMessage, res: { statusCode: number; setHeader: (k: string, v: string) => void; end: (data?: string) => void }) => {
+    // Get the origin of the request
+    const origin = req.headers.origin;
+    // Set CORS headers: allow the web app origin (or localhost in dev)
+    const allowedOrigins = [
+      "http://localhost:3000",
+      "http://10.24.149.185:3000", // network URL seen in startup logs
+    ];
+    const corsOrigin = allowedOrigins.includes(origin ?? "") ? origin : "*";
+    res.setHeader("Access-Control-Allow-Origin", corsOrigin);
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+
+    if (req.method === "OPTIONS") {
+      res.statusCode = 204;
+      res.end();
+      return;
+    }
+
+    handler(req, res);
+  };
+}
+
+/**
  * Main request handler — routes to BetterAuth or tRPC.
  */
 function handler(req: IncomingMessage, res: { statusCode: number; setHeader: (k: string, v: string) => void; end: (data?: string) => void }) {
@@ -125,7 +156,7 @@ function handler(req: IncomingMessage, res: { statusCode: number; setHeader: (k:
 
   // BetterAuth handles /api/auth/*
   if (pathname.startsWith("/api/auth")) {
-    betterAuthHandler(req, res);
+    withCors(betterAuthHandler)(req, res);
     return;
   }
 

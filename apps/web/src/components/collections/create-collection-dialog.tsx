@@ -121,6 +121,7 @@ export function CreateCollectionDialog({
       reset();
       setIsPublic(false);
       setSelectedType("BOOK");
+      setValue("type", "BOOK");
     }
   }, [open, reset]);
 

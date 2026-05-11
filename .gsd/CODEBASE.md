@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-11T07:12:39Z | Files: 135 | Described: 0/135
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T07:12:39Z","fingerprint":"fdd48a2a637c98281809b3fd428286eb3492a6cb","fileCount":135,"truncated":false} -->
+Generated: 2026-05-11T12:31:57Z | Files: 137 | Described: 0/137
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T12:31:57Z","fingerprint":"6d9668f458d6a8e9992b895501e740959f56dab9","fileCount":137,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -203,6 +203,12 @@ Generated: 2026-05-11T07:12:39Z | Files: 135 | Described: 0/135
 
 ### packages/db/prisma/
 - `packages/db/prisma/schema.prisma`
+
+### packages/db/prisma/migrations/
+- `packages/db/prisma/migrations/migration_lock.toml`
+
+### packages/db/prisma/migrations/20260511072136_init_object_types/
+- `packages/db/prisma/migrations/20260511072136_init_object_types/migration.sql`
 
 ### packages/db/src/
 - `packages/db/src/client.ts`

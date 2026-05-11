@@ -26,7 +26,7 @@ async function createPublicCollectionAPI(
       "Content-Type": "application/json",
       Authorization: `Bearer ${userToken}`,
     },
-    body: JSON.stringify({ name, isPublic: true }),
+    body: JSON.stringify({ name, isPublic: true, type: "BOOK" }),
   });
   const data = await res.json();
   if (data.error) {
@@ -45,7 +45,7 @@ async function createPrivateCollectionAPI(
       "Content-Type": "application/json",
       Authorization: `Bearer ${userToken}`,
     },
-    body: JSON.stringify({ name, isPublic: false }),
+    body: JSON.stringify({ name, isPublic: false, type: "BOOK" }),
   });
   const data = await res.json();
   if (data.error) {
