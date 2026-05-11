@@ -12,6 +12,7 @@ import { z } from "zod";
 export const OBJECT_CONDITIONS = ["NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR"] as const;
 export const LOAN_STATUSES = ["ACTIVE", "RETURNED", "OVERDUE", "CANCELLED"] as const;
 export const LOCALES = ["fr", "nl", "en"] as const;
+export const OBJECT_TYPES = ["BOOK", "BOARD_GAME", "TOOL", "FILM", "MUSIC", "ELECTRONIC", "ELECTRIC", "CLOTHING", "CUSTOM"] as const;
 
 // ============================================
 // USER
@@ -40,6 +41,9 @@ export const createCollectionSchema = z.object({
   description: z.string().max(500).optional(),
   coverImage: z.string().url().optional(),
   isPublic: z.boolean().default(false),
+  type: z.enum(OBJECT_TYPES),
+  customField1Label: z.string().max(50).optional(),
+  customField2Label: z.string().max(50).optional(),
 });
 
 /**
@@ -50,6 +54,9 @@ export const updateCollectionSchema = z.object({
   description: z.string().max(500).optional().nullable(),
   coverImage: z.string().url().optional().nullable(),
   isPublic: z.boolean().optional(),
+  type: z.enum(OBJECT_TYPES).optional(),
+  customField1Label: z.string().max(50).optional().nullable(),
+  customField2Label: z.string().max(50).optional().nullable(),
 });
 
 export type CreateCollectionInput = z.infer<typeof createCollectionSchema>;
@@ -60,34 +67,60 @@ export type UpdateCollectionInput = z.infer<typeof updateCollectionSchema>;
 // ============================================
 
 /**
- * Schéma de création d'un objet.
+ * Schema de création d'objet.
+ * Champs communs + champs conditionnels selon objectType (optionnel — router default à BOOK).
+ * La validation par type est faite côté router via collection.type si objectType absent.
  */
 export const createObjectSchema = z.object({
   collectionId: z.string().cuid(),
   name: z.string().min(1).max(255),
   author: z.string().max(255).optional(),
   edition: z.string().max(100).optional(),
-  isbn: z.string().regex(/^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/i).optional().or(z.literal("")),
   barcode: z.string().max(50).optional(),
   condition: z.enum(OBJECT_CONDITIONS).default("GOOD"),
   notes: z.string().max(1000).optional(),
   coverImage: z.string().url().optional(),
   qrStockId: z.string().cuid().optional(),
+  objectType: z.enum(OBJECT_TYPES).optional(),
+  // Champs conditionnels (tous optionnels — router filtre selon objectType)
+  isbn: z.string().regex(/^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/i).optional().or(z.literal("")),
+  playersMin: z.number().int().min(1).optional(),
+  playersMax: z.number().int().min(1).optional(),
+  playingTimeMinutes: z.number().int().min(1).optional(),
+  ageMin: z.number().int().min(0).optional(),
+  powerWatts: z.number().int().min(1).optional(),
+  customField1: z.string().max(255).optional(),
+  customField2: z.string().max(255).optional(),
 });
 
 /**
  * Schéma de mise à jour d'un objet.
+ * Champs conditionnels selon objectType (optionnels pour partial update).
  */
-export const updateObjectSchema = z.object({
+const updateObjectBase = {
   name: z.string().min(1).max(255).optional(),
   author: z.string().max(255).optional().nullable(),
   edition: z.string().max(100).optional().nullable(),
-  isbn: z.string().regex(/^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/i).optional().or(z.literal("")).nullable(),
   barcode: z.string().max(50).optional().nullable(),
   condition: z.enum(OBJECT_CONDITIONS).optional(),
   notes: z.string().max(1000).optional().nullable(),
   coverImage: z.string().url().optional().nullable(),
-});
+  objectType: z.enum(OBJECT_TYPES).optional(),
+  // BOARD_GAME
+  playersMin: z.number().int().min(1).optional().nullable(),
+  playersMax: z.number().int().min(1).optional().nullable(),
+  playingTimeMinutes: z.number().int().min(1).optional().nullable(),
+  ageMin: z.number().int().min(0).optional().nullable(),
+  // ELECTRIC
+  powerWatts: z.number().int().min(1).optional().nullable(),
+  // BOOK / FILM
+  isbn: z.string().regex(/^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/i).optional().or(z.literal("")).nullable(),
+  // CUSTOM
+  customField1: z.string().max(255).optional().nullable(),
+  customField2: z.string().max(255).optional().nullable(),
+};
+
+export const updateObjectSchema = z.object(updateObjectBase);
 
 export type CreateObjectInput = z.infer<typeof createObjectSchema>;
 export type UpdateObjectInput = z.infer<typeof updateObjectSchema>;

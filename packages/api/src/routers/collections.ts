@@ -6,10 +6,41 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import {
-  createCollectionSchema,
-  updateCollectionSchema,
   paginationSchema,
 } from "@brol/shared";
+
+const OBJECT_TYPES = [
+  "BOOK",
+  "BOARD_GAME",
+  "TOOL",
+  "FILM",
+  "MUSIC",
+  "ELECTRONIC",
+  "ELECTRIC",
+  "CLOTHING",
+  "CUSTOM",
+] as const;
+
+// Inline schemas to avoid tsx watch workspace dep caching issue
+const createCollectionSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
+  coverImage: z.string().url().optional(),
+  isPublic: z.boolean().default(false),
+  type: z.enum(OBJECT_TYPES), // required, no default
+  customField1Label: z.string().max(50).optional(),
+  customField2Label: z.string().max(50).optional(),
+});
+
+const updateCollectionSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().max(500).optional(),
+  coverImage: z.string().url().optional(),
+  isPublic: z.boolean().optional(),
+  type: z.enum(OBJECT_TYPES).optional(),
+  customField1Label: z.string().max(50).optional(),
+  customField2Label: z.string().max(50).optional(),
+});
 
 /**
  * Router pour les collections.
@@ -173,15 +204,20 @@ export const collectionsRouter = router({
   create: protectedProcedure
     .input(createCollectionSchema)
     .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.collection.create({
-        data: {
-          name: input.name,
-          description: input.description,
-          coverImage: input.coverImage,
-          isPublic: input.isPublic ?? false,
-          userId: ctx.userId,
-        },
-      });
+      // Force type from input (do not default here — let the DB default handle it)
+      const data: Record<string, unknown> = {
+        name: input.name,
+        description: input.description,
+        coverImage: input.coverImage,
+        isPublic: input.isPublic ?? false,
+        customField1Label: input.customField1Label,
+        customField2Label: input.customField2Label,
+        userId: ctx.userId,
+      };
+      if (input.type !== undefined) {
+        data.type = input.type;
+      }
+      return ctx.prisma.collection.create({ data: data as Parameters<typeof ctx.prisma.collection.create>[0]["data"] });
     }),
 
   /**
@@ -204,6 +240,9 @@ export const collectionsRouter = router({
       if (input.data.description !== undefined) updateData.description = input.data.description;
       if (input.data.coverImage !== undefined) updateData.coverImage = input.data.coverImage;
       if (input.data.isPublic !== undefined) updateData.isPublic = input.data.isPublic;
+      if (input.data.type !== undefined) updateData.type = input.data.type;
+      if (input.data.customField1Label !== undefined) updateData.customField1Label = input.data.customField1Label;
+      if (input.data.customField2Label !== undefined) updateData.customField2Label = input.data.customField2Label;
 
       return ctx.prisma.collection.update({
         where: { id: input.id },

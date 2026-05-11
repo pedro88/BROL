@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { createObjectSchema, type CreateObjectInput, OBJECT_CONDITIONS } from "@brol/shared";
+import { createObjectSchema, type CreateObjectInput, OBJECT_CONDITIONS, OBJECT_TYPES } from "@brol/shared";
 import { BookOpen, QrCode } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -19,6 +19,45 @@ const conditionLabels: Record<string, string> = {
   POOR: "Mauvais",
 };
 
+// Labels and placeholders per object type
+const typeLabels: Record<string, string> = {
+  BOOK: "Livres",
+  BOARD_GAME: "Jeux de société",
+  TOOL: "Outils",
+  FILM: "Films / DVD",
+  MUSIC: "Musique / CD",
+  ELECTRONIC: "Électronique",
+  ELECTRIC: "Outillage électrique",
+  CLOTHING: "Vêtements",
+  CUSTOM: "Personnalisé",
+};
+
+type ObjectType = (typeof OBJECT_TYPES)[number];
+
+const authorLabels: Record<ObjectType, { label: string; placeholder: string }> = {
+  BOOK: { label: "Auteur", placeholder: "Antoine de Saint-Exupéry" },
+  BOARD_GAME: { label: "Auteur / Créateur", placeholder: "Créateur du jeu" },
+  TOOL: { label: "Marque / Fabricant", placeholder: "Makita, Bosch..." },
+  FILM: { label: "Réalisateur", placeholder: "Christopher Nolan" },
+  MUSIC: { label: "Artiste / Groupe", placeholder: "Daft Punk" },
+  ELECTRONIC: { label: "Marque", placeholder: "Apple, Sony..." },
+  ELECTRIC: { label: "Marque", placeholder: "Makita, DeWalt..." },
+  CLOTHING: { label: "Marque", placeholder: "Nike, Zara..." },
+  CUSTOM: { label: "Marque / Auteur", placeholder: "Marque ou auteur" },
+};
+
+const namePlaceholders: Record<ObjectType, string> = {
+  BOOK: "Le Petit Prince",
+  BOARD_GAME: "Catan",
+  TOOL: "Tournevis cruciforme",
+  FILM: "Inception",
+  MUSIC: "Discovery",
+  ELECTRONIC: "iPhone 13",
+  ELECTRIC: "Perceuse sans fil 18V",
+  CLOTHING: "Veste en cuir",
+  CUSTOM: "Mon objet",
+};
+
 interface ObjectFormProps {
   collectionId?: string;
   objectId?: string;
@@ -27,6 +66,7 @@ interface ObjectFormProps {
 
 /**
  * Formulaire de création/modification d'objet.
+ * Les champs affichés s'adaptent au type de la collection cible.
  */
 export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProps) {
   const router = useRouter();
@@ -60,28 +100,17 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
     }
   }, [collectionId, setValue]);
 
-  // Generate QR mutation
-  const generateQrMutation = trpc.qr.generateStock.useMutation({
-    retry: 1,
-  });
-  const createMutation = trpc.objects.create.useMutation({
-    onSuccess: (data) => {
-      utils.objects.list.invalidate({ collectionId: data.collectionId });
-      onSuccess?.();
-      reset();
-      // Redirect to collection
-      router.push(`/collections/${data.collectionId}`);
-    },
-    onError: () => {
-      // Reset form error state so user can try again
-      // The form shows the error message via errors.name / errors.collectionId
-    },
-  });
+  // Fetch the target collection to get its type
+  const { data: targetCollection } = trpc.collections.get.useQuery(
+    { id: collectionId ?? "" },
+    { enabled: !!collectionId }
+  );
 
-  // Always fetch collections (needed for the dropdown when no collectionId prop)
+  // Determine objectType from collection.type
+  const objectType: ObjectType = (targetCollection?.type as ObjectType) ?? "BOOK";
+
+  // Auto-select first collection when no collectionId prop given
   const { data: collections } = trpc.collections.list.useQuery();
-
-  // Auto-select first collection when collections load and no collectionId prop is given
   useEffect(() => {
     if (!collectionId && collections?.items.length) {
       const current = watch("collectionId");
@@ -91,22 +120,30 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
     }
   }, [collections, collectionId, setValue, watch]);
 
-  // Fetch available QR codes when collectionId is provided
+  // Fetch QR codes
   const { data: qrCodes } = trpc.qr.listStock.useQuery(
     { used: false },
     { enabled: !!collectionId }
   );
 
-  // QR code selection state
+  // QR state
   const [qrSelection, setQrSelection] = useState<"none" | "existing" | "create">("none");
   const [selectedQrId, setSelectedQrId] = useState<string>("");
   const [creatingQr, setCreatingQr] = useState(false);
 
+  const generateQrMutation = trpc.qr.generateStock.useMutation({ retry: 1 });
+  const createMutation = trpc.objects.create.useMutation({
+    onSuccess: (data) => {
+      utils.objects.list.invalidate({ collectionId: data.collectionId });
+      onSuccess?.();
+      reset();
+      router.push(`/collections/${data.collectionId}`);
+    },
+  });
+
   const onSubmit = async (formData: CreateObjectInput) => {
     try {
       let qrStockId: string | undefined;
-
-      // Handle QR code selection
       if (qrSelection === "create") {
         setCreatingQr(true);
         const qrResult = await generateQrMutation.mutateAsync({ count: 1 });
@@ -118,17 +155,22 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         qrStockId = selectedQrId;
       }
 
-      const objectData = {
+      await createMutation.mutateAsync({
         ...formData,
+        objectType,
         qrStockId,
-      };
-
-      const created = await createMutation.mutateAsync(objectData);
-    } catch (error) {
+      });
+    } catch {
       setCreatingQr(false);
-      console.error("Failed to create object:", error);
     }
   };
+
+  const authorInfo = authorLabels[objectType];
+  const namePlaceholder = namePlaceholders[objectType];
+  const showIsbn = objectType === "BOOK" || objectType === "FILM";
+  const showBoardGameFields = objectType === "BOARD_GAME";
+  const showElectricFields = objectType === "ELECTRIC";
+  const showCustomFields = objectType === "CUSTOM";
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -147,61 +189,148 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             {collections?.items.map((collection) => (
               <option key={collection.id} value={collection.id}>
                 {collection.name}
+                {collection.type ? ` (${typeLabels[collection.type] ?? collection.type})` : ""}
               </option>
             ))}
           </select>
           {errors.collectionId && (
-            <p className="font-mono text-xs text-destructive">
-              {errors.collectionId.message}
-            </p>
+            <p className="font-mono text-xs text-destructive">{errors.collectionId.message}</p>
           )}
         </div>
       )}
 
+      {/* Type indicator */}
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-xs text-muted-foreground uppercase">Type</span>
+        <span className="font-mono text-xs bg-secondary/20 text-secondary border border-secondary/30 px-2 py-1">
+          {typeLabels[objectType] ?? objectType}
+        </span>
+      </div>
+
       {/* Name */}
       <div className="space-y-2">
         <Label htmlFor="name" className="font-mono text-xs uppercase">
-          Nom de l'objet *
+          Nom *
         </Label>
         <Input
           id="name"
-          placeholder="Le Petit Prince"
+          placeholder={namePlaceholder}
           {...register("name")}
           className={errors.name ? "border-destructive" : ""}
         />
         {errors.name && (
-          <p className="font-mono text-xs text-destructive">
-            {errors.name.message}
-          </p>
+          <p className="font-mono text-xs text-destructive">{errors.name.message}</p>
         )}
       </div>
 
-      {/* Author */}
+      {/* Author / type-specific */}
       <div className="space-y-2">
         <Label htmlFor="author" className="font-mono text-xs uppercase">
-          Auteur / Marque
+          {authorInfo.label}
         </Label>
         <Input
           id="author"
-          placeholder="Antoine de Saint-Exupéry"
+          placeholder={authorInfo.placeholder}
           {...register("author")}
         />
       </div>
 
-      {/* Edition */}
+      {/* Edition / Model */}
       <div className="space-y-2">
         <Label htmlFor="edition" className="font-mono text-xs uppercase">
-          Édition / Modèle
+          {objectType === "BOARD_GAME" ? "Édition" :
+           objectType === "ELECTRIC" ? "Modèle / Référence" : "Édition / Modèle"}
         </Label>
         <Input
           id="edition"
-          placeholder="Gallimard, 1943"
+          placeholder={
+            objectType === "BOOK" ? "Gallimard, 1943" :
+            objectType === "BOARD_GAME" ? "Édition française" :
+            objectType === "FILM" ? "Director's Cut" :
+            objectType === "MUSIC" ? "Virgin Records, 1997" :
+            objectType === "ELECTRIC" ? "DFD453, 18V" :
+            "Modèle, référence..."
+          }
           {...register("edition")}
         />
       </div>
 
-      {/* ISBN / Barcode */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* BOARD_GAME specific fields */}
+      {showBoardGameFields && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="playersMin" className="font-mono text-xs uppercase">
+                Joueurs min.
+              </Label>
+              <Input
+                id="playersMin"
+                type="number"
+                min={1}
+                placeholder="2"
+                {...register("playersMin", { valueAsNumber: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="playersMax" className="font-mono text-xs uppercase">
+                Joueurs max.
+              </Label>
+              <Input
+                id="playersMax"
+                type="number"
+                min={1}
+                placeholder="6"
+                {...register("playersMax", { valueAsNumber: true })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="playingTimeMinutes" className="font-mono text-xs uppercase">
+                Durée (min.)
+              </Label>
+              <Input
+                id="playingTimeMinutes"
+                type="number"
+                min={1}
+                placeholder="60"
+                {...register("playingTimeMinutes", { valueAsNumber: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ageMin" className="font-mono text-xs uppercase">
+                Âge min.
+              </Label>
+              <Input
+                id="ageMin"
+                type="number"
+                min={0}
+                placeholder="8"
+                {...register("ageMin", { valueAsNumber: true })}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ELECTRIC specific fields */}
+      {showElectricFields && (
+        <div className="space-y-2">
+          <Label htmlFor="powerWatts" className="font-mono text-xs uppercase">
+            Puissance (W)
+          </Label>
+          <Input
+            id="powerWatts"
+            type="number"
+            min={1}
+            placeholder="500"
+            {...register("powerWatts", { valueAsNumber: true })}
+          />
+        </div>
+      )}
+
+      {/* ISBN — BOOK and FILM */}
+      {showIsbn && (
         <div className="space-y-2">
           <Label htmlFor="isbn" className="font-mono text-xs uppercase">
             ISBN
@@ -212,23 +341,49 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             {...register("isbn")}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="barcode" className="font-mono text-xs uppercase">
-            Code-barres
-          </Label>
-          <Input
-            id="barcode"
-            placeholder="1234567890123"
-            {...register("barcode")}
-          />
-        </div>
+      )}
+
+      {/* Barcode — all types */}
+      <div className="space-y-2">
+        <Label htmlFor="barcode" className="font-mono text-xs uppercase">
+          Code-barres
+        </Label>
+        <Input
+          id="barcode"
+          placeholder="1234567890123"
+          {...register("barcode")}
+        />
       </div>
+
+      {/* CUSTOM fields */}
+      {showCustomFields && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="customField1" className="font-mono text-xs uppercase">
+              {targetCollection?.customField1Label ?? "Champ libre 1"}
+            </Label>
+            <Input
+              id="customField1"
+              placeholder="Valeur..."
+              {...register("customField1")}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="customField2" className="font-mono text-xs uppercase">
+              {targetCollection?.customField2Label ?? "Champ libre 2"}
+            </Label>
+            <Input
+              id="customField2"
+              placeholder="Valeur..."
+              {...register("customField2")}
+            />
+          </div>
+        </>
+      )}
 
       {/* Condition */}
       <div className="space-y-2">
-        <Label className="font-mono text-xs uppercase">
-          État
-        </Label>
+        <Label className="font-mono text-xs uppercase">État</Label>
         <div className="grid grid-cols-5 gap-2">
           {OBJECT_CONDITIONS.map((condition) => (
             <label
@@ -265,12 +420,10 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         />
       </div>
 
-      {/* QR Code selection — only when collectionId is provided */}
+      {/* QR Code selection */}
       {collectionId && (
         <div className="space-y-2">
-          <Label className="font-mono text-xs uppercase">
-            QR Code
-          </Label>
+          <Label className="font-mono text-xs uppercase">QR Code</Label>
           <div className="space-y-2">
             {[
               { value: "none", label: "Aucun QR code" },
@@ -298,7 +451,6 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             ))}
           </div>
 
-          {/* Existing QR selector */}
           {qrSelection === "existing" && (
             <select
               value={selectedQrId}

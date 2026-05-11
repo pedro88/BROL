@@ -197,43 +197,6 @@
       "confidence": "EXTRACTED"
     },
     {
-      "id": "slice:M002:S06",
-      "label": "S06: Tests e2e complets (tous les cas)",
-      "type": "slice",
-      "confidence": "EXTRACTED",
-      "sourceFile": "milestones/M002/slices/S06/S06-PLAN.md"
-    },
-    {
-      "id": "task:M002:S06:T01",
-      "label": "T01: Auth helper + cleanup",
-      "type": "task",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "id": "task:M002:S06:T02",
-      "label": "T02: Auth full spec (~30 tests)",
-      "type": "task",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "id": "task:M002:S06:T03",
-      "label": "T03: Collections spec (~12 tests)",
-      "type": "task",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "id": "task:M002:S06:T04",
-      "label": "T04: Objects spec (~8 tests)",
-      "type": "task",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "id": "task:M002:S06:T05",
-      "label": "T05: Browse + public spec (~16 tests)",
-      "type": "task",
-      "confidence": "EXTRACTED"
-    },
-    {
       "id": "milestone:M003",
       "label": "M003: Auth: fix password hashing & persistence",
       "type": "milestone",
@@ -610,6 +573,174 @@
       "label": "T02: Create email template for reminders",
       "type": "task",
       "confidence": "EXTRACTED"
+    },
+    {
+      "id": "milestone:M008",
+      "label": "M008: M008 — Bug Fixes & UX Improvements",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M008/M008-ROADMAP.md"
+    },
+    {
+      "id": "slice:M008:S01",
+      "label": "S01: Sign-up password UX + validation",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M008/slices/S01/S01-PLAN.md"
+    },
+    {
+      "id": "task:M008:S01:T01",
+      "label": "T01: Add password confirmation field + strength indicator + visibility toggle",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M008:S02",
+      "label": "S02: loans.create — graceful error on missing borrower",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M008/slices/S02/S02-PLAN.md"
+    },
+    {
+      "id": "task:M008:S02:T01",
+      "label": "T01: Convert loans.create throws to TRPCError with readable messages",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M008:S03",
+      "label": "S03: Fix dead /loans/new link",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M008/slices/S03/S03-PLAN.md"
+    },
+    {
+      "id": "task:M008:S03:T01",
+      "label": "T01: Fix dead /loans/new link on dashboard",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M008:S04",
+      "label": "S04: Inline contact creation in CreateLoanDialog",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M008/slices/S04/S04-PLAN.md"
+    },
+    {
+      "id": "task:M008:S04:T01",
+      "label": "T01: Add inline contact creation to CreateLoanDialog",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M008:S05",
+      "label": "S05: Loans to contacts without Brol account",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M008/slices/S05/S05-PLAN.md"
+    },
+    {
+      "id": "task:M008:S05:T01",
+      "label": "T01: Schema + loans.create: borrowerId optional, add borrowerContactId for non-account contacts",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M008:S06",
+      "label": "S06: S06",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M008/slices/S06/S06-PLAN.md"
+    },
+    {
+      "id": "task:M008:S06:T01",
+      "label": "T01: loans.test.ts updated: contactId, contact without account test, createTestContact helper",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "milestone:M009",
+      "label": "M009: Object Enhancement — Typage des collections par catégorie d'objet",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M009/M009-ROADMAP.md"
+    },
+    {
+      "id": "slice:M009:S01",
+      "label": "S01: Schema DB + API object types",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M009/slices/S01/S01-PLAN.md"
+    },
+    {
+      "id": "task:M009:S01:T01",
+      "label": "T01: Définir ObjectType enum dans schema Prisma",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M009:S01:T02",
+      "label": "T02: Ajouter champs spécifiques sur Object model",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M009:S01:T03",
+      "label": "T03: Mettre à jour Zod schemas dans shared",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M009:S01:T04",
+      "label": "T04: Mettre à jour tRPC routers",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M009:S01:T05",
+      "label": "T05: Générer migration Prisma",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M009:S02",
+      "label": "S02: S02",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M009/slices/S02/S02-PLAN.md"
+    },
+    {
+      "id": "task:M009:S02:T01",
+      "label": "T01: Type selector ajouté dans create/edit collection",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M009:S03",
+      "label": "S03: S03",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M009/slices/S03/S03-PLAN.md"
+    },
+    {
+      "id": "task:M009:S03:T01",
+      "label": "T01: ObjectForm adaptatif par type de collection",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M009:S04",
+      "label": "S04: S04",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M009/slices/S04/S04-PLAN.md"
+    },
+    {
+      "id": "task:M009:S04:T01",
+      "label": "T01: 5 tests E2E pour le flow object types",
+      "type": "task",
+      "confidence": "EXTRACTED"
     }
   ],
   "edges": [
@@ -778,42 +909,6 @@
     {
       "from": "slice:M002:S05",
       "to": "task:M002:S05:T02",
-      "type": "contains",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "from": "milestone:M002",
-      "to": "slice:M002:S06",
-      "type": "contains",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "from": "slice:M002:S06",
-      "to": "task:M002:S06:T01",
-      "type": "contains",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "from": "slice:M002:S06",
-      "to": "task:M002:S06:T02",
-      "type": "contains",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "from": "slice:M002:S06",
-      "to": "task:M002:S06:T03",
-      "type": "contains",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "from": "slice:M002:S06",
-      "to": "task:M002:S06:T04",
-      "type": "contains",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "from": "slice:M002:S06",
-      "to": "task:M002:S06:T05",
       "type": "contains",
       "confidence": "EXTRACTED"
     },
@@ -1146,7 +1241,151 @@
       "to": "task:M007:S05:T02",
       "type": "contains",
       "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M008",
+      "to": "slice:M008:S01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M008:S01",
+      "to": "task:M008:S01:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M008",
+      "to": "slice:M008:S02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M008:S02",
+      "to": "task:M008:S02:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M008",
+      "to": "slice:M008:S03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M008:S03",
+      "to": "task:M008:S03:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M008",
+      "to": "slice:M008:S04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M008:S04",
+      "to": "task:M008:S04:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M008",
+      "to": "slice:M008:S05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M008:S05",
+      "to": "task:M008:S05:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M008",
+      "to": "slice:M008:S06",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M008:S06",
+      "to": "task:M008:S06:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M009",
+      "to": "slice:M009:S01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S01",
+      "to": "task:M009:S01:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S01",
+      "to": "task:M009:S01:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S01",
+      "to": "task:M009:S01:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S01",
+      "to": "task:M009:S01:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S01",
+      "to": "task:M009:S01:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M009",
+      "to": "slice:M009:S02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S02",
+      "to": "task:M009:S02:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M009",
+      "to": "slice:M009:S03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S03",
+      "to": "task:M009:S03:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M009",
+      "to": "slice:M009:S04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S04",
+      "to": "task:M009:S04:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-05-10T07:54:05.989Z"
+  "builtAt": "2026-05-11T07:33:54.730Z"
 }

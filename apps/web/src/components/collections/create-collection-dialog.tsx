@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
-import { createCollectionSchema, type CreateCollectionInput } from "@brol/shared";
+import { createCollectionSchema, OBJECT_TYPES, type CreateCollectionInput } from "@brol/shared";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,19 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { trpc } from "../../lib/trpc";
+
+// Type labels
+const typeLabels: Record<string, string> = {
+  BOOK: "Livres",
+  BOARD_GAME: "Jeux de société",
+  TOOL: "Outils",
+  FILM: "Films / DVD",
+  MUSIC: "Musique / CD",
+  ELECTRONIC: "Électronique",
+  ELECTRIC: "Outillage électrique",
+  CLOTHING: "Vêtements",
+  CUSTOM: "Personnalisé",
+};
 
 interface CreateCollectionDialogProps {
   open: boolean;
@@ -92,6 +105,7 @@ export function CreateCollectionDialog({
       name: "",
       description: "",
       isPublic: false,
+      type: "BOOK",
     },
   });
 
@@ -106,6 +120,8 @@ export function CreateCollectionDialog({
     if (!open) {
       reset();
       setIsPublic(false);
+      setSelectedType("BOOK");
+      setValue("type", "BOOK");
     }
   }, [open, reset]);
 
@@ -122,6 +138,7 @@ export function CreateCollectionDialog({
   });
 
   const [error, setError] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<"BOOK" | "BOARD_GAME" | "TOOL" | "FILM" | "MUSIC" | "ELECTRONIC" | "ELECTRIC" | "CLOTHING" | "CUSTOM">("BOOK");
 
   const onSubmit = async (data: CreateCollectionInput) => {
     setError(null);
@@ -182,6 +199,63 @@ export function CreateCollectionDialog({
               </p>
             )}
           </div>
+
+          {/* Type selector */}
+          <div className="space-y-2">
+            <Label htmlFor="type" className="font-mono text-xs uppercase">
+              Type d&apos;objets
+            </Label>
+            <select
+              id="type"
+              {...register("type")}
+              onChange={(e) => {
+                const val = e.target.value as typeof selectedType;
+                setSelectedType(val);
+                setValue("type", val);
+              }}
+              value={selectedType}
+              className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+            >
+              {OBJECT_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {typeLabels[t] ?? t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Custom field labels — only for CUSTOM type */}
+          {selectedType === "CUSTOM" && (
+            <div className="space-y-2 border border-dashed border-border p-3">
+              <p className="font-mono text-xs text-muted-foreground">
+                Définissez les labels pour les champs libres
+              </p>
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <Label htmlFor="customField1Label" className="font-mono text-xs uppercase">
+                    Champ libre 1
+                  </Label>
+                  <Input
+                    id="customField1Label"
+                    placeholder="Champ libre 1"
+                    {...register("customField1Label")}
+                    className={errors.customField1Label ? "border-destructive" : ""}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="customField2Label" className="font-mono text-xs uppercase">
+                    Champ libre 2
+                  </Label>
+                  <Input
+                    id="customField2Label"
+                    placeholder="Champ libre 2"
+                    {...register("customField2Label")}
+                    className={errors.customField2Label ? "border-destructive" : ""}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* isPublic toggle */}
           <div className="flex items-start justify-between gap-4 pt-2">

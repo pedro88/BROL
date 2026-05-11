@@ -215,6 +215,11 @@ export default function CollectionDetailPage() {
                 <div className="flex-1">
                   <h1 className="font-display text-3xl vhs-text-glow text-primary">
                     {collectionData.name}
+                    {collectionData.type && (
+                      <span className="ml-3 font-mono text-sm bg-secondary/20 text-secondary border border-secondary/30 px-2 py-1">
+                        {(collectionData as { type: string }).type}
+                      </span>
+                    )}
                   </h1>
                   {collectionData.description && (
                     <p className="font-mono text-sm text-muted-foreground mt-2">

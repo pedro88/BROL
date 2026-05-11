@@ -29,6 +29,21 @@ function getBaseUrl(): string {
 }
 
 /**
+ * Get the API base URL (standalone API server port).
+ * Sessions are created by the standalone API (port 3001),
+ * so we must read sessions from there.
+ */
+function getApiUrl(): string {
+  if (typeof window !== "undefined") {
+    return (
+      process.env.NEXT_PUBLIC_API_URL ??
+      "http://localhost:3001"
+    );
+  }
+  return "http://localhost:3001";
+}
+
+/**
  * Reads the session from BetterAuth /get-session endpoint and syncs the
  * token to the global store. Keeps the store in sync whenever the session
  * changes (sign-in, sign-out, token refresh).
@@ -46,7 +61,11 @@ export function AuthSessionSyncer() {
 
     async function syncSession() {
       try {
-        const res = await fetch(`${baseUrl}/api/auth/get-session`, {
+        // Use the standalone API URL so the session cookie (set for port 3001)
+        // is included in the request. The Next.js /api/auth/ handler can't
+        // read it because it's on a different port.
+        const apiUrl = getApiUrl();
+        const res = await fetch(`${apiUrl}/api/auth/get-session`, {
           credentials: "include",
         });
         const data = await res.json();

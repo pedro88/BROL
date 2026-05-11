@@ -74,6 +74,7 @@ describe("collectionsRouter", () => {
         name: "New Collection",
         description: "A description",
         isPublic: true,
+        type: "BOOK",
       });
       expect(result.name).toBe("New Collection");
       expect(result.isPublic).toBe(true);
@@ -83,6 +84,7 @@ describe("collectionsRouter", () => {
     it("creates collection with isPublic default false", async () => {
       const result = await callerFor(owner.id).collections.create({
         name: "Private Collection",
+        type: "BOOK",
       });
       expect(result.isPublic).toBe(false);
     });

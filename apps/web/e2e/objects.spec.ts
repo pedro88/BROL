@@ -9,6 +9,7 @@ import {
   signIn,
   createUserAPI,
   cleanupUser,
+  clearSession,
   uniqueEmail,
 } from "./helpers/auth";
 
@@ -37,7 +38,7 @@ async function createCollectionAPI(
       "Content-Type": "application/json",
       Authorization: `Bearer ${userToken}`,
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, type: "BOOK" }),
   });
   const data = await res.json();
   if (data.error) throw new Error(`createCollectionAPI: ${JSON.stringify(data.error)}`);
