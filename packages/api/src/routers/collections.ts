@@ -173,18 +173,20 @@ export const collectionsRouter = router({
   create: protectedProcedure
     .input(createCollectionSchema)
     .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.collection.create({
-        data: {
-          name: input.name,
-          description: input.description,
-          coverImage: input.coverImage,
-          isPublic: input.isPublic ?? false,
-          type: input.type ?? "BOOK",
-          customField1Label: input.customField1Label,
-          customField2Label: input.customField2Label,
-          userId: ctx.userId,
-        },
-      });
+      // Force type from input (do not default here — let the DB default handle it)
+      const data: Record<string, unknown> = {
+        name: input.name,
+        description: input.description,
+        coverImage: input.coverImage,
+        isPublic: input.isPublic ?? false,
+        customField1Label: input.customField1Label,
+        customField2Label: input.customField2Label,
+        userId: ctx.userId,
+      };
+      if (input.type !== undefined) {
+        data.type = input.type;
+      }
+      return ctx.prisma.collection.create({ data: data as Parameters<typeof ctx.prisma.collection.create>[0]["data"] });
     }),
 
   /**

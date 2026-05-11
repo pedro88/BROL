@@ -41,7 +41,7 @@ export const createCollectionSchema = z.object({
   description: z.string().max(500).optional(),
   coverImage: z.string().url().optional(),
   isPublic: z.boolean().default(false),
-  type: z.enum(OBJECT_TYPES).default("BOOK"),
+  type: z.enum(OBJECT_TYPES),
   customField1Label: z.string().max(50).optional(),
   customField2Label: z.string().max(50).optional(),
 });
