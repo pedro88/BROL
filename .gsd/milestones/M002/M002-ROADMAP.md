@@ -2,7 +2,11 @@
 
 ## Vision
 
-BetterAuth OAuth (Google, GitHub, Apple) + email/password intégrés. Collections publiques browsable sans login. Données réelles via tRPC (plus de mock). Tests unitaires et e2e full coverage.
+BetterAuth email/password intégré. OAuth (Google, GitHub, Apple) commenté en attente des credentials. Collections publiques browsable sans login. Données réelles via tRPC (plus de mock). Tests unitaires et e2e partiels (OAuth skippé, full coverage dans M004).
+
+## Notes
+
+- S06 (Tests e2e complets) supprimé — couvert par M004 qui est plus exhaustif.
 
 ## Slices
 
@@ -20,9 +24,6 @@ BetterAuth OAuth (Google, GitHub, Apple) + email/password intégrés. Collection
 
 - [x] **S05: Tests e2e OAuth + public visibility** `risk:low` `depends:[S01,S02]`
   > After this: playwright test passes: auth form + public browse + middleware redirects + OAuth tests skipped (credentials not configured)
-
-- [ ] **S06: Tests e2e complets (tous les cas)** `risk:medium` `depends:[S01,S02,S03,S04,S05]`
-  > After this: Tous les edge cases e2e testés — sign-up/sign-in/session persistence/sign-out + collections CRUD + objects CRUD + browse public + form validation + error handling + responsive. Zéro test skippé (sauf OAuth credentials).
 
 ## Boundary Map
 

@@ -102,7 +102,9 @@ test.describe("private access", () => {
   let testEmail: string;
   let collectionId: string;
 
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ page }) => {
+    // Clear any leftover session from previous tests (e.g., objects/add tests)
+    await clearSession(page);
     testEmail = uniqueEmail();
     const password = "TestPass123!";
     const user = await createUserAPI(testEmail, password, "Private Access Test User");
@@ -124,8 +126,11 @@ test.describe("private access", () => {
   });
 
   test("accessible to owner when authenticated", async ({ page }) => {
+    // Ensure clean session before sign-in
+    await clearSession(page);
     const password = "TestPass123!";
     await signIn(page, testEmail, password);
+    await page.waitForLoadState("networkidle");
     await page.goto(`${WEB_BASE}/collections/${collectionId}`);
     await expect(page).not.toHaveURL(/\/sign-in/);
     await expect(page.getByText(/Private Access Collection/i)).toBeVisible({ timeout: 5000 });
@@ -144,13 +149,16 @@ test.describe("mixed scenarios", () => {
     const col = await createPrivateCollectionAPI(user.token, "Mixed Private Collection");
 
     // Sign in — can access
+    await clearSession(page); // ensure clean state
     await signIn(page, email, password);
+    await page.waitForLoadState("networkidle");
     await page.goto(`${WEB_BASE}/collections/${col.id}`);
     await expect(page).not.toHaveURL(/\/sign-in/);
 
-    // Clear session — cannot access
+    // Clear session — cannot access (redirect to sign-in or not-found)
     await clearSession(page);
     await page.goto(`${WEB_BASE}/collections/${col.id}`);
+    await page.waitForLoadState("networkidle");
     const url = page.url();
     const isSignIn = /\/sign-in/.test(url);
     const isNotFound = await page.getByText(/non trouvé|intouvable|not found/i).first().isVisible().catch(() => false);
@@ -167,7 +175,7 @@ test.describe("mixed scenarios", () => {
 
     // Browse — collection should be visible without auth
     await page.goto(`${WEB_BASE}/browse`);
-    await expect(page.getByText(/Verify Public Access/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Verify Public Access/i).first()).toBeVisible({ timeout: 5000 });
 
     await cleanupUser(email).catch(() => {});
   });

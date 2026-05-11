@@ -162,8 +162,8 @@ export async function signIn(page: Page, email: string, password: string): Promi
     }
   }
 
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/mot de passe/i).fill(password);
+  await page.locator("#email").fill(email);
+  await page.locator("#password").fill(password);
   await page.getByRole("button", { name: /se connecter/i }).click();
 
   // Wait for navigation away from sign-in (BetterAuth redirect)
@@ -171,7 +171,7 @@ export async function signIn(page: Page, email: string, password: string): Promi
     await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"), {
       timeout: 10000,
     });
-    // Give AuthSessionSyncer time to sync the token to the store (100ms)
+    // Give AuthSessionSyncer time to sync the token to the store
     await page.waitForTimeout(500);
   } catch {
     const errorText = await page.locator(".text-destructive, [role=alert]").first().textContent().catch(() => "(no error message)");
@@ -198,9 +198,10 @@ export async function signUp(
     timeout: 3000,
   });
 
-  await page.getByLabel(/nom/i).fill(name ?? email.split("@")[0]);
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/mot de passe/i).fill(password);
+  await page.locator("#name").fill(name ?? email.split("@")[0]);
+  await page.locator("#email").fill(email);
+  await page.locator("#password").fill(password);
+  await page.locator("#passwordConfirm").fill(password);
   await page.getByRole("button", { name: /créer mon compte/i }).click();
 
   try {
@@ -215,8 +216,9 @@ export async function signUp(
 }
 
 /**
- * Clears the current session by calling the sign-out endpoint from the browser.
- * This works regardless of whether a sign-out button exists in the UI.
+ * Clears the current session by calling the sign-out endpoint from the browser
+ * AND wiping all cookies.  This works regardless of whether a sign-out button
+ * exists in the UI.
  */
 export async function clearSession(page: Page): Promise<void> {
   try {
@@ -236,6 +238,9 @@ export async function clearSession(page: Page): Promise<void> {
     // Sign-out endpoint may fail if session already expired — that's OK
     console.warn(`clearSession: fetch failed (${String(err)}), session may already be cleared`);
   }
+  // Wipe all cookies so the session is gone even if the API call succeeded
+  // but did not delete the cookie (BetterAuth quirk).
+  await page.context().clearCookies();
 }
 
 /**
@@ -255,3 +260,4 @@ export async function signOut(page: Page): Promise<void> {
 export async function hasActiveSession(page: Page): Promise<boolean> {
   return !page.url().includes("/sign-in");
 }
+

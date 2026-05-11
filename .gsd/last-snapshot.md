@@ -1,4 +1,4 @@
-# GSD context snapshot (2026-05-09T14:32:42.387Z)
+# GSD context snapshot (2026-05-11T06:42:04.651Z)
 
 ## Top project memories
 - [MEM005] (gotcha) tRPC v11.17.0 + React 19 + React Query v5: `trpc.X.useQuery()` works in browser but E2E tests see 0 tRPC HTTP requests when using Playwright's `page.on("request")`. Root cause: tRPC React hooks work correctly in real browser but Playwright's request interceptor misses requests under specific conditions (possibly network timing). Workaround: use `page.waitForLoadState("networkidle")` or `waitForTimeout()` after navigation in tests — this allows the request to complete before assertions.

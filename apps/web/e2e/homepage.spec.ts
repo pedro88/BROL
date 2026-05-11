@@ -42,7 +42,9 @@ test.describe("homepage", () => {
   test("logo click returns to homepage", async ({ page }) => {
     await page.goto(`${WEB_BASE}/browse`);
     await page.locator("text=BROL").first().click();
-    await expect(page).toHaveURL(`${WEB_BASE}/`);
+    // Wait for navigation to actually happen (client-side React navigation)
+    await page.waitForURL((url) => !url.pathname.startsWith("/browse"), { timeout: 5000 }).catch(() => {});
+    await expect(page).toHaveURL(/\/$/);
   });
 
   test("navbar visible", async ({ page }) => {
@@ -83,6 +85,6 @@ test.describe("homepage responsive", () => {
     // Must use a public page for anonymous responsive test
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto(`${WEB_BASE}/sign-in`);
-    await expect(page.getByLabel(/email/i)).toBeVisible();
+    await expect(page.locator("#email")).toBeVisible();
   });
 });

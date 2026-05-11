@@ -28,23 +28,23 @@ test.describe("form validation", () => {
     // Submit without filling email
     await page.getByRole("button", { name: /se connecter/i }).click();
     // HTML5 required prevents submission, or we see validation message
-    await expect(page.getByLabel(/email/i)).toBeFocused();
+    await expect(page.locator("#email")).toBeFocused();
   });
 
   test("empty password shows required error", async ({ page }) => {
     await page.goto(`${WEB_BASE}/sign-in`);
-    await page.getByLabel(/email/i).fill("test@example.com");
+    await page.locator("#email").fill("test@example.com");
     await page.getByRole("button", { name: /se connecter/i }).click();
-    await expect(page.getByLabel(/mot de passe/i)).toBeFocused();
+    await expect(page.locator("#password")).toBeFocused();
   });
 
   test("invalid email format shows error", async ({ page }) => {
     await page.goto(`${WEB_BASE}/sign-in`);
-    await page.getByLabel(/email/i).fill("not-an-email");
-    await page.getByLabel(/mot de passe/i).fill("TestPass123!");
+    await page.locator("#email").fill("not-an-email");
+    await page.locator("#password").fill("TestPass123!");
     await page.getByRole("button", { name: /se connecter/i }).click();
     // Browser HTML5 email validation should prevent submission
-    await expect(page.getByLabel(/email/i)).toHaveAttribute("type", "email");
+    await expect(page.locator("#email")).toHaveAttribute("type", "email");
   });
 
   test("password too short shows error", async ({ page }) => {
@@ -55,13 +55,13 @@ test.describe("form validation", () => {
     await expect(page.getByRole("heading", { name: /créer un compte/i })).toBeVisible();
 
     // Try to submit with password < 8 chars
-    await page.getByLabel(/nom/i).fill("Short Pass Test");
-    await page.getByLabel(/email/i).fill(uniqueEmail());
-    await page.getByLabel(/mot de passe/i).fill("1234567"); // 7 chars — too short
+    await page.locator("#name").fill("Short Pass Test");
+    await page.locator("#email").fill(uniqueEmail());
+    await page.locator("#password").fill("1234567"); // 7 chars — too short
     await page.getByRole("button", { name: /créer mon compte/i }).click();
 
     // Browser minLength=8 should prevent submission
-    await expect(page.getByLabel(/mot de passe/i)).toBeFocused();
+    await expect(page.locator("#password")).toBeFocused();
   });
 });
 
@@ -98,9 +98,9 @@ test.describe("sign-up", () => {
     await page.getByText(/pas encore de compte/i).click();
     await expect(page.getByRole("heading", { name: /créer un compte/i })).toBeVisible();
 
-    await page.getByLabel(/nom/i).fill("Duplicate User");
-    await page.getByLabel(/email/i).fill(testEmail);
-    await page.getByLabel(/mot de passe/i).fill(password);
+    await page.locator("#name").fill("Duplicate User");
+    await page.locator("#email").fill(testEmail);
+    await page.locator("#password").fill(password);
     await page.getByRole("button", { name: /créer mon compte/i }).click();
 
     // Should stay on sign-up page and show error
@@ -127,13 +127,13 @@ test.describe("sign-up", () => {
     await page.getByText(/pas encore de compte/i).click();
     await expect(page.getByRole("heading", { name: /créer un compte/i })).toBeVisible();
 
-    await page.getByLabel(/nom/i).fill("Test User");
-    await page.getByLabel(/email/i).fill(testEmail);
-    await page.getByLabel(/mot de passe/i).fill("1234567"); // too short (minLength=8)
+    await page.locator("#name").fill("Test User");
+    await page.locator("#email").fill(testEmail);
+    await page.locator("#password").fill("1234567"); // too short (minLength=8)
     await page.getByRole("button", { name: /créer mon compte/i }).click();
 
     // Browser should prevent submission
-    await expect(page.getByLabel(/mot de passe/i)).toBeFocused();
+    await expect(page.locator("#password")).toBeFocused();
   });
 });
 
@@ -174,8 +174,8 @@ test.describe("sign-in", () => {
 
   test("wrong password shows error", async ({ page }) => {
     await page.goto(`${WEB_BASE}/sign-in`);
-    await page.getByLabel(/email/i).fill(testEmail);
-    await page.getByLabel(/mot de passe/i).fill("WrongPassword999!");
+    await page.locator("#email").fill(testEmail);
+    await page.locator("#password").fill("WrongPassword999!");
     await page.getByRole("button", { name: /se connecter/i }).click();
 
     await expect(page).toHaveURL(/\/sign-in/);
@@ -185,8 +185,8 @@ test.describe("sign-in", () => {
 
   test("non-existent email shows error", async ({ page }) => {
     await page.goto(`${WEB_BASE}/sign-in`);
-    await page.getByLabel(/email/i).fill(`nonexistent-${uniqueEmail()}`);
-    await page.getByLabel(/mot de passe/i).fill("TestPass123!");
+    await page.locator("#email").fill(`nonexistent-${uniqueEmail()}`);
+    await page.locator("#password").fill("TestPass123!");
     await page.getByRole("button", { name: /se connecter/i }).click();
 
     await expect(page).toHaveURL(/\/sign-in/);
@@ -321,7 +321,7 @@ test.describe("responsive", () => {
   test("form renders at 375px mobile", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto(`${WEB_BASE}/sign-in`);
-    await expect(page.getByLabel(/email/i)).toBeVisible();
+    await expect(page.locator("#email")).toBeVisible();
   });
 
   test("browse renders at 375px mobile", async ({ page }) => {

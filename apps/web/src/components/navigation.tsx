@@ -75,15 +75,15 @@ export function Header() {
     <header className="sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          {/* Logo */}
-          <div className="relative">
+          {/* Logo — links to homepage */}
+          <Link href="/" className="relative no-underline">
             <span className="font-display text-3xl vhs-text-glow text-primary">
               BROL
             </span>
             <span className="absolute -top-1 -right-2 text-xs font-mono text-secondary vhs-text-glow-cyan">
               BETA
             </span>
-          </div>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">

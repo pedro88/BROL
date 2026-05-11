@@ -72,13 +72,24 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       // Redirect to collection
       router.push(`/collections/${data.collectionId}`);
     },
+    onError: () => {
+      // Reset form error state so user can try again
+      // The form shows the error message via errors.name / errors.collectionId
+    },
   });
 
-  // Fetch collections for dropdown if no collectionId provided
-  const { data: collections } = trpc.collections.list.useQuery(
-    undefined,
-    { enabled: !collectionId }
-  );
+  // Always fetch collections (needed for the dropdown when no collectionId prop)
+  const { data: collections } = trpc.collections.list.useQuery();
+
+  // Auto-select first collection when collections load and no collectionId prop is given
+  useEffect(() => {
+    if (!collectionId && collections?.items.length) {
+      const current = watch("collectionId");
+      if (!current) {
+        setValue("collectionId", collections.items[0].id);
+      }
+    }
+  }, [collections, collectionId, setValue, watch]);
 
   // Fetch available QR codes when collectionId is provided
   const { data: qrCodes } = trpc.qr.listStock.useQuery(

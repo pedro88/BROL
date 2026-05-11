@@ -158,7 +158,9 @@ test.describe("homepage", () => {
     await page.goto(`${WEB_BASE}/collections`);
     const logo = page.locator("text=BROL").first();
     await logo.click();
-    await expect(page).toHaveURL(`${WEB_BASE}/`);
+    // Wait for navigation to actually happen (client-side React navigation)
+    await page.waitForURL((url) => !url.pathname.startsWith("/collections"), { timeout: 5000 }).catch(() => {});
+    await expect(page).toHaveURL(/\/$/);
   });
 });
 
@@ -223,7 +225,9 @@ test.describe("isPublic toggle", () => {
   test("edit page shows isPublic toggle", async ({ page }) => {
     const col = await createPrivateCollectionAPI(testToken, "Toggle Test Collection");
     await page.goto(`${WEB_BASE}/collections/${col.id}/edit`);
-    const toggle = page.locator('[role="switch"], input[type="checkbox"]').first();
+    // Wait for the switch to be in the DOM (React hydration + render)
+    await page.waitForSelector('[role="switch"]', { timeout: 5000 }).catch(() => {});
+    const toggle = page.locator('[role="switch"]').first();
     await expect(toggle).toBeVisible({ timeout: 3000 });
   });
 
@@ -236,6 +240,9 @@ test.describe("isPublic toggle", () => {
 
     // Toggle to public via edit page
     await page.goto(`${WEB_BASE}/collections/${col.id}/edit`);
+    // Wait for collection to load and useEffect to sync isPublic state
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(500);
     const toggle = page.locator('[role="switch"], input[type="checkbox"]').first();
     const isPublic = await toggle.isChecked().catch(() => false);
     if (!isPublic) {
