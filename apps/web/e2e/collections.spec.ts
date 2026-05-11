@@ -33,6 +33,7 @@ async function createCollectionAPI(
   userToken: string,
   name: string,
   isPublic = false,
+  type = "BOOK",
 ): Promise<{ id: string }> {
   const res = await fetch(`${API_BASE}/api/trpc/collections.create`, {
     method: "POST",
@@ -40,7 +41,7 @@ async function createCollectionAPI(
       "Content-Type": "application/json",
       Authorization: `Bearer ${userToken}`,
     },
-    body: JSON.stringify({ name, isPublic }),
+    body: JSON.stringify({ name, isPublic, type }),
   });
   const data = await res.json();
   if (data.error) throw new Error(`createCollectionAPI: ${JSON.stringify(data.error)}`);
@@ -304,6 +305,91 @@ test.describe("navigation", () => {
     );
     await backLink.click({ timeout: 10000 });
     await expect(page).toHaveURL(/\/collections/);
+  });
+});
+
+// ============================================================================
+// Object Types
+// ============================================================================
+
+test.describe("object types", () => {
+  let testEmail: string;
+  let userToken: string;
+
+  test.beforeEach(async ({ page }) => {
+    testEmail = uniqueEmail();
+    const password = "TestPass123!";
+    const user = await createUserAPI(testEmail, password, "Object Type Test User");
+    userToken = user.token;
+    await signIn(page, testEmail, password);
+    await page.waitForLoadState("networkidle");
+  });
+
+  test.afterEach(async () => {
+    await cleanupUser(testEmail).catch(() => {});
+  });
+
+  test("create collection with BOARD_GAME type via UI", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/collections`);
+    await page.getByRole("button", { name: /nouvelle/i }).click();
+    await page.waitForSelector('[id="type"]');
+    await page.locator('[id="type"]').selectOption("BOARD_GAME");
+    await page.getByLabel(/nom/i).fill("E2E Board Game Collection");
+    await page.getByRole("button", { name: /créer/i }).click();
+    await page.waitForURL(/\/collections\/.+/);
+    await expect(page).toHaveURL(/\/collections\/.+/);
+    // Type badge should show "Jeux de société"
+    await expect(page.getByText(/jeux de société/i).first()).toBeVisible();
+  });
+
+  test("create collection with CUSTOM type via UI", async ({ page }) => {
+    await page.goto(`${WEB_BASE}/collections`);
+    await page.getByRole("button", { name: /nouvelle/i }).click();
+    await page.waitForSelector('[id="type"]');
+    await page.locator('[id="type"]').selectOption("CUSTOM");
+    // Custom field labels should appear
+    await page.waitForSelector('[id="customField1Label"]');
+    await page.getByLabel(/nom/i).fill("E2E Custom Collection");
+    await page.getByLabel(/champ libre 1/i).fill("Couleur");
+    await page.getByLabel(/champ libre 2/i).fill("Taille");
+    await page.getByRole("button", { name: /créer/i }).click();
+    await page.waitForURL(/\/collections\/.+/);
+  });
+
+  test("BOARD_GAME type shows board game fields in object form", async ({ page }) => {
+    const col = await createCollectionAPI(userToken, "Board Game Test", false, "BOARD_GAME");
+    await page.goto(`${WEB_BASE}/objects/add?collectionId=${col.id}`);
+    await page.waitForLoadState("networkidle");
+    // Type badge should show
+    await expect(page.getByText(/jeux de société/i).first()).toBeVisible();
+    // Board game specific fields should be visible
+    await expect(page.getByLabel(/joueurs min/i)).toBeVisible();
+    await expect(page.getByLabel(/durée/i)).toBeVisible();
+    await expect(page.getByLabel(/âge min/i)).toBeVisible();
+    // ISBN should NOT be visible for BOARD_GAME
+    await expect(page.getByLabel(/isbn/i)).not.toBeVisible();
+  });
+
+  test("BOOK type shows ISBN in object form", async ({ page }) => {
+    const col = await createCollectionAPI(userToken, "Book Test", false, "BOOK");
+    await page.goto(`${WEB_BASE}/objects/add?collectionId=${col.id}`);
+    await page.waitForLoadState("networkidle");
+    // Type badge should show
+    await expect(page.getByText(/livres/i).first()).toBeVisible();
+    // ISBN should be visible
+    await expect(page.getByLabel(/isbn/i)).toBeVisible();
+    // Board game fields should NOT be visible
+    await expect(page.getByLabel(/joueurs min/i)).not.toBeVisible();
+  });
+
+  test("ELECTRIC type shows powerWatts in object form", async ({ page }) => {
+    const col = await createCollectionAPI(userToken, "Electric Test", false, "ELECTRIC");
+    await page.goto(`${WEB_BASE}/objects/add?collectionId=${col.id}`);
+    await page.waitForLoadState("networkidle");
+    // Type badge should show
+    await expect(page.getByText(/outillage électrique/i).first()).toBeVisible();
+    // powerWatts field should be visible
+    await expect(page.getByLabel(/puissance/i)).toBeVisible();
   });
 });
 
