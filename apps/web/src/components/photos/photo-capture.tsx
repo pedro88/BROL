@@ -1,11 +1,10 @@
 /**
- * Composant PhotoCapture — capture photo, upload S3, et intégration DuckDuckGo.
+ * Composant PhotoCapture — capture photo et upload S3.
  *
  * Props:
  * - objectId: ID de l'objet parent (requis pour la presigned URL)
  * - onPhotoAdded: callback called with the created Photo record
  * - onError: callback called on upload/API error
- * - maxPhotos: nombre maximum de photos (par défaut: illimité)
  *
  * Utilisation:
  * <PhotoCapture objectId={object.id} onPhotoAdded={(photo) => console.log(photo)} />
@@ -16,10 +15,9 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Camera, Upload, Search, X, CheckCircle, Loader2, AlertCircle, Image } from "lucide-react";
+import { Camera, Upload, X, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { usePresignedUrl, usePhotoAdd } from "../../lib/trpc-hooks/photos";
-import { searchImages, type ImageResult, proxyImageUrl } from "../../lib/duckduckgo";
 import type { Photo } from "@brol/shared";
 
 interface PhotoCaptureProps {
@@ -29,7 +27,6 @@ interface PhotoCaptureProps {
   disabled?: boolean;
 }
 
-type Source = "camera" | "file" | "search";
 type Status = "idle" | "preview" | "uploading" | "success" | "error";
 
 export function PhotoCapture({
@@ -39,14 +36,10 @@ export function PhotoCapture({
   disabled,
 }: PhotoCaptureProps) {
   const [open, setOpen] = useState(false);
-  const [activeSource, setActiveSource] = useState<Source>("file");
+  const [activeSource, setActiveSource] = useState<"camera" | "file">("file");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<ImageResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [selectedSearchImage, setSelectedSearchImage] = useState<ImageResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -72,54 +65,44 @@ export function PhotoCapture({
     setStatus("idle");
     setPreviewUrl(null);
     setErrorMessage("");
-    setSelectedSearchImage(null);
-    setSearchResults([]);
-    setSearchQuery("");
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
   }, []);
 
-  // Gère la sélection de fichier (upload ou caméra)
+  const processFile = useCallback(async (file: File) => {
+    // Valider le type
+    if (!file.type.startsWith("image/")) {
+      setStatus("error");
+      setErrorMessage("Le fichier doit être une image (JPEG, PNG, WebP, GIF)");
+      return;
+    }
+
+    // Valider la taille (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      setStatus("error");
+      setErrorMessage("Le fichier est trop volumineux. Maximum: 10 Mo.");
+      return;
+    }
+
+    // Créer la preview
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      setPreviewUrl(e.target?.result as string);
+      setStatus("preview");
+      await uploadFile(file);
+    };
+    reader.readAsDataURL(file);
+  }, [objectId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleFileChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
-
       await processFile(file);
     },
-    [objectId] // eslint-disable-line react-hooks/exhaustive-deps
+    [processFile]
   );
 
-  // Traite un fichier (preview + upload)
-  const processFile = useCallback(
-    async (file: File) => {
-      // Valider le type
-      if (!file.type.startsWith("image/")) {
-        setStatus("error");
-        setErrorMessage("Le fichier doit être une image (JPEG, PNG, WebP, GIF)");
-        return;
-      }
-
-      // Valider la taille (10MB max — correspond à S3_MAX_FILE_SIZE_MB)
-      if (file.size > 10 * 1024 * 1024) {
-        setStatus("error");
-        setErrorMessage("Le fichier est trop volumineux. Maximum: 10 Mo.");
-        return;
-      }
-
-      // Créer la preview
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        setPreviewUrl(e.target?.result as string);
-        setStatus("preview");
-        await uploadFile(file);
-      };
-      reader.readAsDataURL(file);
-    },
-    [objectId] // eslint-disable-line react-hooks/exhaustive-deps
-  );
-
-  // Upload un fichier vers S3 via presigned URL
   const uploadFile = useCallback(
     async (file: File) => {
       setStatus("uploading");
@@ -150,7 +133,7 @@ export function PhotoCapture({
         await addMutation.mutateAsync({
           objectId,
           url: publicUrl,
-          position: 0, // TODO: calculer la prochaine position
+          position: 0,
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Erreur lors de l'upload";
@@ -161,62 +144,6 @@ export function PhotoCapture({
     },
     [objectId, presignedMutation, addMutation, onError]
   );
-
-  // Upload une image depuis DuckDuckGo (proxée via notre backend)
-  const uploadImageFromSearch = useCallback(
-    async (image: ImageResult) => {
-      setSelectedSearchImage(image);
-      setPreviewUrl(proxyImageUrl(image.url));
-      setStatus("preview");
-
-      try {
-        // Pour les images DuckDuckGo: on les proxie via notre API
-        // On fait un fetch de l'image, puis on l'upload via presigned URL
-        const imageResponse = await fetch(proxyImageUrl(image.url));
-        if (!imageResponse.ok) {
-          throw new Error(`Impossible de charger l'image: ${imageResponse.status}`);
-        }
-
-        const blob = await imageResponse.blob();
-        // Déterminer le type MIME depuis l'URL ou fallback
-        const ext = image.url.split(".").pop()?.toLowerCase().split("?")[0];
-        const mimeTypes: Record<string, string> = {
-          jpg: "image/jpeg",
-          jpeg: "image/jpeg",
-          png: "image/png",
-          webp: "image/webp",
-          gif: "image/gif",
-        };
-        const mimeType = mimeTypes[ext ?? ""] ?? "image/jpeg";
-        const filename = `search-${Date.now()}.${ext ?? "jpg"}`;
-
-        const file = new File([blob], filename, { type: mimeType });
-        await uploadFile(file);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Erreur lors du téléchargement de l'image";
-        setStatus("error");
-        setErrorMessage(message);
-        onError?.(err instanceof Error ? err : new Error(message));
-      }
-    },
-    [objectId, uploadFile, onError] // eslint-disable-line react-hooks/exhaustive-deps
-  );
-
-  // Recherche DuckDuckGo Images
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery.trim()) return;
-
-    setSearchLoading(true);
-    setSearchResults([]);
-    try {
-      const results = await searchImages(searchQuery.trim(), { limit: 20 });
-      setSearchResults(results);
-    } catch {
-      setSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [searchQuery]);
 
   const isWorking = status === "uploading" || status === "preview";
   const isDisabled = disabled || presignedMutation.isPending || addMutation.isPending;
@@ -237,7 +164,7 @@ export function PhotoCapture({
       {/* Dialog */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-background border border-border w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-background border border-border w-full max-w-md">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="font-mono text-sm font-medium">Ajouter une photo</h2>
@@ -253,35 +180,42 @@ export function PhotoCapture({
               </button>
             </div>
 
-            {/* Onglets */}
+            {/* Onglets — Fichier / Caméra */}
             {status === "idle" && (
               <div className="flex border-b border-border">
-                {[
-                  { id: "file", label: "Fichier", icon: Upload },
-                  { id: "camera", label: "Caméra", icon: Camera },
-                  { id: "search", label: "Rechercher", icon: Search },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveSource(tab.id as Source)}
-                    className={`
-                      flex-1 flex items-center justify-center gap-2 py-3 text-sm font-mono
-                      border-b-2 transition-colors
-                      ${activeSource === tab.id
-                        ? "border-primary text-primary"
-                        : "border-transparent text-muted-foreground hover:text-foreground"
-                      }
-                    `}
-                  >
-                    <tab.icon className="w-4 h-4" />
-                    {tab.label}
-                  </button>
-                ))}
+                <button
+                  onClick={() => setActiveSource("file")}
+                  className={`
+                    flex-1 flex items-center justify-center gap-2 py-3 text-sm font-mono
+                    border-b-2 transition-colors
+                    ${activeSource === "file"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                    }
+                  `}
+                >
+                  <Upload className="w-4 h-4" />
+                  Fichier
+                </button>
+                <button
+                  onClick={() => setActiveSource("camera")}
+                  className={`
+                    flex-1 flex items-center justify-center gap-2 py-3 text-sm font-mono
+                    border-b-2 transition-colors
+                    ${activeSource === "camera"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                    }
+                  `}
+                >
+                  <Camera className="w-4 h-4" />
+                  Caméra
+                </button>
               </div>
             )}
 
             {/* Contenu */}
-            <div className="p-4">
+            <div className="p-4 space-y-4">
               {/* === ONGLET FICHIER === */}
               {activeSource === "file" && status === "idle" && (
                 <div className="space-y-4">
@@ -337,70 +271,6 @@ export function PhotoCapture({
                 </div>
               )}
 
-              {/* === ONGLET RECHERCHE === */}
-              {activeSource === "search" && status === "idle" && (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground font-mono">
-                    Recherchez une image sur le web.
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Nom de l'objet, auteur..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                      className="flex-1 bg-input border-2 border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-primary"
-                    />
-                    <Button
-                      variant="secondary"
-                      onClick={handleSearch}
-                      disabled={searchLoading || !searchQuery.trim()}
-                    >
-                      {searchLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Search className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-
-                  {/* Résultats */}
-                  {searchResults.length > 0 && (
-                    <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
-                      {searchResults.map((img, i) => (
-                        <button
-                          key={i}
-                          onClick={() => uploadImageFromSearch(img)}
-                          className="aspect-square overflow-hidden border-2 border-border hover:border-primary transition-colors"
-                          title={img.title}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={proxyImageUrl(img.url)}
-                            alt={img.title}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {searchResults.length === 0 && searchQuery && !searchLoading && (
-                    <p className="text-sm text-muted-foreground font-mono text-center py-4">
-                      Aucun résultat — essayez un autre terme
-                    </p>
-                  )}
-
-                  {!searchQuery && (
-                    <p className="text-xs text-muted-foreground font-mono text-center">
-                      Recherche via DuckDuckGo Images
-                    </p>
-                  )}
-                </div>
-              )}
-
               {/* === PREVIEW === */}
               {status === "preview" && previewUrl && (
                 <div className="space-y-4">
@@ -413,11 +283,6 @@ export function PhotoCapture({
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  {selectedSearchImage && (
-                    <p className="text-xs text-muted-foreground font-mono">
-                      Source: DuckDuckGo Images
-                    </p>
-                  )}
                   <Button
                     variant="secondary"
                     className="w-full"
