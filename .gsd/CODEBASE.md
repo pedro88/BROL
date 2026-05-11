@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-11T07:03:47Z | Files: 134 | Described: 0/134
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T07:03:47Z","fingerprint":"2dadcd0221aa480959b560b9266e0e21777305b8","fileCount":134,"truncated":false} -->
+Generated: 2026-05-11T07:12:39Z | Files: 135 | Described: 0/135
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T07:12:39Z","fingerprint":"fdd48a2a637c98281809b3fd428286eb3492a6cb","fileCount":135,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -150,6 +150,7 @@ Generated: 2026-05-11T07:03:47Z | Files: 134 | Described: 0/134
 - `apps/web/src/components/ui/dropdown-menu.tsx`
 - `apps/web/src/components/ui/input.tsx`
 - `apps/web/src/components/ui/label.tsx`
+- `apps/web/src/components/ui/switch.tsx`
 
 ### apps/web/src/lib/
 - `apps/web/src/lib/api-client.ts`

@@ -88,6 +88,19 @@ model VerificationToken {
 // COLLECTIONS & OBJECTS
 // ============================================
 
+// ObjectType: type d'objet determines which fields are relevant
+enum ObjectType {
+  BOOK        // Livres
+  BOARD_GAME  // Jeux de société
+  TOOL        // Outils manuels
+  FILM        // DVD / Blu-ray
+  MUSIC       // CD / Vinyl / Cassette
+  ELECTRONIC  // Électronique (appareils)
+  ELECTRIC    // Outillage électrique
+  CLOTHING    // Vêtements / Accessoires
+  CUSTOM      // Personnalisé — champs libres
+}
+
 model Collection {
   id          String   @id @default(cuid())
   userId      String
@@ -95,8 +108,13 @@ model Collection {
   description String?
   coverImage  String?
   isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Type determines which Object fields are relevant
+  type              ObjectType? @default(BOOK)
+  // Labels for custom fields (only used when type = CUSTOM)
+  customField1Label String?     @default("Champ libre 1")
+  customField2Label String?     @default("Champ libre 2")
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   objects Object[]
@@ -117,8 +135,20 @@ model Object {
   condition     ObjectCondition @default(GOOD)
   notes         String?
   coverImage    String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  // Object type (mirrors collection.type — allows per-object override in future)
+  objectType    ObjectType? @default(BOOK)
+  // BOARD_GAME fields
+  playersMin         Int?
+  playersMax         Int?
+  playingTimeMinutes Int?
+  ageMin             Int?
+  // ELECTRIC fields
+  powerWatts Int?
+  // CUSTOM fields
+  customField1 String?
+  customField2 String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   loans      Loan[]

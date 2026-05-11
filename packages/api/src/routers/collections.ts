@@ -179,6 +179,9 @@ export const collectionsRouter = router({
           description: input.description,
           coverImage: input.coverImage,
           isPublic: input.isPublic ?? false,
+          type: input.type ?? "BOOK",
+          customField1Label: input.customField1Label,
+          customField2Label: input.customField2Label,
           userId: ctx.userId,
         },
       });
@@ -204,6 +207,9 @@ export const collectionsRouter = router({
       if (input.data.description !== undefined) updateData.description = input.data.description;
       if (input.data.coverImage !== undefined) updateData.coverImage = input.data.coverImage;
       if (input.data.isPublic !== undefined) updateData.isPublic = input.data.isPublic;
+      if (input.data.type !== undefined) updateData.type = input.data.type;
+      if (input.data.customField1Label !== undefined) updateData.customField1Label = input.data.customField1Label;
+      if (input.data.customField2Label !== undefined) updateData.customField2Label = input.data.customField2Label;
 
       return ctx.prisma.collection.update({
         where: { id: input.id },

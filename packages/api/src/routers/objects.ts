@@ -132,6 +132,9 @@ export const objectsRouter = router({
         throw new Error("Collection non trouvée");
       }
 
+      // objectType defaults to BOOK via Zod schema, override from collection type if not set by client
+      const objectType = input.objectType ?? collection.type ?? "BOOK";
+
       // Si un QR stock est fourni, vérifier qu'il appartient à l'utilisateur
       if (input.qrStockId) {
         const qrStock = await ctx.prisma.qrStock.findFirst({
@@ -152,6 +155,7 @@ export const objectsRouter = router({
       return ctx.prisma.object.create({
         data: {
           ...input,
+          objectType,
           qrStockId: input.qrStockId ?? null,
         },
         include: {

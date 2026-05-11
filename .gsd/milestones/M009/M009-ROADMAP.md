@@ -4,7 +4,7 @@
 
 ## Slices
 
-- [ ] **S01: Schema DB + API object types** `risk:medium` `depends:[]`
+- [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: Après S01 : une collection peut être créée avec un type, l'API valide le bon format
 
 - [ ] **S02: Collection type selector dans create/edit** `risk:low` `depends:[S01]`
