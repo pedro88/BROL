@@ -702,6 +702,45 @@
       "label": "T05: Générer migration Prisma",
       "type": "task",
       "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M009:S02",
+      "label": "S02: S02",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M009/slices/S02/S02-PLAN.md"
+    },
+    {
+      "id": "task:M009:S02:T01",
+      "label": "T01: Type selector ajouté dans create/edit collection",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M009:S03",
+      "label": "S03: S03",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M009/slices/S03/S03-PLAN.md"
+    },
+    {
+      "id": "task:M009:S03:T01",
+      "label": "T01: ObjectForm adaptatif par type de collection",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M009:S04",
+      "label": "S04: S04",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M009/slices/S04/S04-PLAN.md"
+    },
+    {
+      "id": "task:M009:S04:T01",
+      "label": "T01: 5 tests E2E pour le flow object types",
+      "type": "task",
+      "confidence": "EXTRACTED"
     }
   ],
   "edges": [
@@ -1310,7 +1349,43 @@
       "to": "task:M009:S01:T05",
       "type": "contains",
       "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M009",
+      "to": "slice:M009:S02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S02",
+      "to": "task:M009:S02:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M009",
+      "to": "slice:M009:S03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S03",
+      "to": "task:M009:S03:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M009",
+      "to": "slice:M009:S04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M009:S04",
+      "to": "task:M009:S04:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-05-11T07:25:49.352Z"
+  "builtAt": "2026-05-11T07:33:54.730Z"
 }

@@ -11,7 +11,7 @@
 - ✅ **M003:** Auth: fix password hashing & persistence
 - ⬜ **M004:** Fix & stabilisation des tests E2E et unitaires
 - ⬜ **M006:** M006
-- ⬜ **M009:** Object Enhancement — Typage des collections par catégorie d'objet
+- ✅ **M009:** Object Enhancement — Typage des collections par catégorie d'objet
 
 ## Recent Decisions
 - None recorded

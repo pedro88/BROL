@@ -7,13 +7,13 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: Après S01 : une collection peut être créée avec un type, l'API valide le bon format
 
-- [ ] **S02: Collection type selector dans create/edit** `risk:low` `depends:[S01]`
+- [x] **S02: S02** `risk:low` `depends:[]`
   > After this: Après S02 : quand on crée ou modifie une collection, un sélecteur de type est visible
 
-- [ ] **S03: ObjectForm adaptatif par type** `risk:medium` `depends:[S02]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Après S03 : le formulaire objet affiche les champs adaptés au type de la collection cible
 
-- [ ] **S04: E2E object type flow** `risk:medium` `depends:[S03]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: Après S04 : Playwright cover le flow de création typée
 
 ## Boundary Map
