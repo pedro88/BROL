@@ -18,6 +18,88 @@ import {
  */
 export const objectsRouter = router({
   /**
+   * Liste TOUS les objets de l'utilisateur (toutes collections confondues).
+   * Pour la page /objects avec filtres.
+   */
+  all: protectedProcedure
+    .input(
+      z.object({
+        collectionId: z.string().cuid().optional(),
+        status: z.enum(["all", "available", "lent", "borrowed"]).default("all"),
+        condition: z.string().optional(),
+        search: z.string().optional(),
+        ...paginationSchema.shape,
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+
+      const objects = await ctx.prisma.object.findMany({
+        where: {
+          collection: {
+            userId: ctx.userId,
+            ...(input.collectionId ? { id: input.collectionId } : {}),
+          },
+          ...(input.search
+            ? {
+                OR: [
+                  { name: { contains: input.search, mode: "insensitive" as const } },
+                  { author: { contains: input.search, mode: "insensitive" as const } },
+                ],
+              }
+            : {}),
+          ...(input.condition ? { condition: input.condition as any } : {}),
+        },
+        include: {
+          collection: {
+            select: { id: true, name: true, type: true },
+          },
+          loans: {
+            where: { status: { in: ["ACTIVE", "OVERDUE"] } },
+            include: {
+              borrower: { select: { id: true, name: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: input.limit ?? 100,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+      });
+
+      // Filtrer par status借贷 après le fetch (plus simple que plusieurs requêtes)
+      const filtered = objects.filter((obj) => {
+        if (input.status === "available") return obj.loans.length === 0;
+        if (input.status === "lent") return obj.loans.length > 0;
+        // "all" et "borrowed" passent (borrowed = pas applicable ici, on filtre côté loans.borrowedId)
+        return true;
+      });
+
+      return {
+        items: filtered.map((obj) => ({
+          id: obj.id,
+          name: obj.name,
+          author: obj.author,
+          condition: obj.condition,
+          coverImage: obj.coverImage,
+          collection: obj.collection,
+          currentLoan: obj.loans[0]
+            ? {
+                id: obj.loans[0].id,
+                status: obj.loans[0].status,
+                borrower: obj.loans[0].borrower,
+                returnDueDate: obj.loans[0].returnDueDate,
+                isOverdue: obj.loans[0].status === "ACTIVE" && obj.loans[0].returnDueDate != null && obj.loans[0].returnDueDate < now,
+              }
+            : null,
+        })),
+        nextCursor:
+          objects.length === (input.limit ?? 100)
+            ? (objects[objects.length - 1]?.id ?? null)
+            : null,
+      };
+    }),
+
+  /**
    * Liste les objets d'une collection.
    * Throws UNAUTHORIZED if the collection doesn't belong to the user.
    */
