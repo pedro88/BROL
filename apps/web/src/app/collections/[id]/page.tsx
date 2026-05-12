@@ -24,7 +24,12 @@ function transformPrivateObject(obj: {
   name: string;
   author: string | null;
   condition: "NEW" | "LIKE_NEW" | "GOOD" | "FAIR" | "POOR";
-  loans?: { id: string; status: string; borrower?: { id: string; name: string | null; image: string | null }; returnDueDate?: Date }[];
+  loans?: {
+    id: string;
+    status: string;
+    borrower?: { id: string; name: string | null; image: string | null };
+    returnDueDate?: Date;
+  }[];
 }) {
   const activeLoan = obj.loans?.find((l) => l.status === "ACTIVE");
   return {
@@ -68,20 +73,22 @@ export default function CollectionDetailPage() {
   const [isAuthenticated] = useState(() => !!getSessionToken());
 
   // Requête authentifiée (collections privées)
-  const { data: collection, isFetching: isFetchingAuth } = trpc.collections.get.useQuery(
-    { id: collectionId },
-    { enabled: !!collectionId && isAuthenticated }
-  );
+  const { data: collection, isFetching: isFetchingAuth } =
+    trpc.collections.get.useQuery(
+      { id: collectionId },
+      { enabled: !!collectionId && isAuthenticated },
+    );
 
   // Requête publique (collections publiques)
-  const { data: publicCollection, isFetching: isFetchingPublic } = trpc.collections.getPublic.useQuery(
-    { id: collectionId },
-    {
-      enabled: !!collectionId && !isAuthenticated,
-      // Retry a few times in case of race with auth check
-      retry: 1,
-    }
-  );
+  const { data: publicCollection, isFetching: isFetchingPublic } =
+    trpc.collections.getPublic.useQuery(
+      { id: collectionId },
+      {
+        enabled: !!collectionId && !isAuthenticated,
+        // Retry a few times in case of race with auth check
+        retry: 1,
+      },
+    );
 
   // isLoading reflète l'état de chargement effectif (au moins une requête en cours)
   const isLoading = isFetchingAuth || isFetchingPublic;
@@ -103,8 +110,8 @@ export default function CollectionDetailPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const objects: any[] = collectionData
     ? isAuthenticated
-      ? (collectionData as any).objects?.map(transformPrivateObject) ?? []
-      : (collectionData as any).objects?.map(transformPublicObject) ?? []
+      ? ((collectionData as any).objects?.map(transformPrivateObject) ?? [])
+      : ((collectionData as any).objects?.map(transformPublicObject) ?? [])
     : [];
 
   const loanedCount = objects.filter((o) => o.currentLoan).length;
@@ -174,9 +181,7 @@ export default function CollectionDetailPage() {
               Connectez-vous pour voir le contenu et gérer vos prêts.
             </p>
             <Button asChild>
-              <Link href="/sign-in?callbackUrl=/collections">
-                Se connecter
-              </Link>
+              <Link href="/sign-in?callbackUrl=/collections">Se connecter</Link>
             </Button>
           </div>
         </main>
@@ -215,9 +220,9 @@ export default function CollectionDetailPage() {
                 <div className="flex-1">
                   <h1 className="font-display text-3xl vhs-text-glow text-primary">
                     {collectionData.name}
-                    {collectionData.type && (
+                    {"type" in collectionData && collectionData.type && (
                       <span className="ml-3 font-mono text-sm bg-secondary/20 text-secondary border border-secondary/30 px-2 py-1">
-                        {(collectionData as { type: string }).type}
+                        {collectionData.type}
                       </span>
                     )}
                   </h1>

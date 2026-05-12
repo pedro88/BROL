@@ -66,7 +66,11 @@ function StatusBadge({ status }: { status: string }) {
 function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "—";
   const d = new Date(date);
-  return d.toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" });
+  return d.toLocaleDateString("fr-BE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function formatRelativeDate(date: Date | string | null | undefined): string {
@@ -76,7 +80,8 @@ function formatRelativeDate(date: Date | string | null | undefined): string {
   const diff = d.getTime() - now.getTime();
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
-  if (days < -1) return `En retard de ${Math.abs(days)} jour${Math.abs(days) !== 1 ? "s" : ""}`;
+  if (days < -1)
+    return `En retard de ${Math.abs(days)} jour${Math.abs(days) !== 1 ? "s" : ""}`;
   if (days === -1) return "En retard d'un jour";
   if (days === 0) return "Aujourd'hui";
   if (days === 1) return "Demain";
@@ -88,14 +93,18 @@ interface LoanCardProps {
   loan: {
     id: string;
     object: { id: string; name: string; coverImage?: string | null };
-    owner?: { id: string; name?: string | null; image?: string | null };
-    borrower?: { id: string; name?: string | null; image?: string | null };
+    owner?: { id: string; name?: string | null; image?: string | null } | null;
+    borrower?: {
+      id: string;
+      name?: string | null;
+      image?: string | null;
+    } | null;
     status: string;
     computedStatus: string;
-    returnDueDate: Date | null;
-    lentAt: Date;
-    returnedAt: Date | null;
-    reminderSentAt: Date | null;
+    returnDueDate: Date | string | null;
+    lentAt: Date | string;
+    returnedAt: Date | string | null;
+    reminderSentAt: Date | string | null;
     notes?: string | null;
   };
   viewAs: "owner" | "borrower";
@@ -105,11 +114,14 @@ interface LoanCardProps {
 
 function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
   const canReturn = viewAs === "owner" && loan.status === "ACTIVE";
-  const canRemind = viewAs === "owner" && (loan.status === "ACTIVE" || loan.status === "OVERDUE");
+  const canRemind =
+    viewAs === "owner" &&
+    (loan.status === "ACTIVE" || loan.status === "OVERDUE");
   const isOverdue = loan.computedStatus === "OVERDUE";
-  const contactName = viewAs === "owner"
-    ? loan.borrower?.name ?? "Inconnu"
-    : loan.owner?.name ?? "Inconnu";
+  const contactName =
+    viewAs === "owner"
+      ? (loan.borrower?.name ?? "Inconnu")
+      : (loan.owner?.name ?? "Inconnu");
 
   return (
     <div className={`card-vhs p-4 ${isOverdue ? "border-destructive/50" : ""}`}>
@@ -117,13 +129,19 @@ function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
       <div className="flex items-start gap-3 mb-3">
         <div className="w-12 h-12 rounded bg-muted flex items-center justify-center overflow-hidden">
           {loan.object.coverImage ? (
-            <img src={loan.object.coverImage} alt="" className="w-full h-full object-cover" />
+            <img
+              src={loan.object.coverImage}
+              alt=""
+              className="w-full h-full object-cover"
+            />
           ) : (
             <Package className="w-6 h-6 text-muted-foreground" />
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-mono text-sm font-medium truncate">{loan.object.name}</h3>
+          <h3 className="font-mono text-sm font-medium truncate">
+            {loan.object.name}
+          </h3>
           <p className="text-xs text-muted-foreground">{contactName}</p>
         </div>
         <StatusBadge status={loan.computedStatus} />
@@ -141,7 +159,9 @@ function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
 
       {/* Notes */}
       {loan.notes && (
-        <p className="text-xs text-muted-foreground italic mb-3 line-clamp-2">{loan.notes}</p>
+        <p className="text-xs text-muted-foreground italic mb-3 line-clamp-2">
+          {loan.notes}
+        </p>
       )}
 
       {/* Actions */}
@@ -177,9 +197,12 @@ export default function LoansPage() {
   const [activeTab, setActiveTab] = useState<Tab>("lent");
   const utils = trpc.useUtils();
 
-  const { data: lentData, isLoading: isLoadingLent } = trpc.loans.lentOut.useQuery(undefined);
-  const { data: borrowedData, isLoading: isLoadingBorrowed } = trpc.loans.borrowed.useQuery(undefined);
-  const { data: historyData, isLoading: isLoadingHistory } = trpc.loans.history.useQuery(undefined);
+  const { data: lentData, isLoading: isLoadingLent } =
+    trpc.loans.lentOut.useQuery(undefined);
+  const { data: borrowedData, isLoading: isLoadingBorrowed } =
+    trpc.loans.borrowed.useQuery(undefined);
+  const { data: historyData, isLoading: isLoadingHistory } =
+    trpc.loans.history.useQuery(undefined);
 
   const returnMutation = trpc.loans.return.useMutation({
     onSuccess: () => {
@@ -215,13 +238,19 @@ export default function LoansPage() {
   const borrowedLoans = borrowedData?.items ?? [];
   const historyLoans = historyData?.items ?? [];
 
-  const isLoading = activeTab === "lent" ? isLoadingLent
-    : activeTab === "borrowed" ? isLoadingBorrowed
-    : isLoadingHistory;
+  const isLoading =
+    activeTab === "lent"
+      ? isLoadingLent
+      : activeTab === "borrowed"
+        ? isLoadingBorrowed
+        : isLoadingHistory;
 
-  const currentLoans = activeTab === "lent" ? lentLoans
-    : activeTab === "borrowed" ? borrowedLoans
-    : historyLoans;
+  const currentLoans =
+    activeTab === "lent"
+      ? lentLoans
+      : activeTab === "borrowed"
+        ? borrowedLoans
+        : historyLoans;
 
   const tabCounts = {
     lent: lentLoans.length,
@@ -258,11 +287,13 @@ export default function LoansPage() {
             >
               {tab.label}
               {tabCounts[tab.id] > 0 && (
-                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
-                  activeTab === tab.id
-                    ? "bg-primary-foreground/20"
-                    : "bg-muted"
-                }`}>
+                <span
+                  className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                    activeTab === tab.id
+                      ? "bg-primary-foreground/20"
+                      : "bg-muted"
+                  }`}
+                >
                   {tabCounts[tab.id]}
                 </span>
               )}
@@ -285,15 +316,15 @@ export default function LoansPage() {
               {activeTab === "lent"
                 ? "AUCUN PRÊT EN COURS"
                 : activeTab === "borrowed"
-                ? "AUCUN EMPRUNT"
-                : "AUCUN HISTORIQUE"}
+                  ? "AUCUN EMPRUNT"
+                  : "AUCUN HISTORIQUE"}
             </h2>
             <p className="font-mono text-sm text-muted-foreground">
               {activeTab === "lent"
                 ? "Vos objets prêtés apparaîtront ici"
                 : activeTab === "borrowed"
-                ? "Les objets que vous avez empruntés apparaîtront ici"
-                : "Votre historique de prêts apparaîtra ici"}
+                  ? "Les objets que vous avez empruntés apparaîtront ici"
+                  : "Votre historique de prêts apparaîtra ici"}
             </p>
           </div>
         )}

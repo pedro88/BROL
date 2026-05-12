@@ -29,7 +29,9 @@ export default function HomePage() {
   const activeLoans = loansQuery.data?.items.length ?? 0;
   const totalContacts = contactsQuery.data?.items.length ?? 0;
   const isLoading =
-    collectionsQuery.isLoading || contactsQuery.isLoading || loansQuery.isLoading;
+    collectionsQuery.isLoading ||
+    contactsQuery.isLoading ||
+    loansQuery.isLoading;
 
   return (
     <div className="min-h-screen pb-20">
@@ -117,19 +119,20 @@ export default function HomePage() {
                 <div key={loan.id} className="card-vhs p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-display text-lg">
-                        {loan.object.name}
-                      </p>
+                      <p className="font-display text-lg">{loan.object.name}</p>
                       <p className="font-mono text-xs text-muted-foreground">
-                        → {loan.borrower.name}
+                        → {loan.borrower?.name}
                       </p>
                     </div>
                     {loan.returnDueDate && (
                       <span className="font-mono text-xs text-muted-foreground">
-                        {new Date(loan.returnDueDate).toLocaleDateString("fr-BE", {
-                          day: "numeric",
-                          month: "short",
-                        })}
+                        {new Date(loan.returnDueDate).toLocaleDateString(
+                          "fr-BE",
+                          {
+                            day: "numeric",
+                            month: "short",
+                          },
+                        )}
                       </span>
                     )}
                   </div>
@@ -180,9 +183,7 @@ function StatCard({
         {label}
       </p>
       {trend && (
-        <p className="font-mono text-xs text-muted-foreground mt-1">
-          {trend}
-        </p>
+        <p className="font-mono text-xs text-muted-foreground mt-1">{trend}</p>
       )}
     </div>
   );
@@ -203,12 +204,10 @@ function QuickAction({
   variant: "primary" | "secondary" | "accent";
 }) {
   const variantStyles = {
-    primary:
-      "border-primary hover:bg-primary hover:text-primary-foreground",
+    primary: "border-primary hover:bg-primary hover:text-primary-foreground",
     secondary:
       "border-secondary hover:bg-secondary hover:text-secondary-foreground",
-    accent:
-      "border-accent hover:bg-accent hover:text-accent-foreground",
+    accent: "border-accent hover:bg-accent hover:text-accent-foreground",
   };
 
   return (
@@ -217,9 +216,7 @@ function QuickAction({
       className={`card-vhs block p-4 border-l-4 ${variantStyles[variant]} transition-all hover:scale-[1.02] active:scale-[0.98]`}
     >
       <h3 className="font-display text-xl mb-1">{title}</h3>
-      <p className="font-mono text-xs text-muted-foreground">
-        {description}
-      </p>
+      <p className="font-mono text-xs text-muted-foreground">{description}</p>
     </Link>
   );
 }

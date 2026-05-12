@@ -23,7 +23,7 @@ export default function BrowsePage() {
     staleTime: 30_000,
   });
 
-  const collections: typeof data extends { items: infer T } ? T : never[] = data?.items ?? [];
+  const collections = data?.items ?? [];
 
   return (
     <div className="min-h-screen pb-20">
@@ -71,51 +71,54 @@ export default function BrowsePage() {
         {/* Collections list */}
         {!isLoading && collections.length > 0 && (
           <div className="space-y-4">
-            {collections.map((collection) => (
-              <Link
-                key={collection.id}
-                href={`/collections/${collection.id}`}
-                className="card-vhs block p-4 hover:border-primary/50 transition-colors group"
-              >
-                <div className="flex items-start gap-4">
-                  {/* Cover or placeholder */}
-                  <div className="w-16 h-16 flex-shrink-0 rounded-sm overflow-hidden bg-muted flex items-center justify-center">
-                    {collection.coverImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={collection.coverImage}
-                        alt={collection.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <BookOpen className="w-8 h-8 text-muted-foreground/50" />
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <h2 className="font-display text-lg group-hover:text-primary transition-colors truncate">
-                      {collection.name}
-                    </h2>
-                    {collection.description && (
-                      <p className="font-mono text-xs text-muted-foreground line-clamp-2 mt-1">
-                        {collection.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 mt-2">
-                      {collection.ownerName && (
-                        <span className="font-mono text-xs text-muted-foreground">
-                          par {collection.ownerName}
-                        </span>
+            {collections.map(
+              (collection: NonNullable<typeof data>["items"][number]) => (
+                <Link
+                  key={collection.id}
+                  href={`/collections/${collection.id}`}
+                  className="card-vhs block p-4 hover:border-primary/50 transition-colors group"
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Cover or placeholder */}
+                    <div className="w-16 h-16 flex-shrink-0 rounded-sm overflow-hidden bg-muted flex items-center justify-center">
+                      {collection.coverImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={collection.coverImage}
+                          alt={collection.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <BookOpen className="w-8 h-8 text-muted-foreground/50" />
                       )}
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {collection.objectCount} objet{collection.objectCount !== 1 ? "s" : ""}
-                      </span>
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <h2 className="font-display text-lg group-hover:text-primary transition-colors truncate">
+                        {collection.name}
+                      </h2>
+                      {collection.description && (
+                        <p className="font-mono text-xs text-muted-foreground line-clamp-2 mt-1">
+                          {collection.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 mt-2">
+                        {collection.ownerName && (
+                          <span className="font-mono text-xs text-muted-foreground">
+                            par {collection.ownerName}
+                          </span>
+                        )}
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {collection.objectCount} objet
+                          {collection.objectCount !== 1 ? "s" : ""}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ),
+            )}
           </div>
         )}
       </main>

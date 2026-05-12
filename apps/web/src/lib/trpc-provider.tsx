@@ -28,7 +28,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             retry: 0,
           },
         },
-      })
+      }),
   );
 
   const [trpcClient] = useState(() =>
@@ -38,14 +38,13 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           url: process.env.NEXT_PUBLIC_API_URL
             ? `${process.env.NEXT_PUBLIC_API_URL}/api/trpc`
             : "http://localhost:3001/api/trpc",
-          batch: false,
           headers() {
             const token = getSessionToken();
             return token ? { Authorization: `Bearer ${token}` } : {};
           },
         }),
       ],
-    })
+    }),
   );
 
   return (

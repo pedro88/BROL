@@ -4,7 +4,12 @@
  */
 
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure, TRPCError } from "../trpc";
+import {
+  router,
+  publicProcedure,
+  protectedProcedure,
+  TRPCError,
+} from "../trpc";
 import {
   createLoanSchema,
   returnLoanSchema,
@@ -80,9 +85,10 @@ export const loansRouter = router({
 
       return {
         items: loansWithComputedStatus,
-        nextCursor: loans.length === (input?.limit ?? 20)
-          ? loans[loans.length - 1]?.id ?? null
-          : null,
+        nextCursor:
+          loans.length === (input?.limit ?? 20)
+            ? (loans[loans.length - 1]?.id ?? null)
+            : null,
       };
     }),
 
@@ -147,9 +153,10 @@ export const loansRouter = router({
 
       return {
         items: loansWithComputedStatus,
-        nextCursor: loans.length === (input?.limit ?? 20)
-          ? loans[loans.length - 1]?.id ?? null
-          : null,
+        nextCursor:
+          loans.length === (input?.limit ?? 20)
+            ? (loans[loans.length - 1]?.id ?? null)
+            : null,
       };
     }),
 
@@ -162,10 +169,7 @@ export const loansRouter = router({
       const now = new Date();
       const loans = await ctx.prisma.loan.findMany({
         where: {
-          OR: [
-            { ownerId: ctx.userId },
-            { borrowerId: ctx.userId },
-          ],
+          OR: [{ ownerId: ctx.userId }, { borrowerId: ctx.userId }],
         },
         include: {
           object: {
@@ -211,14 +215,16 @@ export const loansRouter = router({
           loan.returnDueDate < now
             ? "OVERDUE"
             : loan.status,
-        borrowerName: loan.borrower?.name ?? loan.borrowerContact?.name ?? "Inconnu",
+        borrowerName:
+          loan.borrower?.name ?? loan.borrowerContact?.name ?? "Inconnu",
       }));
 
       return {
         items: loansWithComputedStatus,
-        nextCursor: loans.length === (input?.limit ?? 20)
-          ? loans[loans.length - 1]?.id ?? null
-          : null,
+        nextCursor:
+          loans.length === (input?.limit ?? 20)
+            ? (loans[loans.length - 1]?.id ?? null)
+            : null,
       };
     }),
 
@@ -240,7 +246,10 @@ export const loansRouter = router({
       });
 
       if (!object) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Objet non trouvé." });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Objet non trouvé.",
+        });
       }
 
       // Vérifier qu'il n'y a pas déjà un prêt actif
@@ -252,7 +261,10 @@ export const loansRouter = router({
       });
 
       if (existingLoan) {
-        throw new TRPCError({ code: "CONFLICT", message: "Cet objet est déjà prêté." });
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Cet objet est déjà prêté.",
+        });
       }
 
       // Vérifier que le contact existe et appartient à l'utilisateur
@@ -367,10 +379,18 @@ export const loansRouter = router({
       if (!loan) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Prêt non trouvé ou emprunteur sans compte (email non disponible).",
+          message:
+            "Prêt non trouvé ou emprunteur sans compte (email non disponible).",
         });
       }
 
+      if (!loan.borrower) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Prêt non trouvé ou emprunteur sans compte (email non disponible).",
+        });
+      }
       const emailResult = await sendReminderEmail({
         to: loan.borrower.email ?? "",
         borrowerName: loan.borrower.name ?? "",

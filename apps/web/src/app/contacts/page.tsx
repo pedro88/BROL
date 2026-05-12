@@ -37,7 +37,7 @@ interface ContactCardProps {
     note: string | null;
     borrowerId: string | null;
   };
-  onEdit: (contact: typeof contact) => void;
+  onEdit: (contact: any) => void;
   onDelete: (id: string) => void;
 }
 
@@ -103,11 +103,16 @@ interface ContactFormData {
 interface ContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  contact?: ContactFormData & { id?: string } | null;
+  contact?: (ContactFormData & { id?: string }) | null;
   onSuccess: () => void;
 }
 
-function ContactDialog({ open, onOpenChange, contact, onSuccess }: ContactDialogProps) {
+function ContactDialog({
+  open,
+  onOpenChange,
+  contact,
+  onSuccess,
+}: ContactDialogProps) {
   const [form, setForm] = useState<ContactFormData>({
     name: contact?.name ?? "",
     email: contact?.email ?? "",
@@ -283,7 +288,8 @@ function DeleteDialog({
           <DialogTitle>Supprimer le contact ?</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Voulez-vous vraiment supprimer <strong>{contactName}</strong> ? Cette action est irréversible.
+          Voulez-vous vraiment supprimer <strong>{contactName}</strong> ? Cette
+          action est irréversible.
         </p>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -294,7 +300,9 @@ function DeleteDialog({
             onClick={() => deleteMutation.mutate({ id: contactId })}
             disabled={deleteMutation.isPending}
           >
-            {deleteMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {deleteMutation.isPending && (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            )}
             Supprimer
           </Button>
         </DialogFooter>
@@ -305,7 +313,9 @@ function DeleteDialog({
 
 export default function ContactsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editContact, setEditContact] = useState<ContactFormData & { id: string } | null>(null);
+  const [editContact, setEditContact] = useState<
+    (ContactFormData & { id: string }) | null
+  >(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data, isLoading } = trpc.contacts.list.useQuery(undefined);
@@ -313,7 +323,7 @@ export default function ContactsPage() {
 
   const deleteContactName = contacts.find((c) => c.id === deleteId)?.name ?? "";
 
-  function handleEdit(contact: typeof contacts[0]) {
+  function handleEdit(contact: (typeof contacts)[0]) {
     setEditContact({
       id: contact.id,
       name: contact.name,

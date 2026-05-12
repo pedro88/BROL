@@ -3,12 +3,25 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, Clock, User, BookOpen, QrCode, Download, Printer } from "lucide-react";
+import {
+  ArrowLeft,
+  Pencil,
+  Trash2,
+  Clock,
+  User,
+  BookOpen,
+  QrCode,
+  Download,
+  Printer,
+} from "lucide-react";
 import { Header, Navigation } from "../../../components/navigation";
 import { Button } from "../../../components/ui/button";
 import { trpc } from "../../../lib/trpc";
 import { AssignQrDialog } from "../../../components/qr/assign-qr-dialog";
-import { QrCodeImage, useQrDownload } from "../../../components/qr/qr-code-image";
+import {
+  QrCodeImage,
+  useQrDownload,
+} from "../../../components/qr/qr-code-image";
 import { CreateLoanDialog } from "../../../components/loans/create-loan-dialog";
 import { PhotoGallery } from "../../../components/photos/photo-gallery";
 
@@ -23,12 +36,14 @@ export default function ObjectDetailPage() {
 
   const { data: object, isLoading } = trpc.objects.get.useQuery(
     { id: objectId },
-    { enabled: !!objectId }
+    { enabled: !!objectId },
   );
 
   const [assignQrOpen, setAssignQrOpen] = useState(false);
   const [loanDialogOpen, setLoanDialogOpen] = useState(false);
-  const { downloadPng, printQr } = useQrDownload(process.env.NEXT_PUBLIC_APP_URL);
+  const { downloadPng, printQr } = useQrDownload(
+    process.env.NEXT_PUBLIC_APP_URL,
+  );
 
   const deleteMutation = trpc.objects.delete.useMutation({
     onSuccess: () => {
@@ -158,29 +173,39 @@ export default function ObjectDetailPage() {
         <div className="card-vhs p-4 space-y-4">
           {object.edition && (
             <div>
-              <p className="font-mono text-xs text-muted-foreground uppercase">Édition</p>
+              <p className="font-mono text-xs text-muted-foreground uppercase">
+                Édition
+              </p>
               <p className="font-mono text-sm">{object.edition}</p>
             </div>
           )}
 
           {object.isbn && (
             <div>
-              <p className="font-mono text-xs text-muted-foreground uppercase">ISBN</p>
+              <p className="font-mono text-xs text-muted-foreground uppercase">
+                ISBN
+              </p>
               <p className="font-mono text-sm">{object.isbn}</p>
             </div>
           )}
 
           {object.notes && (
             <div>
-              <p className="font-mono text-xs text-muted-foreground uppercase">Notes</p>
+              <p className="font-mono text-xs text-muted-foreground uppercase">
+                Notes
+              </p>
               <p className="font-mono text-sm">{object.notes}</p>
             </div>
           )}
 
           {object.qrStock && (
             <div>
-              <p className="font-mono text-xs text-muted-foreground uppercase">QR Code</p>
-              <p className="font-mono text-sm text-secondary">{object.qrStock.code}</p>
+              <p className="font-mono text-xs text-muted-foreground uppercase">
+                QR Code
+              </p>
+              <p className="font-mono text-sm text-secondary">
+                {object.qrStock.code}
+              </p>
             </div>
           )}
         </div>
@@ -202,7 +227,10 @@ export default function ObjectDetailPage() {
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span className="font-mono text-xs text-muted-foreground">
-                    Retour prévu le {new Date(currentLoan.returnDueDate).toLocaleDateString("fr-BE")}
+                    Retour prévu le{" "}
+                    {new Date(currentLoan.returnDueDate).toLocaleDateString(
+                      "fr-BE",
+                    )}
                   </span>
                 </div>
               )}
@@ -223,10 +251,13 @@ export default function ObjectDetailPage() {
                     <span className="font-mono text-sm">
                       {loan.borrower?.name}
                     </span>
-                    <span className={`font-mono text-xs px-2 py-0.5 ${
-                      loan.status === "RETURNED" ? "bg-green-500/20 text-green-400" :
-                      "bg-red-500/20 text-red-400"
-                    }`}>
+                    <span
+                      className={`font-mono text-xs px-2 py-0.5 ${
+                        loan.status === "RETURNED"
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-red-500/20 text-red-400"
+                      }`}
+                    >
                       {loan.status === "RETURNED" ? "Retourné" : loan.status}
                     </span>
                   </div>
@@ -243,13 +274,20 @@ export default function ObjectDetailPage() {
               QR Code
             </h2>
             <div className="card-vhs p-4 flex flex-col items-center gap-4">
-              <QrCodeImage code={object.qrStock.code} size={180} baseUrl={process.env.NEXT_PUBLIC_APP_URL} />
+              <QrCodeImage
+                code={object.qrStock.code}
+                size={180}
+                baseUrl={process.env.NEXT_PUBLIC_APP_URL}
+              />
               <div className="w-full space-y-2">
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     className="flex-1"
-                    onClick={() => downloadPng(object.qrStock.code, object.name)}
+                    onClick={() =>
+                      object.qrStock &&
+                      downloadPng(object.qrStock.code, object.name)
+                    }
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Télécharger PNG
@@ -257,7 +295,10 @@ export default function ObjectDetailPage() {
                   <Button
                     variant="outline"
                     className="flex-1"
-                    onClick={() => printQr(object.qrStock.code, object.name)}
+                    onClick={() =>
+                      object.qrStock &&
+                      printQr(object.qrStock.code, object.name)
+                    }
                   >
                     <Printer className="w-4 h-4 mr-2" />
                     Imprimer

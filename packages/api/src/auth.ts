@@ -47,10 +47,6 @@ function baseAuthConfig(overrides?: {
     secret: process.env.BETTER_AUTH_SECRET,
     baseURL: overrides?.baseURL ?? "http://localhost:3001",
     basePath: "/api/auth",
-    trustedOrigins: [
-      "http://localhost:3001",
-      "http://localhost:3000",
-    ],
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
@@ -96,7 +92,10 @@ function baseAuthConfig(overrides?: {
  */
 export const auth = betterAuth(
   baseAuthConfig({
-    baseURL: process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001",
+    baseURL:
+      process.env.BETTER_AUTH_URL ??
+      process.env.NEXT_PUBLIC_APP_URL ??
+      "http://localhost:3001",
   }) as Parameters<typeof betterAuth>[0], // eslint-disable-line @typescript-eslint/no-explicit-any
 );
 
@@ -142,7 +141,9 @@ export interface BetterAuthSession {
  * Get the current session from a Request object.
  * Checks cookies first, then falls back to Authorization Bearer header.
  */
-export async function getSession(request: Request): Promise<BetterAuthSession | null> {
+export async function getSession(
+  request: Request,
+): Promise<BetterAuthSession | null> {
   try {
     // Try cookie-based session first
     const cookieSession = await auth.api.getSession({
