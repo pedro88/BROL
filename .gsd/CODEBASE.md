@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-13T06:30:07Z | Files: 149 | Described: 0/149
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-13T06:30:07Z","fingerprint":"714414902686e09cca3e71d1d8f22fad1fd7d656","fileCount":149,"truncated":false} -->
+Generated: 2026-05-13T07:51:29Z | Files: 150 | Described: 0/150
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-13T07:51:29Z","fingerprint":"de811932b6c5f5c816af2d1e36b2ed41033abd2b","fileCount":150,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -16,6 +16,7 @@ Generated: 2026-05-13T06:30:07Z | Files: 149 | Described: 0/149
 - `RAPPORT.md`
 - `README.md`
 - `TESTS.md`
+- `todo.md`
 - `tsconfig.json`
 - `tsconfig.tsbuildinfo`
 - `turbo.json`

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-12T09:24:24.137Z",
+  "exported_at": "2026-05-13T06:32:38.108Z",
   "milestones": [
     {
       "id": "M001",
@@ -332,6 +332,39 @@
         "CreateLoanDialog avec combobox search"
       ],
       "requirement_coverage": "\"Améliorations UI/UX dashboard + navigation, intégration photo dans formulaire, bouton prêt sur page dédiée\"",
+      "boundary_map_markdown": "Not provided.",
+      "sequence": 0
+    },
+    {
+      "id": "M013",
+      "title": "Enhanced Object Creation - Type-specific fields, photos, QR, and pricing",
+      "status": "active",
+      "depends_on": [],
+      "created_at": "2026-05-13T06:31:36.917Z",
+      "completed_at": null,
+      "vision": "Improved object creation with type-specific fields, photo upload during creation, QR scanner on mobile, adaptive edit modal, and new fields for caution and rental pricing.",
+      "success_criteria": [],
+      "key_risks": [
+        {
+          "risk": "QR scanner integration on mobile requires proper permissions handling",
+          "whyItMatters": "Users need camera access; failure to get permission breaks the feature"
+        },
+        {
+          "risk": "Dynamic form fields per object type increase complexity",
+          "whyItMatters": "Need to ensure all object types have appropriate fields without code duplication"
+        },
+        {
+          "risk": "Photo upload during creation adds async complexity",
+          "whyItMatters": "Must handle upload before object creation or link them correctly"
+        }
+      ],
+      "proof_strategy": [],
+      "verification_contract": "Object type-specific fields render correctly; photo upload works during creation",
+      "verification_integration": "Cross-slice: type fields defined in shared schemas and used in both creation and edit",
+      "verification_operational": "None required",
+      "verification_uat": "User creates each object type and verifies correct fields appear; mobile user scans QR during creation",
+      "definition_of_done": [],
+      "requirement_coverage": "Not provided.",
       "boundary_map_markdown": "Not provided.",
       "sequence": 0
     }
@@ -963,6 +996,100 @@
       "integration_closure": "Le dialog reste fonctionnel avec flow d'ajout inline",
       "observability_impact": "Aucun",
       "sequence": 3,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M013",
+      "id": "S01",
+      "title": "Object creation type-specific fields + photo upload + no redirect",
+      "status": "pending",
+      "risk": "high",
+      "depends": [],
+      "demo": "Object creation shows photo upload field, no redirect to edit, type-specific fields visible",
+      "created_at": "2026-05-13T06:32:38.080Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Add type-specific dynamic fields to object creation, photo upload, and remove redirect behavior",
+      "success_criteria": "Form shows correct fields for Clothing (taille, genre, couleur, matiere, marque) and Tools (manuel, secteur, batterie, marque)",
+      "proof_level": "UI verification",
+      "integration_closure": "Object form renders correct fields for each type",
+      "observability_impact": "Track form field usage by object type",
+      "sequence": 1,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M013",
+      "id": "S02",
+      "title": "QR scanner integration in object creation (mobile)",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [
+        "S01"
+      ],
+      "demo": "Mobile user can scan QR code during object creation",
+      "created_at": "2026-05-13T06:32:38.080Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Add QR scanner component for mobile that assigns QR code during object creation",
+      "success_criteria": "Mobile device shows QR scan button; scan assigns code to object",
+      "proof_level": "UI verification on mobile",
+      "integration_closure": "QR scanner integrates with object creation flow",
+      "observability_impact": "Track QR scan usage during creation",
+      "sequence": 2,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M013",
+      "id": "S03",
+      "title": "Type-adapted object edit modal",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [
+        "S01"
+      ],
+      "demo": "Object edit modal adapts to object type",
+      "created_at": "2026-05-13T06:32:38.081Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Make object edit dialog display type-specific fields",
+      "success_criteria": "Edit dialog shows fields matching object type",
+      "proof_level": "UI verification",
+      "integration_closure": "Edit dialog renders same fields as creation form",
+      "observability_impact": "Track type-specific edits",
+      "sequence": 3,
+      "replan_triggered_at": null,
+      "is_sketch": 0,
+      "sketch_scope": ""
+    },
+    {
+      "milestone_id": "M013",
+      "id": "S04",
+      "title": "Caution and rental pricing fields",
+      "status": "pending",
+      "risk": "medium",
+      "depends": [
+        "S01"
+      ],
+      "demo": "Objects can have caution and rental pricing",
+      "created_at": "2026-05-13T06:32:38.081Z",
+      "completed_at": null,
+      "full_summary_md": "",
+      "full_uat_md": "",
+      "goal": "Add caution amount and rental pricing fields to objects",
+      "success_criteria": "Object has caution field and rental pricing (day/hour/week)",
+      "proof_level": "UI verification + data persistence",
+      "integration_closure": "Caution and pricing fields save to DB and display in object details",
+      "observability_impact": "Track caution claims and rental revenue",
+      "sequence": 4,
       "replan_triggered_at": null,
       "is_sketch": 0,
       "sketch_scope": ""

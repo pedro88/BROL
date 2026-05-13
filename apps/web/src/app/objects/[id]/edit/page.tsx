@@ -105,12 +105,29 @@ export default function EditObjectPage() {
             }}
             objectId={objectId}
             objectName={object.name}
+            objectType={object.objectType}
             initialData={{
               name: object.name,
               author: object.author,
               edition: object.edition,
               condition: object.condition,
               notes: object.notes,
+              // CLOTHING
+              clothingSize: object.clothingSize,
+              clothingGender: object.clothingGender,
+              clothingColor: object.clothingColor,
+              clothingMaterial: object.clothingMaterial,
+              // TOOL
+              toolManual: object.toolManual,
+              toolSector: object.toolSector,
+              toolBattery: object.toolBattery,
+              // Caution et tarification
+              cautionAmount: object.cautionAmount ? Number(object.cautionAmount) : null,
+              rentalPriceDay: object.rentalPriceDay ? Number(object.rentalPriceDay) : null,
+              rentalPriceHour: object.rentalPriceHour ? Number(object.rentalPriceHour) : null,
+              rentalPriceWeek: object.rentalPriceWeek ? Number(object.rentalPriceWeek) : null,
+              rentalPriceKm: object.rentalPriceKm ? Number(object.rentalPriceKm) : null,
+              hasPricing: !!(object.cautionAmount || object.rentalPriceDay || object.rentalPriceHour || object.rentalPriceWeek || object.rentalPriceKm),
             }}
             onSuccess={handleSuccess}
           />

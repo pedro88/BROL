@@ -15,6 +15,7 @@
 - ✅ **M010:** QR codes with local network URLs
 - ✅ **M011:** Photos sur les objets
 - ✅ **M012:** Dashboard UX & Navigation
+- ⬜ **M013:** Enhanced Object Creation - Type-specific fields, photos, QR, and pricing
 
 ## Recent Decisions
 - None recorded

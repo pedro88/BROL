@@ -1,13 +1,15 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Needed for Decimal fields (caution, rental prices)
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 // ============================================
@@ -144,9 +146,21 @@ model Object {
   ageMin             Int?
   // ELECTRIC fields
   powerWatts Int?
-  // CUSTOM fields
-  customField1 String?
-  customField2 String?
+  // CLOTHING fields
+  clothingSize     String?  // Taille (XS, S, M, L, XL, XXL, 38, 40, 42...)
+  clothingGender   String?  // Genre (Homme, Femme, Unisexe, Enfant)
+  clothingColor    String?  // Couleur principale
+  clothingMaterial String?  // Matière (coton, cuir, polyester...)
+  // TOOL fields
+  toolManual       Boolean? @default(false) // Manuel (non alimenté)
+  toolSector       String?  // Secteur (construction, jardinage, automobile...)
+  toolBattery      Boolean? @default(false) // Sur batterie
+  // Caution et tarification
+  cautionAmount    Decimal? @db.Decimal(10,2)  // Montant de la caution
+  rentalPriceDay   Decimal? @db.Decimal(10,2)  // Prix location / jour
+  rentalPriceHour  Decimal? @db.Decimal(10,2)  // Prix location / heure
+  rentalPriceWeek  Decimal? @db.Decimal(10,2)  // Prix location / semaine
+  rentalPriceKm    Decimal? @db.Decimal(10,2)  // Prix location / km
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

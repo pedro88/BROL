@@ -106,8 +106,12 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
     { enabled: !!collectionId }
   );
 
-  // Determine objectType from collection.type
-  const objectType: ObjectType = (targetCollection?.type as ObjectType) ?? "BOOK";
+  // Determine objectType from collection.type — use state to update when collection changes
+  const [objectType, setObjectType] = useState<ObjectType>("BOOK");
+  useEffect(() => {
+    const type = (targetCollection?.type as ObjectType) ?? "BOOK";
+    setObjectType(type);
+  }, [targetCollection?.type]);
 
   // Auto-select first collection when no collectionId prop given
   const { data: collections } = trpc.collections.list.useQuery();
@@ -188,9 +192,9 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   const createMutation = trpc.objects.create.useMutation({
     onSuccess: (data) => {
       utils.objects.list.invalidate({ collectionId: data.collectionId });
+      utils.objects.all.invalidate();
       onSuccess?.();
       reset();
-      router.push(`/objects/${data.id}/edit`);
     },
   });
 
@@ -223,7 +227,11 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   const showIsbn = objectType === "BOOK" || objectType === "FILM";
   const showBoardGameFields = objectType === "BOARD_GAME";
   const showElectricFields = objectType === "ELECTRIC";
+  const showClothingFields = objectType === "CLOTHING";
+  const showToolFields = objectType === "TOOL";
   const showCustomFields = objectType === "CUSTOM";
+  // Tarification: disponible pour tous les types, mais désactivée par défaut
+  const [pricingEnabled, setPricingEnabled] = useState(false);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -464,6 +472,130 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         </>
       )}
 
+      {/* CLOTHING specific fields */}
+      {showClothingFields && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="clothingSize" className="font-mono text-xs uppercase">
+                Taille
+              </Label>
+              <select
+                id="clothingSize"
+                {...register("clothingSize")}
+                className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+              >
+                <option value="">Sélectionner</option>
+                <option value="XS">XS</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+                <option value="XXXL">XXXL</option>
+                <option value="34">34</option>
+                <option value="36">36</option>
+                <option value="38">38</option>
+                <option value="40">40</option>
+                <option value="42">42</option>
+                <option value="44">44</option>
+                <option value="46">46</option>
+                <option value="48">48</option>
+                <option value="50">50</option>
+                <option value="52">52</option>
+                <option value="54">54</option>
+                <option value="56">56</option>
+                <option value="Enfant">Enfant</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="clothingGender" className="font-mono text-xs uppercase">
+                Genre
+              </Label>
+              <select
+                id="clothingGender"
+                {...register("clothingGender")}
+                className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+              >
+                <option value="">Sélectionner</option>
+                <option value="Homme">Homme</option>
+                <option value="Femme">Femme</option>
+                <option value="Unisexe">Unisexe</option>
+                <option value="Enfant">Enfant</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="clothingColor" className="font-mono text-xs uppercase">
+                Couleur
+              </Label>
+              <Input
+                id="clothingColor"
+                placeholder="Noir, bleu..."
+                {...register("clothingColor")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="clothingMaterial" className="font-mono text-xs uppercase">
+                Matière
+              </Label>
+              <Input
+                id="clothingMaterial"
+                placeholder="Coton, cuir..."
+                {...register("clothingMaterial")}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* TOOL specific fields */}
+      {showToolFields && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="toolSector" className="font-mono text-xs uppercase">
+              Secteur / Usage
+            </Label>
+            <select
+              id="toolSector"
+              {...register("toolSector")}
+              className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+            >
+              <option value="">Sélectionner</option>
+              <option value="Bricolage">Bricolage</option>
+              <option value="Jardinage">Jardinage</option>
+              <option value="Automobile">Automobile</option>
+              <option value="Plomberie">Plomberie</option>
+              <option value="Électricité">Électricité</option>
+              <option value="Construction">Construction</option>
+              <option value="Menuiserie">Menuiserie</option>
+              <option value="Peinture">Peinture</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                {...register("toolManual")}
+                className="w-5 h-5 rounded border-2 border-border bg-input text-primary focus:ring-2 focus:ring-primary"
+              />
+              <span className="font-mono text-sm">Manuel (non alimenté)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                {...register("toolBattery")}
+                className="w-5 h-5 rounded border-2 border-border bg-input text-primary focus:ring-2 focus:ring-primary"
+              />
+              <span className="font-mono text-sm">Sur batterie</span>
+            </label>
+          </div>
+        </>
+      )}
+
       {/* Condition */}
       <div className="space-y-2">
         <Label className="font-mono text-xs uppercase">État</Label>
@@ -487,6 +619,101 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             </label>
           ))}
         </div>
+      </div>
+
+      {/* Pricing toggle — available for all object types */}
+      <div className="border-t-2 border-border pt-4 mt-4">
+        <button
+          type="button"
+          onClick={() => setPricingEnabled(!pricingEnabled)}
+          className={`
+            w-full flex items-center justify-between px-4 py-3 border-2 border-border
+            hover:border-primary/50 transition-colors
+            ${pricingEnabled ? "border-primary bg-primary/10" : ""}
+          `}
+        >
+          <span className="font-mono text-xs uppercase">
+            {pricingEnabled ? "▼ Tarification activée" : "▶ Activer la tarification"}
+          </span>
+          <span className="font-mono text-xs text-muted-foreground">
+            {pricingEnabled ? "Désactiver" : "Optionnel"}
+          </span>
+        </button>
+
+        {/* Pricing fields */}
+        {pricingEnabled && (
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cautionAmount" className="font-mono text-xs uppercase">
+                  Caution (€)
+                </Label>
+                <Input
+                  id="cautionAmount"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="50.00"
+                  {...register("cautionAmount", { valueAsNumber: true })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rentalPriceDay" className="font-mono text-xs uppercase">
+                  Prix / jour (€)
+                </Label>
+                <Input
+                  id="rentalPriceDay"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="5.00"
+                  {...register("rentalPriceDay", { valueAsNumber: true })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="rentalPriceHour" className="font-mono text-xs uppercase">
+                  Prix / heure (€)
+                </Label>
+                <Input
+                  id="rentalPriceHour"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="1.00"
+                  {...register("rentalPriceHour", { valueAsNumber: true })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rentalPriceWeek" className="font-mono text-xs uppercase">
+                  Prix / semaine (€)
+                </Label>
+                <Input
+                  id="rentalPriceWeek"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="25.00"
+                  {...register("rentalPriceWeek", { valueAsNumber: true })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rentalPriceKm" className="font-mono text-xs uppercase">
+                  Prix / km (€)
+                </Label>
+                <Input
+                  id="rentalPriceKm"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="0.50"
+                  {...register("rentalPriceKm", { valueAsNumber: true })}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Notes */}

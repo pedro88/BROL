@@ -82,6 +82,22 @@ export const objectsRouter = router({
           condition: obj.condition,
           coverImage: obj.coverImage,
           collection: obj.collection,
+          objectType: obj.objectType,
+          // CLOTHING
+          clothingSize: obj.clothingSize,
+          clothingGender: obj.clothingGender,
+          clothingColor: obj.clothingColor,
+          clothingMaterial: obj.clothingMaterial,
+          // TOOL
+          toolManual: obj.toolManual,
+          toolSector: obj.toolSector,
+          toolBattery: obj.toolBattery,
+          // Caution et tarification
+          cautionAmount: obj.cautionAmount ? Number(obj.cautionAmount) : null,
+          rentalPriceDay: obj.rentalPriceDay ? Number(obj.rentalPriceDay) : null,
+          rentalPriceHour: obj.rentalPriceHour ? Number(obj.rentalPriceHour) : null,
+          rentalPriceWeek: obj.rentalPriceWeek ? Number(obj.rentalPriceWeek) : null,
+          rentalPriceKm: obj.rentalPriceKm ? Number(obj.rentalPriceKm) : null,
           currentLoan: obj.loans[0]
             ? {
                 id: obj.loans[0].id,

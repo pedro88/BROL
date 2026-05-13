@@ -89,6 +89,22 @@ export const createObjectSchema = z.object({
   playingTimeMinutes: z.number().int().min(1).optional(),
   ageMin: z.number().int().min(0).optional(),
   powerWatts: z.number().int().min(1).optional(),
+  // CLOTHING
+  clothingSize: z.string().max(20).optional(),
+  clothingGender: z.string().max(30).optional(),
+  clothingColor: z.string().max(50).optional(),
+  clothingMaterial: z.string().max(50).optional(),
+  // TOOL
+  toolManual: z.boolean().optional(),
+  toolSector: z.string().max(50).optional(),
+  toolBattery: z.boolean().optional(),
+  // Caution et tarification
+  cautionAmount: z.number().min(0).optional(),
+  rentalPriceDay: z.number().min(0).optional(),
+  rentalPriceHour: z.number().min(0).optional(),
+  rentalPriceWeek: z.number().min(0).optional(),
+  rentalPriceKm: z.number().min(0).optional(),
+  // CUSTOM
   customField1: z.string().max(255).optional(),
   customField2: z.string().max(255).optional(),
 });
@@ -115,6 +131,21 @@ const updateObjectBase = {
   powerWatts: z.number().int().min(1).optional().nullable(),
   // BOOK / FILM
   isbn: z.string().regex(/^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/i).optional().or(z.literal("")).nullable(),
+  // CLOTHING
+  clothingSize: z.string().max(20).optional().nullable(),
+  clothingGender: z.string().max(30).optional().nullable(),
+  clothingColor: z.string().max(50).optional().nullable(),
+  clothingMaterial: z.string().max(50).optional().nullable(),
+  // TOOL
+  toolManual: z.boolean().optional().nullable(),
+  toolSector: z.string().max(50).optional().nullable(),
+  toolBattery: z.boolean().optional().nullable(),
+  // Caution et tarification
+  cautionAmount: z.number().min(0).optional().nullable(),
+  rentalPriceDay: z.number().min(0).optional().nullable(),
+  rentalPriceHour: z.number().min(0).optional().nullable(),
+  rentalPriceWeek: z.number().min(0).optional().nullable(),
+  rentalPriceKm: z.number().min(0).optional().nullable(),
   // CUSTOM
   customField1: z.string().max(255).optional().nullable(),
   customField2: z.string().max(255).optional().nullable(),
