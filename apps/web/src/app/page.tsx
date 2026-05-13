@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Header, Navigation } from "../components/navigation";
 import { trpc } from "../lib/trpc";
+import { Package, User, Repeat } from "lucide-react";
+import { useUserAgent } from "../lib/use-user-agent";
 
 /**
  * Page d'accueil principale — dashboard utilisateur.
@@ -19,6 +21,8 @@ export default function HomePage() {
   const loansQuery = trpc.loans.lentOut.useQuery(undefined, {
     staleTime: 30_000,
   });
+
+  const { isMobile } = useUserAgent();
 
   // Dériver les totaux
   const totalObjects =
@@ -48,11 +52,13 @@ export default function HomePage() {
           </p>
         </section>
 
-        {/* Stats */}
+        {/* Stats — cliquables */}
         <section className="grid grid-cols-3 gap-3 mb-8">
           <StatCard
+            href="/objects"
             label="Objets"
             value={isLoading ? "..." : String(totalObjects)}
+            icon={<Package className="w-4 h-4" />}
             trend={
               isLoading
                 ? undefined
@@ -62,14 +68,17 @@ export default function HomePage() {
             }
           />
           <StatCard
+            href="/loans?tab=lent"
             label="Prêtés"
             value={isLoading ? "..." : String(activeLoans)}
+            icon={<Repeat className="w-4 h-4" />}
             variant={activeLoans > 0 ? "warning" : "default"}
-            trend={isLoading ? undefined : activeLoans > 0 ? "active" : "rien"}
           />
           <StatCard
+            href="/contacts"
             label="Contacts"
             value={isLoading ? "..." : String(totalContacts)}
+            icon={<User className="w-4 h-4" />}
           />
         </section>
 
@@ -93,18 +102,21 @@ export default function HomePage() {
             variant="secondary"
           />
 
-          <QuickAction
-            href="/scan"
-            title="SCANNER"
-            description="Scanner un QR code"
-            variant="accent"
-          />
+          {/* Scanner uniquement sur mobile */}
+          {isMobile && (
+            <QuickAction
+              href="/scan"
+              title="SCANNER"
+              description="Scanner un QR code"
+              variant="accent"
+            />
+          )}
         </section>
 
-        {/* Objets prêtés récemment */}
+        {/* Prêts récents */}
         <section className="mt-8">
           <h2 className="font-mono text-sm text-muted-foreground mb-3">
-            // RETOURS RECENTS
+            // PRÊTS RÉCENTS
           </h2>
 
           {isLoading ? (
@@ -115,29 +127,39 @@ export default function HomePage() {
             </div>
           ) : loansQuery.data && loansQuery.data.items.length > 0 ? (
             <div className="space-y-3">
-              {loansQuery.data.items.slice(0, 3).map((loan) => (
-                <div key={loan.id} className="card-vhs p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-display text-lg">{loan.object.name}</p>
-                      <p className="font-mono text-xs text-muted-foreground">
-                        → {loan.borrower?.name}
-                      </p>
+              {loansQuery.data.items.slice(0, 3).map((loan) => {
+                const borrowerName =
+                  (loan as typeof loan & { borrowerName?: string }).borrowerName ??
+                  loan.borrower?.name ??
+                  "Inconnu";
+                return (
+                  <Link
+                    key={loan.id}
+                    href={`/objects/${loan.object.id}`}
+                    className="card-vhs p-4 block hover:border-primary/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-display text-lg">{loan.object.name}</p>
+                        <p className="font-mono text-xs text-muted-foreground">
+                          → {borrowerName}
+                        </p>
+                      </div>
+                      {loan.returnDueDate && (
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {new Date(loan.returnDueDate).toLocaleDateString(
+                            "fr-BE",
+                            {
+                              day: "numeric",
+                              month: "short",
+                            },
+                          )}
+                        </span>
+                      )}
                     </div>
-                    {loan.returnDueDate && (
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {new Date(loan.returnDueDate).toLocaleDateString(
-                          "fr-BE",
-                          {
-                            day: "numeric",
-                            month: "short",
-                          },
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="card-vhs p-4 text-center">
@@ -155,16 +177,20 @@ export default function HomePage() {
 }
 
 /**
- * Carte statistique avec valeur et tendance.
+ * Carte statistique cliquable avec valeur et tendance.
  */
 function StatCard({
+  href,
   label,
   value,
+  icon,
   trend,
   variant = "default",
 }: {
+  href?: string;
   label: string;
   value: string;
+  icon?: React.ReactNode;
   trend?: string;
   variant?: "default" | "warning" | "success";
 }) {
@@ -174,8 +200,13 @@ function StatCard({
     success: "text-secondary",
   };
 
-  return (
+  const content = (
     <div className="card-vhs p-3 text-center">
+      {icon && (
+        <div className="flex justify-center mb-1 text-muted-foreground">
+          {icon}
+        </div>
+      )}
       <p className={`font-display text-3xl ${variantStyles[variant]}`}>
         {value}
       </p>
@@ -187,6 +218,19 @@ function StatCard({
       )}
     </div>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="block hover:opacity-90 active:scale-[0.98] transition-all"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }
 
 /**
