@@ -9,6 +9,7 @@ import { BookOpen, QrCode, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { PhotoPicker } from "./photo-picker";
 import { trpc } from "../../lib/trpc";
 
 const conditionLabels: Record<string, string> = {
@@ -135,6 +136,10 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   const [selectedQrId, setSelectedQrId] = useState<string>("");
   const [creatingQr, setCreatingQr] = useState(false);
 
+  // Photo state for creation-time upload
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
   // ISBN lookup state
   const [isbnQuery, setIsbnQuery] = useState("");
   const [isbnForLookup, setIsbnForLookup] = useState("");
@@ -212,13 +217,65 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         qrStockId = selectedQrId;
       }
 
-      await createMutation.mutateAsync({
+      // 1. Créer l'objet
+      const newObject = await createMutation.mutateAsync({
         ...formData,
         objectType,
         qrStockId,
       });
+
+      // 2. Upload la photo si sélectionnée (S3 direct via presigned URL)
+      if (selectedPhoto) {
+        setUploadingPhoto(true);
+        try {
+          // Demander presigned URL
+          const presignedUrlRes = await fetch("/api/trpc/photos.getPresignedUrl", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              json: {
+                objectId: newObject.id,
+                filename: selectedPhoto.name,
+                contentType: selectedPhoto.type,
+                fileSize: selectedPhoto.size,
+              },
+            }),
+          });
+          const presignedData = await presignedUrlRes.json();
+          const { uploadUrl, publicUrl } = presignedData.result?.data ?? presignedData;
+
+          // Upload vers S3
+          await fetch(uploadUrl, {
+            method: "PUT",
+            body: selectedPhoto,
+            headers: { "Content-Type": selectedPhoto.type },
+          });
+
+          // Enregistrer la photo en base
+          await fetch("/api/trpc/photos.add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              json: {
+                objectId: newObject.id,
+                url: publicUrl,
+                position: 0,
+              },
+            }),
+          });
+        } catch (uploadErr) {
+          console.error("Photo upload failed:", uploadErr);
+          // Ne pas bloquer si l'upload échoue — l'objet est déjà créé
+        }
+        setUploadingPhoto(false);
+      }
+
+      setSelectedPhoto(null);
+      onSuccess?.();
+      reset();
     } catch {
       setCreatingQr(false);
+      setUploadingPhoto(false);
     }
   };
 
@@ -266,6 +323,17 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         <span className="font-mono text-xs bg-secondary/20 text-secondary border border-secondary/30 px-2 py-1">
           {typeLabels[objectType] ?? objectType}
         </span>
+      </div>
+
+      {/* Photo picker */}
+      <div className="space-y-2">
+        <Label className="font-mono text-xs uppercase">Photo</Label>
+        <PhotoPicker
+          onPhotoSelected={(file) => {
+            setSelectedPhoto(file);
+          }}
+          disabled={uploadingPhoto}
+        />
       </div>
 
       {/* Name */}
@@ -794,12 +862,12 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       <Button
         type="submit"
         className="w-full"
-        disabled={isSubmitting || createMutation.isPending || creatingQr}
+        disabled={isSubmitting || createMutation.isPending || creatingQr || uploadingPhoto}
       >
-        {createMutation.isPending || creatingQr ? (
+        {createMutation.isPending || creatingQr || uploadingPhoto ? (
           <>
             <BookOpen className="w-4 h-4 mr-2 animate-spin" />
-            {creatingQr ? "Génération du QR..." : "Création..."}
+            {uploadingPhoto ? "Upload photo..." : creatingQr ? "Génération du QR..." : "Création..."}
           </>
         ) : (
           <>
