@@ -3,9 +3,10 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Camera } from "lucide-react";
 import { Header, Navigation } from "../../../../components/navigation";
 import { EditObjectDialog } from "../../../../components/objects/edit-object-dialog";
+import { PhotoCapture } from "../../../../components/photos/photo-capture";
 import { trpc } from "../../../../lib/trpc";
 
 /**
@@ -22,6 +23,7 @@ export default function EditObjectPage() {
     { id: objectId },
     { enabled: !!objectId }
   );
+  const utils = trpc.useUtils();
 
   const handleSuccess = () => {
     router.push(`/objects/${objectId}`);
@@ -62,7 +64,38 @@ export default function EditObjectPage() {
           </div>
         )}
 
-        {/* Dialog */}
+        {/* Photo section */}
+        {object && (
+          <section className="mb-8">
+            <h2 className="font-mono text-xs text-muted-foreground uppercase mb-3">
+              // PHOTOS
+            </h2>
+            <PhotoCapture
+              objectId={objectId}
+              onPhotoAdded={() => utils.objects.get.invalidate({ id: objectId })}
+            />
+            {object.photos && object.photos.length > 0 && (
+              <div className="mt-4">
+                <p className="font-mono text-xs text-muted-foreground mb-2">
+                  {object.photos.length} photo{object.photos.length !== 1 ? "s" : ""}
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {object.photos.map((photo) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={photo.id}
+                      src={photo.url}
+                      alt=""
+                      className="w-20 h-20 object-cover rounded border border-border"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Edit dialog */}
         {!isLoading && object && (
           <EditObjectDialog
             open={dialogOpen}

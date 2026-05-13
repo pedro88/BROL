@@ -1,13 +1,14 @@
 # Codebase Map
 
-Generated: 2026-05-11T18:29:15Z | Files: 147 | Described: 0/147
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-11T18:29:15Z","fingerprint":"d45c486092ca8eeff25de0d32c8422601bc680f8","fileCount":147,"truncated":false} -->
+Generated: 2026-05-13T06:30:07Z | Files: 149 | Described: 0/149
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-13T06:30:07Z","fingerprint":"714414902686e09cca3e71d1d8f22fad1fd7d656","fileCount":149,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
 - `.gitignore`
 - `.gsd-id`
 - `DECISIONS.md`
+- `package-lock.json`
 - `package.json`
 - `playwright.config.ts`
 - `pnpm-lock.yaml`
@@ -81,9 +82,6 @@ Generated: 2026-05-11T18:29:15Z | Files: 147 | Described: 0/147
 ### apps/web/src/app/api/auth/[...all]/
 - `apps/web/src/app/api/auth/[...all]/route.ts`
 
-### apps/web/src/app/api/search-images/
-- `apps/web/src/app/api/search-images/route.ts`
-
 ### apps/web/src/app/browse/
 - `apps/web/src/app/browse/page.tsx`
 
@@ -104,6 +102,9 @@ Generated: 2026-05-11T18:29:15Z | Files: 147 | Described: 0/147
 
 ### apps/web/src/app/loans/
 - `apps/web/src/app/loans/page.tsx`
+
+### apps/web/src/app/objects/
+- `apps/web/src/app/objects/page.tsx`
 
 ### apps/web/src/app/objects/[id]/
 - `apps/web/src/app/objects/[id]/page.tsx`
@@ -164,9 +165,9 @@ Generated: 2026-05-11T18:29:15Z | Files: 147 | Described: 0/147
 - `apps/web/src/lib/auth-client.ts`
 - `apps/web/src/lib/auth-session-syncer.tsx`
 - `apps/web/src/lib/auth-store.ts`
-- `apps/web/src/lib/duckduckgo.ts`
 - `apps/web/src/lib/trpc-provider.tsx`
 - `apps/web/src/lib/trpc.ts`
+- `apps/web/src/lib/use-user-agent.ts`
 - `apps/web/src/lib/utils.ts`
 
 ### apps/web/src/lib/trpc-hooks/
@@ -176,6 +177,7 @@ Generated: 2026-05-11T18:29:15Z | Files: 147 | Described: 0/147
 - `packages/api/package.json`
 - `packages/api/test-adapter.ts`
 - `packages/api/tsconfig.json`
+- `packages/api/tsconfig.tsbuildinfo`
 - `packages/api/vitest.config.ts`
 
 ### packages/api/src/

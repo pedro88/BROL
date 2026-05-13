@@ -20,10 +20,26 @@ export const contactsRouter = router({
    * Liste les contacts de l'utilisateur.
    */
   list: protectedProcedure
-    .input(paginationSchema.optional())
+    .input(
+      z.object({
+        ...paginationSchema.shape,
+        search: z.string().optional(),
+      }).optional()
+    )
     .query(async ({ ctx, input }) => {
+      const search = input?.search?.trim();
       const contacts = await ctx.prisma.contact.findMany({
-        where: { userId: ctx.userId },
+        where: {
+          userId: ctx.userId,
+          ...(search
+            ? {
+                OR: [
+                  { name: { contains: search, mode: "insensitive" } },
+                  { email: { contains: search, mode: "insensitive" } },
+                ],
+              }
+            : {}),
+        },
         orderBy: { name: "asc" },
         take: input?.limit ?? 50,
         cursor: input?.cursor ? { id: input.cursor } : undefined,

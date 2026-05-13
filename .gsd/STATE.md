@@ -14,6 +14,7 @@
 - ✅ **M009:** Object Enhancement — Typage des collections par catégorie d'objet
 - ✅ **M010:** QR codes with local network URLs
 - ✅ **M011:** Photos sur les objets
+- ✅ **M012:** Dashboard UX & Navigation
 
 ## Recent Decisions
 - None recorded

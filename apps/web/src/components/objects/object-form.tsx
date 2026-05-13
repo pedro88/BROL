@@ -190,7 +190,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       utils.objects.list.invalidate({ collectionId: data.collectionId });
       onSuccess?.();
       reset();
-      router.push(`/collections/${data.collectionId}`);
+      router.push(`/objects/${data.id}/edit`);
     },
   });
 

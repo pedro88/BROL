@@ -905,6 +905,88 @@
       "label": "T10: Photos incluses dans les réponses objects.list et objects.get",
       "type": "task",
       "confidence": "EXTRACTED"
+    },
+    {
+      "id": "milestone:M012",
+      "label": "M012: Dashboard UX & Navigation",
+      "type": "milestone",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M012/M012-ROADMAP.md"
+    },
+    {
+      "id": "slice:M012:S01",
+      "label": "S01: Dashboard cliquable + pages列表",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M012/slices/S01/S01-PLAN.md"
+    },
+    {
+      "id": "task:M012:S01:T01",
+      "label": "T01: Rendre les StatCards cliquables",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M012:S01:T02",
+      "label": "T02: Créer page /objects avec tableau filtrable",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M012:S01:T03",
+      "label": "T03: Lier les 3 StatCards aux pages",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M012:S01:T04",
+      "label": "T04: Masquer Scanner sur desktop (mobile-only)",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M012:S01:T05",
+      "label": "T05: Corriger section Prêts récents + cards cliquables",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M012:S02",
+      "label": "S02: S02",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M012/slices/S02/S02-PLAN.md"
+    },
+    {
+      "id": "task:M012:S02:T01",
+      "label": "T01: Photo dans formulaire objet (coverImage URL + PhotoCapture sur edit)",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M012:S02:T02",
+      "label": "T02: Bouton + sur /loans avec dialog de sélection d'objet",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M012:S03",
+      "label": "S03: S03",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M012/slices/S03/S03-PLAN.md"
+    },
+    {
+      "id": "task:M012:S03:T01",
+      "label": "T01: search param sur contacts.list API",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M012:S03:T02",
+      "label": "T02: Combobox recherche contacts dans CreateLoanDialog",
+      "type": "task",
+      "confidence": "EXTRACTED"
     }
   ],
   "edges": [
@@ -1693,7 +1775,79 @@
       "to": "task:M011:S03:T10",
       "type": "contains",
       "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M012",
+      "to": "slice:M012:S01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M012:S01",
+      "to": "task:M012:S01:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M012:S01",
+      "to": "task:M012:S01:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M012:S01",
+      "to": "task:M012:S01:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M012:S01",
+      "to": "task:M012:S01:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M012:S01",
+      "to": "task:M012:S01:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M012",
+      "to": "slice:M012:S02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M012:S02",
+      "to": "task:M012:S02:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M012:S02",
+      "to": "task:M012:S02:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M012",
+      "to": "slice:M012:S03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M012:S03",
+      "to": "task:M012:S03:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M012:S03",
+      "to": "task:M012:S03:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-05-11T14:38:08.618Z"
+  "builtAt": "2026-05-12T09:21:44.424Z"
 }

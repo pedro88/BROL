@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Header, Navigation } from "../../components/navigation";
 import { Button } from "../../components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
+import { CreateLoanDialog } from "../../components/loans/create-loan-dialog";
+import { Input } from "../../components/ui/input";
 import { trpc } from "../../lib/trpc";
 import { toast } from "sonner";
 import {
+  Plus,
   Repeat,
   AlertCircle,
   CheckCircle2,
@@ -14,6 +17,8 @@ import {
   Bell,
   ArrowRight,
   Package,
+  Search,
+  X,
 } from "lucide-react";
 
 type Tab = "lent" | "borrowed" | "history";
@@ -197,6 +202,11 @@ export default function LoansPage() {
   const [activeTab, setActiveTab] = useState<Tab>("lent");
   const utils = trpc.useUtils();
 
+  // Object picker state
+  const [showObjectPicker, setShowObjectPicker] = useState(false);
+  const [objectSearch, setObjectSearch] = useState("");
+  const [selectedObjectForLoan, setSelectedObjectForLoan] = useState<{ id: string; name: string } | null>(null);
+
   const { data: lentData, isLoading: isLoadingLent } =
     trpc.loans.lentOut.useQuery(undefined);
   const { data: borrowedData, isLoading: isLoadingBorrowed } =
@@ -264,13 +274,22 @@ export default function LoansPage() {
 
       <main className="px-4 py-6 max-w-lg mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="font-display text-3xl vhs-text-glow text-primary">
-            PRÊTS
-          </h1>
-          <p className="font-mono text-xs text-muted-foreground mt-1">
-            Suivez vos prêts et emprunts
-          </p>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="font-display text-3xl vhs-text-glow text-primary">
+              PRÊTS
+            </h1>
+            <p className="font-mono text-xs text-muted-foreground mt-1">
+              Suivez vos prêts et emprunts
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowObjectPicker(true)}
+            className="gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            NOUVEAU PRÊT
+          </Button>
         </div>
 
         {/* Tabs */}
@@ -343,9 +362,159 @@ export default function LoansPage() {
             ))}
           </div>
         )}
+
+        {/* Object picker dialog */}
+        <ObjectPickerDialog
+          open={showObjectPicker}
+          onOpenChange={(open) => {
+            setShowObjectPicker(open);
+            if (!open) {
+              setObjectSearch("");
+              setSelectedObjectForLoan(null);
+            }
+          }}
+          onObjectSelected={(object) => {
+            setSelectedObjectForLoan(object);
+          }}
+          searchQuery={objectSearch}
+          onSearchChange={setObjectSearch}
+        />
+
+        {/* Create loan dialog */}
+        {selectedObjectForLoan && (
+          <CreateLoanDialogWrapper
+            objectId={selectedObjectForLoan.id}
+            objectName={selectedObjectForLoan.name}
+            onClose={() => {
+              setSelectedObjectForLoan(null);
+              setShowObjectPicker(false);
+              setObjectSearch("");
+            }}
+          />
+        )}
       </main>
 
       <Navigation />
     </div>
+  );
+}
+
+/**
+ * Dialog de sélection d'objet pour créer un prêt.
+ */
+function ObjectPickerDialog({
+  open,
+  onOpenChange,
+  onObjectSelected,
+  searchQuery,
+  onSearchChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onObjectSelected: (object: { id: string; name: string }) => void;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
+}) {
+  const { data, isLoading } = trpc.objects.all.useQuery({
+    status: "available",
+    search: searchQuery || undefined,
+    limit: 50,
+  });
+
+  const availableObjects = data?.items.filter((o) => !o.currentLoan) ?? [];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Sélectionner un objet à prêter</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un objet..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10"
+              autoFocus
+            />
+          </div>
+
+          {/* Object list */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="spinner-vhs w-6 h-6" />
+            </div>
+          ) : availableObjects.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
+              <p className="font-mono text-sm text-muted-foreground">
+                {searchQuery
+                  ? "Aucun objet disponible ne correspond"
+                  : "Aucun objet disponible — tous sont déjà prêtés ou vous n'avez pas d'objets"}
+              </p>
+            </div>
+          ) : (
+            <div className="max-h-64 overflow-y-auto space-y-1">
+              {availableObjects.map((obj) => (
+                <button
+                  key={obj.id}
+                  onClick={() => {
+                    onObjectSelected({ id: obj.id, name: obj.name });
+                    onOpenChange(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded border border-border hover:border-primary/50 hover:bg-muted/50 transition-colors text-left"
+                >
+                  <div className="w-8 h-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                    {obj.coverImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={obj.coverImage} alt="" className="w-full h-full object-cover rounded" />
+                    ) : (
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono text-sm truncate">{obj.name}</p>
+                    <p className="font-mono text-xs text-muted-foreground truncate">
+                      {obj.collection.name}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Wrapper qui ouvre CreateLoanDialog et reset le state parent après fermeture.
+ */
+function CreateLoanDialogWrapper({
+  objectId,
+  objectName,
+  onClose,
+}: {
+  objectId: string;
+  objectName: string;
+  onClose: () => void;
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <CreateLoanDialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) onClose();
+      }}
+      objectId={objectId}
+      objectName={objectName}
+    />
   );
 }
