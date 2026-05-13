@@ -81,7 +81,60 @@ export const qrRouter = router({
     }),
 
   /**
-   * Assigne un QR code de stock à un objet.
+   * Assigne un QR code de stock à un objet via scan (par code, pas par ID).
+   */
+  assign: protectedProcedure
+    .input(z.object({ objectId: z.string().cuid(), qrCode: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Trouver le QR stock par son code
+      const qrStock = await ctx.prisma.qrStock.findFirst({
+        where: {
+          code: input.qrCode,
+          userId: ctx.userId,
+          used: false,
+        },
+      });
+
+      if (!qrStock) {
+        throw new Error("QR code non disponible ou déjà utilisé");
+      }
+
+      // Vérifier que l'objet appartient à l'utilisateur
+      const object = await ctx.prisma.object.findFirst({
+        where: {
+          id: input.objectId,
+          collection: {
+            userId: ctx.userId,
+          },
+        },
+      });
+
+      if (!object) {
+        throw new Error("Objet non trouvé");
+      }
+
+      // Vérifier que l'objet n'a pas déjà un QR assigné
+      if (object.qrStockId) {
+        throw new Error("Cet objet a déjà un QR code assigné");
+      }
+
+      // Assigner le QR à l'objet
+      const [updatedObject] = await ctx.prisma.$transaction([
+        ctx.prisma.object.update({
+          where: { id: input.objectId },
+          data: { qrStockId: qrStock.id },
+        }),
+        ctx.prisma.qrStock.update({
+          where: { id: qrStock.id },
+          data: { used: true, usedAt: new Date() },
+        }),
+      ]);
+
+      return updatedObject;
+    }),
+
+  /**
+   * Assigne un QR code de stock à un objet (par ID interne).
    */
   assignToObject: protectedProcedure
     .input(assignQrStockSchema)

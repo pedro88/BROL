@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-13T07:51:29Z | Files: 150 | Described: 0/150
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-13T07:51:29Z","fingerprint":"de811932b6c5f5c816af2d1e36b2ed41033abd2b","fileCount":150,"truncated":false} -->
+Generated: 2026-05-13T07:57:29Z | Files: 151 | Described: 0/151
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-13T07:57:29Z","fingerprint":"df2f82527c3aeffeb1b85bb16987c1e333aaa8ef","fileCount":151,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -143,6 +143,7 @@ Generated: 2026-05-13T07:51:29Z | Files: 150 | Described: 0/150
 - `apps/web/src/components/objects/edit-object-dialog.tsx`
 - `apps/web/src/components/objects/object-card.tsx`
 - `apps/web/src/components/objects/object-form.tsx`
+- `apps/web/src/components/objects/photo-picker.tsx`
 
 ### apps/web/src/components/photos/
 - `apps/web/src/components/photos/photo-capture.tsx`

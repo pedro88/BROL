@@ -5,11 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createObjectSchema, type CreateObjectInput, OBJECT_CONDITIONS, OBJECT_TYPES } from "@brol/shared";
-import { BookOpen, QrCode, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { BookOpen, QrCode, Loader2, CheckCircle2, XCircle, Camera } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { PhotoPicker } from "./photo-picker";
+import { QrScanner } from "../qr/qr-scanner";
 import { trpc } from "../../lib/trpc";
 
 const conditionLabels: Record<string, string> = {
@@ -132,13 +133,17 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   );
 
   // QR state
-  const [qrSelection, setQrSelection] = useState<"none" | "existing" | "create">("none");
+  const [qrSelection, setQrSelection] = useState<"none" | "scan" | "existing" | "create">("none");
   const [selectedQrId, setSelectedQrId] = useState<string>("");
   const [creatingQr, setCreatingQr] = useState(false);
 
   // Photo state for creation-time upload
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // QR Scanner state
+  const [showQrScanner, setShowQrScanner] = useState(false);
+  const [scannedQrCode, setScannedQrCode] = useState<string | null>(null);
 
   // ISBN lookup state
   const [isbnQuery, setIsbnQuery] = useState("");
@@ -206,6 +211,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   const onSubmit = async (formData: CreateObjectInput) => {
     try {
       let qrStockId: string | undefined;
+
       if (qrSelection === "create") {
         setCreatingQr(true);
         const qrResult = await generateQrMutation.mutateAsync({ count: 1 });
@@ -215,6 +221,9 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         setCreatingQr(false);
       } else if (qrSelection === "existing" && selectedQrId) {
         qrStockId = selectedQrId;
+      } else if (qrSelection === "scan" && scannedQrCode) {
+        // Scan case: we'll assign after object creation
+        // qrStockId will be resolved after object is created
       }
 
       // 1. Créer l'objet
@@ -224,7 +233,31 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         qrStockId,
       });
 
-      // 2. Upload la photo si sélectionnée (S3 direct via presigned URL)
+      // 2. Assigner le QR scanné après création
+      if (qrSelection === "scan" && scannedQrCode) {
+        try {
+          // Extraire le code si c'est une URL
+          const code = scannedQrCode.includes("/qr/") 
+            ? scannedQrCode.split("/qr/").pop()! 
+            : scannedQrCode;
+
+          await fetch("/api/trpc/qr.assign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              json: {
+                objectId: newObject.id,
+                qrCode: code,
+              },
+            }),
+          });
+        } catch (assignErr) {
+          console.error("QR assign failed:", assignErr);
+          // Ne pas bloquer si l'assignation échoue
+        }
+      }
+
+      // 3. Upload la photo si sélectionnée (S3 direct via presigned URL)
       if (selectedPhoto) {
         setUploadingPhoto(true);
         try {
@@ -270,6 +303,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         setUploadingPhoto(false);
       }
 
+      setScannedQrCode(null);
       setSelectedPhoto(null);
       onSuccess?.();
       reset();
@@ -805,6 +839,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           <div className="space-y-2">
             {[
               { value: "none", label: "Aucun QR code" },
+              { value: "scan", label: "Scanner un QR code" },
               { value: "existing", label: "Sélectionner un QR existant" },
               { value: "create", label: "Créer un nouveau QR" },
             ].map((option) => (
@@ -820,14 +855,29 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
                   type="radio"
                   value={option.value}
                   checked={qrSelection === option.value}
-                  onChange={() => setQrSelection(option.value as typeof qrSelection)}
+                  onChange={() => {
+                    setQrSelection(option.value as typeof qrSelection);
+                    if (option.value === "scan") {
+                      setShowQrScanner(true);
+                    }
+                  }}
                   className="sr-only"
                 />
-                <QrCode className="w-4 h-4 text-muted-foreground" />
+                {option.value === "scan" ? (
+                  <Camera className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <QrCode className="w-4 h-4 text-muted-foreground" />
+                )}
                 <span className="font-mono text-sm">{option.label}</span>
               </label>
             ))}
           </div>
+
+          {scannedQrCode && (
+            <p className="font-mono text-xs text-green-400">
+              ✓ QR scanné : {scannedQrCode}
+            </p>
+          )}
 
           {qrSelection === "existing" && (
             <select
@@ -856,6 +906,20 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             </p>
           )}
         </div>
+      )}
+
+      {/* QR Scanner Modal */}
+      {showQrScanner && (
+        <QrScanner
+          onCodeScanned={(code) => {
+            setScannedQrCode(code);
+            setQrSelection("scan");
+            setShowQrScanner(false);
+          }}
+          onClose={() => {
+            setShowQrScanner(false);
+          }}
+        />
       )}
 
       {/* Submit */}
