@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-13T07:57:29Z | Files: 151 | Described: 0/151
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-13T07:57:29Z","fingerprint":"df2f82527c3aeffeb1b85bb16987c1e333aaa8ef","fileCount":151,"truncated":false} -->
+Generated: 2026-05-13T08:08:40Z | Files: 152 | Described: 0/152
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-13T08:08:40Z","fingerprint":"06e0a90f3b4d8b563038a820faea310275c12330","fileCount":152,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -152,6 +152,7 @@ Generated: 2026-05-13T07:57:29Z | Files: 151 | Described: 0/151
 ### apps/web/src/components/qr/
 - `apps/web/src/components/qr/assign-qr-dialog.tsx`
 - `apps/web/src/components/qr/qr-code-image.tsx`
+- `apps/web/src/components/qr/qr-scanner.tsx`
 
 ### apps/web/src/components/ui/
 - `apps/web/src/components/ui/button.tsx`
