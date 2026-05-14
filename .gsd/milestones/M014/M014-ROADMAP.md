@@ -15,10 +15,10 @@
 - [x] **S01: S01** `risk:low` `depends:[]`
   > After this: Les utilisateurs peuvent voir le profil complet d'un contact avec ses notes et commentaires
 
-- [ ] **S02: S02** `risk:medium` `depends:[]`
+- [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: Les utilisateurs peuvent envoyer une demande à la communauté pour un objet souhaité
 
-- [ ] **S03: Système de notification** `risk:medium` `depends:[S02]`
+- [ ] **S03: S03** `risk:medium` `depends:[]`
   > After this: Les utilisateurs reçoivent des notifications pour tous les événements importants
 
 - [ ] **S04: Tiers d'utilisation et limites** `risk:medium` `depends:[S01]`

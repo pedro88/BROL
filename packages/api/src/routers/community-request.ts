@@ -189,6 +189,20 @@ export const communityRequestRouter = router({
         },
       });
 
+      // Notification à l'auteur de la demande
+      if (request.authorId !== ctx.session.user.id) {
+        await ctx.prisma.notification.create({
+          data: {
+            userId: request.authorId,
+            type: "REQUEST_FULFILLED",
+            title: "Votre demande a été traitée",
+            message: `Quelqu'un a répondu à votre demande: "${request.title}"`,
+            relatedId: request.id,
+            relatedType: "request",
+          },
+        });
+      }
+
       return updated;
     }),
 

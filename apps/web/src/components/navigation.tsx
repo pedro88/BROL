@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut } from "lucide-react";
+import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut, Bell } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 import { signOut } from "@/lib/auth-client";
 import { setSessionToken, sessionTokenStore, getSessionToken } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
@@ -86,7 +87,17 @@ export function Header() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {isAuthenticated && (
+            <Link
+              href="/notifications"
+              className="relative p-2 text-muted-foreground hover:text-primary transition-colors"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" strokeWidth={1.5} />
+            </Link>
+          )}
+
           {isAuthenticated ? (
             <button
               onClick={handleLogout}

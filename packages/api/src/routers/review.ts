@@ -153,6 +153,20 @@ export const reviewRouter = router({
         },
       });
 
+      // Notification à la cible
+      await ctx.prisma.notification.create({
+        data: {
+          userId: input.targetId,
+          type: "REVIEW_RECEIVED",
+          title: `Nouvel avis de ${review.author.name ?? "quelqu'un"}`,
+          message: input.comment
+            ? `"${input.comment.slice(0, 100)}${input.comment.length > 100 ? "..." : ""}"`
+            : `${input.rating}/5 étoiles`,
+          relatedId: review.id,
+          relatedType: "review",
+        },
+      });
+
       return review;
     }),
 });
