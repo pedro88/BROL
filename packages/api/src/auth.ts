@@ -29,6 +29,14 @@ export interface AuthOptions {
     minPasswordLength: 8;
     autoSignIn: true;
   };
+  additionalFields?: {
+    user?: Record<string, {
+      type: string;
+      required?: boolean;
+      output?: { type: string; nullable?: boolean };
+      input?: { type: string; nullable?: boolean };
+    }>;
+  };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   socialProviders?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,6 +59,18 @@ function baseAuthConfig(overrides?: {
       enabled: true,
       minPasswordLength: 8,
       autoSignIn: true,
+    },
+    additionalFields: {
+      user: {
+        name: {
+          type: "string",
+          required: false,
+          output: {
+            type: "string",
+            nullable: true,
+          },
+        },
+      },
     },
     // OAuth providers — commented out for future use
     // socialProviders: {

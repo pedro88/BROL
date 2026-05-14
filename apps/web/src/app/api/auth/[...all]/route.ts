@@ -36,6 +36,22 @@ const auth = betterAuth({
     minPasswordLength: 8,
     autoSignIn: true,
   },
+  /**
+   * Additional fields to include in the user object returned by get-session.
+   * Without this, only id/email/image are returned.
+   */
+  additionalFields: {
+    user: {
+      name: {
+        type: "string",
+        required: false,
+        output: {
+          type: "string",
+          nullable: true,
+        },
+      },
+    },
+  },
   // OAuth providers — commented out for future use
   // socialProviders: {
   //   google: google({
