@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-05-14T11:59:31.029Z",
+  "exported_at": "2026-05-14T12:00:39.207Z",
   "milestones": [
     {
       "id": "M001",
@@ -371,10 +371,10 @@
     {
       "id": "M014",
       "title": "Profil, Notifications, Tiers et Badges",
-      "status": "active",
+      "status": "complete",
       "depends_on": [],
       "created_at": "2026-05-14T06:32:40.423Z",
-      "completed_at": null,
+      "completed_at": "2026-05-14T12:00:39.155Z",
       "vision": "Permettre aux utilisateurs d'avoir un profil complet avec réputation (notes, badges), de demander des emprunts à la communauté, de recevoir des notifications importantes, et d'évoluer vers des plans payants avec plus de capacités.",
       "success_criteria": [
         "Les utilisateurs peuvent consulter le profil complet d'un contact avec ses badges, note moyenne et commentaires",
@@ -1231,14 +1231,14 @@
       "milestone_id": "M014",
       "id": "S05",
       "title": "S05",
-      "status": "pending",
+      "status": "complete",
       "risk": "low",
       "depends": [],
       "demo": "Les utilisateurs gagnent des badges en utilisant l'application",
       "created_at": "2026-05-14T06:34:33.561Z",
-      "completed_at": null,
-      "full_summary_md": "",
-      "full_uat_md": "",
+      "completed_at": "2026-05-14T11:59:52.889Z",
+      "full_summary_md": "---\nid: S05\nparent: M014\nmilestone: M014\nprovides:\n  - (none)\nrequires:\n  []\naffects:\n  []\nkey_files:\n  - (none)\nkey_decisions:\n  - (none)\npatterns_established:\n  - (none)\nobservability_surfaces:\n  - none\ndrill_down_paths:\n  []\nduration: \"\"\nverification_result: passed\ncompleted_at: 2026-05-14T11:59:52.891Z\nblocker_discovered: false\n---\n\n# S05: Système de badge\n\n**S05 complet: système de badge**\n\n## What Happened\n\n4 tasks completed: seed script (7 BadgeDefinition), badge-service with syncUserBadges, trigger integration in loans/objects/review, profile page already shows badges, unit tests (5 tests, 99 total). All tests pass.\n\n## Verification\n\n99 tests passent, web build OK\n\n## Requirements Advanced\n\nNone.\n\n## Requirements Validated\n\nNone.\n\n## New Requirements Surfaced\n\nNone.\n\n## Requirements Invalidated or Re-scoped\n\nNone.\n\n## Operational Readiness\n\nNone.\n\n## Deviations\n\nNone.\n\n## Known Limitations\n\nNone.\n\n## Follow-ups\n\nNone.\n\n## Files Created/Modified\n\nNone.\n",
+      "full_uat_md": "# S05: Système de badge — UAT\n\n**Milestone:** M014\n**Written:** 2026-05-14T11:59:52.891Z\n\n1. Créer un prêt → le badge \"Premier prêt\" doit être awardé automatiquement\n2. Ajouter 10 objets → le badge \"Collectionneur\" doit être awardé automatiquement\n3. Laisser un avis → le badge \"Critique\" doit être awardé automatiquement\n4. Aller sur /profile/[userId] → voir les badges affichés avec icône, nom et description\n5. Répéter les actions et vérifier que les badges progressent (lender-5, collector-50, etc.)\n",
       "goal": "Implémenter le système de badge (badges atteints, progression, affichage sur le profil)",
       "success_criteria": "- Seed data des BadgeDefinition dans la DB (7 badges par défaut)\n- syncUser appelé automatiquement après prêt, ajout d'objet, review\n- Page /profile/[id] affiche les badges awardés\n- Badge awarded automatiquement quand les critères sont atteints\n- API badge.list inclut les badges awardés pour l'utilisateur",
       "proof_level": "End-to-end test",

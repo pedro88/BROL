@@ -24,7 +24,7 @@
 - [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: Les utilisateurs ont accès à des plans selon leurs besoins
 
-- [ ] **S05: S05** `risk:low` `depends:[]`
+- [x] **S05: S05** `risk:low` `depends:[]`
   > After this: Les utilisateurs gagnent des badges en utilisant l'application
 
 ## Boundary Map
