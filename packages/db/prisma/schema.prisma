@@ -37,6 +37,10 @@ model User {
   ownerOf    Loan[]          @relation("Owner")
   borrowerOfContact Contact[] @relation("ContactBorrower")
   qrStocks   QrStock[]
+  profile    Profile?
+  authorReviews   Review[] @relation("ReviewAuthor")
+  targetReviews   Review[] @relation("ReviewTarget")
+  userBadges      UserBadge[]
 
   @@map("users")
 }
@@ -247,6 +251,7 @@ model Loan {
   owner          User    @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
   borrower       User?   @relation("Borrower", fields: [borrowerId], references: [id], onDelete: Cascade)
   borrowerContact Contact? @relation("LoanBorrowerContact", fields: [borrowerContactId], references: [id], onDelete: Cascade)
+  reviews         Review[] @relation("ReviewLoan")
 
   @@index([objectId])
   @@index([borrowerId])
@@ -262,6 +267,77 @@ enum LoanStatus {
   RETURNED
   OVERDUE
   CANCELLED
+}
+
+// ============================================
+// USER PROFILE
+// ============================================
+
+model Profile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  bio       String?
+  avatarUrl String?
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+// ============================================
+// REVIEWS (NOTES & COMMENTAIRES)
+// ============================================
+
+model Review {
+  id        String   @id @default(cuid())
+  authorId  String
+  targetId  String
+  loanId    String   // Échange obligatoire — doit exister
+  rating    Int      // 1-5 étoiles
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author User @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  target User @relation("ReviewTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  loan   Loan @relation("ReviewLoan", fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@unique([authorId, loanId]) // Un seul review par auteur par prêt
+  @@index([targetId])
+  @@map("reviews")
+}
+
+// ============================================
+// BADGES
+// ============================================
+
+model BadgeDefinition {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  icon        String   // Emoji ou URL vers l'icône
+  criteria    Json     // Règles d'attribution automatique (ex: { "type": "loan_count", "threshold": 10 })
+  createdAt   DateTime @default(now())
+
+  userBadges UserBadge[]
+
+  @@map("badge_definitions")
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  awardedAt DateTime @default(now())
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge BadgeDefinition @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("user_badges")
 }
 
 // ============================================

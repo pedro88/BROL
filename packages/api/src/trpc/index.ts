@@ -14,6 +14,7 @@ import { getSession } from "../auth";
 export interface Context {
   prisma: typeof prisma;
   userId: string | null;
+  session: { user: { id: string } } | null;
   /** Raw request headers (lowercase keys) for auth helpers */
   headers: Record<string, string>;
 }
@@ -34,6 +35,7 @@ export async function createContext(opts: FetchCreateContextFnOptions): Promise<
   return {
     prisma,
     userId: session?.user?.id ?? null,
+    session,
     headers,
   };
 }
@@ -72,6 +74,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   return next({
     ctx: {
       ...ctx,
+      session: ctx.session!,
       userId: ctx.userId,
     },
   });

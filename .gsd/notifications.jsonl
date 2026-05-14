@@ -53,3 +53,4 @@
 {"id":"2a8bf1e7-36be-43c6-8166-f89b38d0bad4","ts":"2026-05-11T08:39:37.684Z","severity":"info","message":"Auto-mode is not running.","source":"notify","read":false}
 {"id":"6befc416-73b7-4eaa-a81c-1b6f377abc46","ts":"2026-05-11T14:13:05.559Z","severity":"warning","message":"[migration] Deprecated MCP alias tool used; update callers to the canonical gsd_* tool name before alias removal.","source":"workflow-logger","read":false}
 {"id":"fde2c22c-17f6-47c6-b317-7be14422a21d","ts":"2026-05-12T08:00:36.011Z","severity":"warning","message":"[migration] Deprecated MCP alias tool used; update callers to the canonical gsd_* tool name before alias removal.","source":"workflow-logger","read":false}
+{"id":"cffefe8f-ad5d-4ea2-aaec-68fd4dbc53df","ts":"2026-05-14T06:36:36.825Z","severity":"warning","message":"[migration] Deprecated MCP alias tool used; update callers to the canonical gsd_* tool name before alias removal.","source":"workflow-logger","read":false}

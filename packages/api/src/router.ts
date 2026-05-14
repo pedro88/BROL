@@ -10,6 +10,9 @@ import { loansRouter } from "./routers/loans";
 import { contactsRouter } from "./routers/contacts";
 import { qrRouter } from "./routers/qr";
 import { photosRouter } from "./routers/photos";
+import { profileRouter } from "./routers/profile";
+import { reviewRouter } from "./routers/review";
+import { badgeRouter } from "./routers/badge";
 import { auth } from "./auth";
 
 /**
@@ -43,6 +46,9 @@ export const appRouter = router({
   contacts: contactsRouter,
   qr: qrRouter,
   photos: photosRouter,
+  profile: profileRouter,
+  review: reviewRouter,
+  badge: badgeRouter,
 
   /**
    * Endpoint de santé pour vérifier que l'API est alive.
