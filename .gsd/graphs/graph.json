@@ -1087,6 +1087,49 @@
       "label": "T06: E2E tests pour les demandes communauté",
       "type": "task",
       "confidence": "EXTRACTED"
+    },
+    {
+      "id": "slice:M014:S03",
+      "label": "S03: Système de notification",
+      "type": "slice",
+      "confidence": "EXTRACTED",
+      "sourceFile": "milestones/M014/slices/S03/S03-PLAN.md"
+    },
+    {
+      "id": "task:M014:S03:T01",
+      "label": "T01: Ajouter table Notification au schéma Prisma",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M014:S03:T02",
+      "label": "T02: Créer router tRPC notification",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M014:S03:T03",
+      "label": "T03: Intégrer création automatique de notifications dans les routers",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M014:S03:T04",
+      "label": "T04: UI notifications (page + badge dans navigation)",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M014:S03:T05",
+      "label": "T05: Email reminder integration",
+      "type": "task",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "id": "task:M014:S03:T06",
+      "label": "T06: E2E tests pour les notifications",
+      "type": "task",
+      "confidence": "EXTRACTED"
     }
   ],
   "edges": [
@@ -2031,7 +2074,49 @@
       "to": "task:M014:S02:T06",
       "type": "contains",
       "confidence": "EXTRACTED"
+    },
+    {
+      "from": "milestone:M014",
+      "to": "slice:M014:S03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M014:S03",
+      "to": "task:M014:S03:T01",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M014:S03",
+      "to": "task:M014:S03:T02",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M014:S03",
+      "to": "task:M014:S03:T03",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M014:S03",
+      "to": "task:M014:S03:T04",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M014:S03",
+      "to": "task:M014:S03:T05",
+      "type": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "from": "slice:M014:S03",
+      "to": "task:M014:S03:T06",
+      "type": "contains",
+      "confidence": "EXTRACTED"
     }
   ],
-  "builtAt": "2026-05-14T07:12:40.202Z"
+  "builtAt": "2026-05-14T11:37:02.878Z"
 }

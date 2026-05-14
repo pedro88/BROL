@@ -272,6 +272,16 @@ enum LoanStatus {
 }
 
 // ============================================
+// USER TIER (plans d'abonnement)
+// ============================================
+
+enum UserTier {
+  FREE     // 5 collections, 50 objets, 10 prêts
+  TIER_2   // 10 collections, 500 objets, 50 prêts — 3€/mois
+  TIER_3   // Illimité — 20€/mois
+}
+
+// ============================================
 // USER PROFILE
 // ============================================
 
@@ -280,6 +290,8 @@ model Profile {
   userId    String   @unique
   bio       String?
   avatarUrl String?
+  tier      UserTier @default(FREE)
+  tierExpiresAt DateTime? // null = jamais (ou déjà payé pour TIER_2/3)
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

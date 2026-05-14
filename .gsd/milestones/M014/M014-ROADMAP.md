@@ -18,10 +18,10 @@
 - [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: Les utilisateurs peuvent envoyer une demande à la communauté pour un objet souhaité
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Les utilisateurs reçoivent des notifications pour tous les événements importants
 
-- [ ] **S04: Tiers d'utilisation et limites** `risk:medium` `depends:[S01]`
+- [ ] **S04: S04** `risk:medium` `depends:[]`
   > After this: Les utilisateurs ont accès à des plans selon leurs besoins
 
 - [ ] **S05: Système de badge** `risk:low` `depends:[S01]`

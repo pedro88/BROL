@@ -15,6 +15,7 @@ import { reviewRouter } from "./routers/review";
 import { badgeRouter } from "./routers/badge";
 import { communityRequestRouter } from "./routers/community-request";
 import { notificationRouter } from "./routers/notification";
+import { tierRouter } from "./routers/tier";
 import { auth } from "./auth";
 
 /**
@@ -53,6 +54,7 @@ export const appRouter = router({
   badge: badgeRouter,
   communityRequest: communityRequestRouter,
   notification: notificationRouter,
+  tier: tierRouter,
 
   /**
    * Endpoint de santé pour vérifier que l'API est alive.
