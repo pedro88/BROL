@@ -31,13 +31,21 @@ interface EditObjectDialogProps {
   onOpenChange: (open: boolean) => void;
   objectId: string;
   objectName: string;
-  objectType?: string | null;
+  collectionType?: string | null;
   initialData?: {
     name?: string;
     author?: string | null;
     edition?: string | null;
     condition?: string;
     notes?: string | null;
+    isbn?: string | null;
+    // BOARD_GAME
+    playersMin?: number | null;
+    playersMax?: number | null;
+    playingTimeMinutes?: number | null;
+    ageMin?: number | null;
+    // ELECTRIC
+    powerWatts?: number | null;
     // CLOTHING
     clothingSize?: string | null;
     clothingGender?: string | null;
@@ -47,13 +55,16 @@ interface EditObjectDialogProps {
     toolManual?: boolean | null;
     toolSector?: string | null;
     toolBattery?: boolean | null;
+    // CUSTOM
+    customField1?: string | null;
+    customField2?: string | null;
     // Caution et tarification
     cautionAmount?: number | null;
     rentalPriceDay?: number | null;
     rentalPriceHour?: number | null;
     rentalPriceWeek?: number | null;
     rentalPriceKm?: number | null;
-    hasPricing?: boolean; // Toggle pour afficher/cacher la tarification
+    hasPricing?: boolean;
   };
   onSuccess?: () => void;
 }
@@ -66,16 +77,20 @@ export function EditObjectDialog({
   onOpenChange,
   objectId,
   objectName,
-  objectType,
+  collectionType,
   initialData,
   onSuccess,
 }: EditObjectDialogProps) {
   const utils = trpc.useUtils();
 
-  // Determine type for field visibility
-  const type = objectType as string ?? "BOOK";
+  // Determine type for field visibility based on collection type
+  const type = collectionType as string ?? "BOOK";
+  const showBoardGameFields = type === "BOARD_GAME";
+  const showElectricFields = type === "ELECTRIC";
   const showClothingFields = type === "CLOTHING";
   const showToolFields = type === "TOOL";
+  const showCustomFields = type === "CUSTOM";
+  const showIsbn = type === "BOOK" || type === "FILM";
   // Tarification: disponible pour tous les types, mais désactivée par défaut
   const [pricingEnabled, setPricingEnabled] = useState(initialData?.hasPricing ?? false);
 
@@ -93,6 +108,12 @@ export function EditObjectDialog({
       edition: initialData?.edition ?? null,
       condition: (initialData?.condition as UpdateObjectInput["condition"]) ?? "GOOD",
       notes: initialData?.notes ?? null,
+      isbn: initialData?.isbn ?? null,
+      playersMin: initialData?.playersMin ?? null,
+      playersMax: initialData?.playersMax ?? null,
+      playingTimeMinutes: initialData?.playingTimeMinutes ?? null,
+      ageMin: initialData?.ageMin ?? null,
+      powerWatts: initialData?.powerWatts ?? null,
       clothingSize: initialData?.clothingSize ?? null,
       clothingGender: initialData?.clothingGender ?? null,
       clothingColor: initialData?.clothingColor ?? null,
@@ -100,6 +121,8 @@ export function EditObjectDialog({
       toolManual: initialData?.toolManual ?? null,
       toolSector: initialData?.toolSector ?? null,
       toolBattery: initialData?.toolBattery ?? null,
+      customField1: initialData?.customField1 ?? null,
+      customField2: initialData?.customField2 ?? null,
       cautionAmount: initialData?.cautionAmount ?? null,
       rentalPriceDay: initialData?.rentalPriceDay ?? null,
       rentalPriceHour: initialData?.rentalPriceHour ?? null,
@@ -118,6 +141,12 @@ export function EditObjectDialog({
         edition: initialData?.edition ?? null,
         condition: (initialData?.condition as UpdateObjectInput["condition"]) ?? "GOOD",
         notes: initialData?.notes ?? null,
+        isbn: initialData?.isbn ?? null,
+        playersMin: initialData?.playersMin ?? null,
+        playersMax: initialData?.playersMax ?? null,
+        playingTimeMinutes: initialData?.playingTimeMinutes ?? null,
+        ageMin: initialData?.ageMin ?? null,
+        powerWatts: initialData?.powerWatts ?? null,
         clothingSize: initialData?.clothingSize ?? null,
         clothingGender: initialData?.clothingGender ?? null,
         clothingColor: initialData?.clothingColor ?? null,
@@ -125,6 +154,8 @@ export function EditObjectDialog({
         toolManual: initialData?.toolManual ?? null,
         toolSector: initialData?.toolSector ?? null,
         toolBattery: initialData?.toolBattery ?? null,
+        customField1: initialData?.customField1 ?? null,
+        customField2: initialData?.customField2 ?? null,
         cautionAmount: initialData?.cautionAmount ?? null,
         rentalPriceDay: initialData?.rentalPriceDay ?? null,
         rentalPriceHour: initialData?.rentalPriceHour ?? null,
@@ -223,6 +254,94 @@ export function EditObjectDialog({
               ))}
             </div>
           </div>
+
+          {/* BOOK / FILM — ISBN */}
+          {showIsbn && (
+            <div className="space-y-2">
+              <Label htmlFor="edit-isbn" className="font-mono text-xs uppercase">
+                ISBN
+              </Label>
+              <Input
+                id="edit-isbn"
+                placeholder="978-2-07-040850-4"
+                {...register("isbn")}
+              />
+            </div>
+          )}
+
+          {/* BOARD_GAME specific fields */}
+          {showBoardGameFields && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-playersMin" className="font-mono text-xs uppercase">
+                    Joueurs min.
+                  </Label>
+                  <Input
+                    id="edit-playersMin"
+                    type="number"
+                    min={1}
+                    placeholder="2"
+                    {...register("playersMin", { valueAsNumber: true })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-playersMax" className="font-mono text-xs uppercase">
+                    Joueurs max.
+                  </Label>
+                  <Input
+                    id="edit-playersMax"
+                    type="number"
+                    min={1}
+                    placeholder="6"
+                    {...register("playersMax", { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-playingTimeMinutes" className="font-mono text-xs uppercase">
+                    Durée (min.)
+                  </Label>
+                  <Input
+                    id="edit-playingTimeMinutes"
+                    type="number"
+                    min={1}
+                    placeholder="60"
+                    {...register("playingTimeMinutes", { valueAsNumber: true })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-ageMin" className="font-mono text-xs uppercase">
+                    Âge min.
+                  </Label>
+                  <Input
+                    id="edit-ageMin"
+                    type="number"
+                    min={0}
+                    placeholder="8"
+                    {...register("ageMin", { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ELECTRIC specific fields */}
+          {showElectricFields && (
+            <div className="space-y-2">
+              <Label htmlFor="edit-powerWatts" className="font-mono text-xs uppercase">
+                Puissance (W)
+              </Label>
+              <Input
+                id="edit-powerWatts"
+                type="number"
+                min={1}
+                placeholder="500"
+                {...register("powerWatts", { valueAsNumber: true })}
+              />
+            </div>
+          )}
 
           {/* CLOTHING specific fields */}
           {showClothingFields && (
@@ -343,6 +462,32 @@ export function EditObjectDialog({
                   />
                   <span className="font-mono text-sm">Sur batterie</span>
                 </label>
+              </div>
+            </>
+          )}
+
+          {/* CUSTOM specific fields */}
+          {showCustomFields && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="edit-customField1" className="font-mono text-xs uppercase">
+                  Champ libre 1
+                </Label>
+                <Input
+                  id="edit-customField1"
+                  placeholder="Valeur..."
+                  {...register("customField1")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-customField2" className="font-mono text-xs uppercase">
+                  Champ libre 2
+                </Label>
+                <Input
+                  id="edit-customField2"
+                  placeholder="Valeur..."
+                  {...register("customField2")}
+                />
               </div>
             </>
           )}

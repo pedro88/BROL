@@ -105,13 +105,21 @@ export default function EditObjectPage() {
             }}
             objectId={objectId}
             objectName={object.name}
-            objectType={object.objectType}
+            collectionType={object.collection?.type}
             initialData={{
               name: object.name,
               author: object.author,
               edition: object.edition,
               condition: object.condition,
               notes: object.notes,
+              isbn: object.isbn,
+              // BOARD_GAME
+              playersMin: object.playersMin,
+              playersMax: object.playersMax,
+              playingTimeMinutes: object.playingTimeMinutes,
+              ageMin: object.ageMin,
+              // ELECTRIC
+              powerWatts: object.powerWatts,
               // CLOTHING
               clothingSize: object.clothingSize,
               clothingGender: object.clothingGender,
@@ -121,6 +129,9 @@ export default function EditObjectPage() {
               toolManual: object.toolManual,
               toolSector: object.toolSector,
               toolBattery: object.toolBattery,
+              // CUSTOM
+              customField1: object.customField1,
+              customField2: object.customField2,
               // Caution et tarification
               cautionAmount: object.cautionAmount ? Number(object.cautionAmount) : null,
               rentalPriceDay: object.rentalPriceDay ? Number(object.rentalPriceDay) : null,

@@ -2,10 +2,10 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createObjectSchema, type CreateObjectInput, OBJECT_CONDITIONS, OBJECT_TYPES } from "@brol/shared";
 import { BookOpen, QrCode, Loader2, CheckCircle2, XCircle, Camera } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -63,7 +63,7 @@ const namePlaceholders: Record<ObjectType, string> = {
 interface ObjectFormProps {
   collectionId?: string;
   objectId?: string;
-  onSuccess?: () => void;
+  onSuccess?: (newObject?: { id: string; collectionId: string }) => void;
 }
 
 /**
@@ -71,7 +71,6 @@ interface ObjectFormProps {
  * Les champs affichés s'adaptent au type de la collection cible.
  */
 export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProps) {
-  const router = useRouter();
   const utils = trpc.useUtils();
 
   const {
@@ -203,12 +202,13 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
     onSuccess: (data) => {
       utils.objects.list.invalidate({ collectionId: data.collectionId });
       utils.objects.all.invalidate();
-      onSuccess?.();
-      reset();
     },
   });
 
   const onSubmit = async (formData: CreateObjectInput) => {
+    setCreatingQr(false);
+    setUploadingPhoto(false);
+
     try {
       let qrStockId: string | undefined;
 
@@ -222,8 +222,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       } else if (qrSelection === "existing" && selectedQrId) {
         qrStockId = selectedQrId;
       } else if (qrSelection === "scan" && scannedQrCode) {
-        // Scan case: we'll assign after object creation
-        // qrStockId will be resolved after object is created
+        // Will be assigned after object creation
       }
 
       // 1. Créer l'objet
@@ -237,79 +236,45 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       if (qrSelection === "scan" && scannedQrCode) {
         try {
           // Extraire le code si c'est une URL
-          const code = scannedQrCode.includes("/qr/") 
-            ? scannedQrCode.split("/qr/").pop()! 
+          const code = scannedQrCode.includes("/qr/")
+            ? scannedQrCode.split("/qr/").pop()!
             : scannedQrCode;
 
-          await fetch("/api/trpc/qr.assign", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              json: {
-                objectId: newObject.id,
-                qrCode: code,
-              },
-            }),
+          await assignQrMutation.mutateAsync({
+            objectId: newObject.id,
+            qrCode: code,
           });
         } catch (assignErr) {
           console.error("QR assign failed:", assignErr);
-          // Ne pas bloquer si l'assignation échoue
         }
       }
 
-      // 3. Upload la photo si sélectionnée (S3 direct via presigned URL)
+      // 3. Upload la photo si sélectionnée
       if (selectedPhoto) {
         setUploadingPhoto(true);
-        try {
-          // Demander presigned URL
-          const presignedUrlRes = await fetch("/api/trpc/photos.getPresignedUrl", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              json: {
-                objectId: newObject.id,
-                filename: selectedPhoto.name,
-                contentType: selectedPhoto.type,
-                fileSize: selectedPhoto.size,
-              },
-            }),
-          });
-          const presignedData = await presignedUrlRes.json();
-          const { uploadUrl, publicUrl } = presignedData.result?.data ?? presignedData;
-
-          // Upload vers S3
-          await fetch(uploadUrl, {
-            method: "PUT",
-            body: selectedPhoto,
-            headers: { "Content-Type": selectedPhoto.type },
-          });
-
-          // Enregistrer la photo en base
-          await fetch("/api/trpc/photos.add", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              json: {
-                objectId: newObject.id,
-                url: publicUrl,
-                position: 0,
-              },
-            }),
-          });
-        } catch (uploadErr) {
-          console.error("Photo upload failed:", uploadErr);
-          // Ne pas bloquer si l'upload échoue — l'objet est déjà créé
-        }
+        await getPresignedUrlMutation.mutateAsync({
+          objectId: newObject.id,
+          filename: selectedPhoto.name,
+          contentType: selectedPhoto.type,
+          fileSize: selectedPhoto.size,
+        });
         setUploadingPhoto(false);
       }
 
       setScannedQrCode(null);
       setSelectedPhoto(null);
-      onSuccess?.();
+      onSuccess?.(newObject);
+
+      // Toast de succès
+      toast.success("Objet créé avec succès !");
+
+      // Reset form
       reset();
-    } catch {
+    } catch (err) {
       setCreatingQr(false);
       setUploadingPhoto(false);
+      toast.error("Erreur lors de la création de l'objet");
+      throw err; // Rethrow to prevent form reset
     }
   };
 
@@ -323,6 +288,46 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   const showCustomFields = objectType === "CUSTOM";
   // Tarification: disponible pour tous les types, mais désactivée par défaut
   const [pricingEnabled, setPricingEnabled] = useState(false);
+
+  // QR assign mutation
+  const assignQrMutation = trpc.qr.assign.useMutation();
+
+  // Photo add mutation
+  const addPhotoMutation = trpc.photos.add.useMutation();
+
+  // Photo presigned URL mutation (for upload)
+  const getPresignedUrlMutation = trpc.photos.getPresignedUrl.useMutation({
+    onSuccess: async (presignedData, vars) => {
+      if (!selectedPhoto) return;
+
+      const { uploadUrl, publicUrl } = presignedData;
+      if (!uploadUrl || !publicUrl) return;
+
+      setUploadingPhoto(true);
+      try {
+        // Upload vers S3
+        await fetch(uploadUrl, {
+          method: "PUT",
+          body: selectedPhoto,
+          headers: { "Content-Type": selectedPhoto.type },
+        });
+
+        // Enregistrer la photo en base via mutation
+        await addPhotoMutation.mutateAsync({
+          objectId: vars.objectId,
+          url: publicUrl,
+          position: 0,
+        });
+      } catch (uploadErr) {
+        console.error("Photo upload failed:", uploadErr);
+      }
+      setUploadingPhoto(false);
+    },
+    onError: (err) => {
+      console.error("Presigned URL failed:", err);
+      setUploadingPhoto(false);
+    },
+  });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

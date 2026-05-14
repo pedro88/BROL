@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Header, Navigation } from "../../../components/navigation";
@@ -14,6 +14,7 @@ import { trpc } from "../../../lib/trpc";
  */
 function AddObjectForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const collectionId = searchParams.get("collectionId");
   const utils = trpc.useUtils();
 
@@ -41,8 +42,11 @@ function AddObjectForm() {
       {/* Form */}
       <ObjectForm
         collectionId={collectionId ?? undefined}
-        onSuccess={() => {
-          if (collectionId) {
+        onSuccess={(newObject) => {
+          if (newObject?.collectionId) {
+            utils.collections.get.invalidate({ id: newObject.collectionId });
+            router.push(`/collections/${newObject.collectionId}`);
+          } else if (collectionId) {
             utils.collections.get.invalidate({ id: collectionId });
           }
         }}

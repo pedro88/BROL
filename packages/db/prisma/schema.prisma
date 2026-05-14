@@ -155,6 +155,9 @@ model Object {
   toolManual       Boolean? @default(false) // Manuel (non alimenté)
   toolSector       String?  // Secteur (construction, jardinage, automobile...)
   toolBattery      Boolean? @default(false) // Sur batterie
+  // CUSTOM fields (only used when type = CUSTOM)
+  customField1     String?
+  customField2     String?
   // Caution et tarification
   cautionAmount    Decimal? @db.Decimal(10,2)  // Montant de la caution
   rentalPriceDay   Decimal? @db.Decimal(10,2)  // Prix location / jour
