@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { Header, Navigation } from "@/components/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Crown, Zap } from "lucide-react";
+import { Crown, Zap, User, ExternalLink } from "lucide-react";
+import { UserAvatar } from "@/components/profile/user-avatar";
 
 function ProgressBar({
   current,
@@ -57,7 +59,10 @@ const TIER_INFO = {
 };
 
 export default function SettingsPage() {
-  const { data, isLoading } = trpc.tier.getLimits.useQuery();
+  const { data, isLoading: tierLoading } = trpc.tier.getLimits.useQuery();
+  const { data: sessionData, isLoading: sessionLoading } = trpc.auth.me.useQuery();
+  const user = sessionData?.user;
+  const isLoading = tierLoading || sessionLoading;
 
   if (isLoading) {
     return (
@@ -82,6 +87,38 @@ export default function SettingsPage() {
         <h1 className="font-display text-3xl vhs-text-glow text-primary">
           PARAMÈTRES
         </h1>
+
+        {/* Mon Profil section */}
+        <div className="card-vhs p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <User className="w-5 h-5 text-primary" />
+            <h2 className="font-display text-xl vhs-text-glow text-primary">
+              MON PROFIL
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <UserAvatar
+              name={user?.name}
+              image={user?.image}
+              size="lg"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-lg truncate">
+                {user?.name || "Sans nom"}
+              </p>
+              <p className="text-sm text-muted-foreground truncate">
+                {user?.email || ""}
+              </p>
+            </div>
+            <Link href={user?.id ? `/profile/${user.id}` : "#"}>
+              <Button variant="outline" size="sm">
+                <ExternalLink className="w-4 h-4 mr-1" />
+                Voir
+              </Button>
+            </Link>
+          </div>
+        </div>
 
         {/* Tier section */}
         <div className="card-vhs p-6 space-y-4">
