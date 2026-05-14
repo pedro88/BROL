@@ -42,7 +42,7 @@
   - Files: `apps/web/src/app/settings/page.tsx`
   - Verify: pnpm --filter @brol/web build
 
-- [ ] **T05: Tests unitaires pour tier limits** `est:small`
+- [x] **T05: Tests unitaires pour tier limits** `est:small`
   Écrire les tests: limites respectées, upgrade déclenché, blocage si limite atteinte
   - Files: `packages/api/src/routers/__tests__/tier.test.ts`
   - Verify: pnpm --filter @brol/api test

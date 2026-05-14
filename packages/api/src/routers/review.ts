@@ -4,6 +4,7 @@
  */
 
 import { router, protectedProcedure, publicProcedure } from "../trpc";
+import { syncUserBadges } from "../lib/badge-service";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -166,6 +167,10 @@ export const reviewRouter = router({
           relatedType: "review",
         },
       });
+
+      // Sync badges pour l'auteur et la cible
+      syncUserBadges(ctx.prisma, authorId).catch(() => {});
+      syncUserBadges(ctx.prisma, input.targetId).catch(() => {});
 
       return review;
     }),

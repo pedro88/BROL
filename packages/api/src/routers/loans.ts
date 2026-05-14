@@ -16,6 +16,7 @@ import {
   paginationSchema,
 } from "@brol/shared";
 import { sendReminderEmail } from "../emails";
+import { syncUserBadges } from "../lib/badge-service";
 
 /**
  * Router pour les prêts.
@@ -331,6 +332,9 @@ export const loansRouter = router({
           },
         });
       }
+
+      // Sync badges pour le prêteur
+      syncUserBadges(ctx.prisma, ctx.userId).catch(() => {});
 
       return loan;
     }),

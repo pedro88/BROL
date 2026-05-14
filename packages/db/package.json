@@ -13,6 +13,7 @@
     "generate": "prisma generate",
     "push": "prisma db push",
     "migrate": "prisma migrate dev",
+    "seed": "npx tsx prisma/seed.ts",
     "studio": "prisma studio",
     "typecheck": "tsc --noEmit"
   },
@@ -23,6 +24,7 @@
     "@brol/tsconfig": "workspace:*",
     "dotenv": "^17.4.2",
     "prisma": "^6.19.3",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
 }

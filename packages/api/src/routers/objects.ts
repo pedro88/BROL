@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
+import { syncUserBadges } from "../lib/badge-service";
 import {
   createObjectSchema,
   updateObjectSchema,
@@ -266,6 +267,10 @@ export const objectsRouter = router({
         include: {
           qrStock: true,
         },
+      }).then((obj) => {
+        // Sync badges pour le propriétaire de la collection
+        syncUserBadges(ctx.prisma, ctx.userId).catch(() => {});
+        return obj;
       });
     }),
 
