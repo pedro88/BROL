@@ -5,11 +5,13 @@
  * @package @brol/mobile
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { trpc, getApiUrl } from "./trpc";
 import { authAtom } from "./auth-store";
+import type { TRPCClient } from "@trpc/client";
+import type { AppRouter } from "@brol/api";
 
 /**
  * TRPCProvider wraps the app and configures:
@@ -33,47 +35,36 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       }),
   );
 
-  // Re-create trpcClient when token changes
-  const [trpcClient] = useState(() => {
-    const token = authAtom.get().sessionToken;
+  // Get current token from auth atom
+  const token = authAtom.get().sessionToken;
 
+  // Create a new client whenever the token changes
+  const [trpcClient] = useState(() => {
     return trpc.createClient({
       links: [
         httpBatchLink({
           url: `${getApiUrl()}/api/trpc`,
           headers() {
-            return token ? { Authorization: `Bearer ${token}` } : {};
+            const currentToken = authAtom.get().sessionToken;
+            return currentToken
+              ? { Authorization: `Bearer ${currentToken}` }
+              : {};
           },
         }),
       ],
     });
   });
 
-  // Re-create client when auth state changes
-  const [clientKey, setClientKey] = useState(0);
-
+  // Force a re-render when auth changes
+  const [, setVersion] = useState(0);
   useEffect(() => {
-    // Subscribe to auth atom changes
-    const unsubscribe = authAtom.subscribe(() => {
-      // Force re-creation of the trpc client by changing the key
-      setClientKey((k) => k + 1);
+    return authAtom.subscribe(() => {
+      setVersion((v) => v + 1);
     });
-
-    return unsubscribe;
   }, []);
 
-  // Recreate client when sessionToken changes
-  useEffect(() => {
-    const token = authAtom.get().sessionToken;
-    trpcClient.mutationCache.clear();
-  }, [trpcClient]);
-
   return (
-    <trpc.Provider
-      key={clientKey}
-      client={trpcClient}
-      queryClient={queryClient}
-    >
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </trpc.Provider>
   );
