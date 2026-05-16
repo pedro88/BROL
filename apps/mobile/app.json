@@ -48,6 +48,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": "http://10.201.26.8:3001"
     }
   }
 }
