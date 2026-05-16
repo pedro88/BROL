@@ -16,6 +16,7 @@ import {
   paginationSchema,
 } from "@brol/shared";
 import { sendReminderEmail } from "../emails";
+import { syncUserBadges } from "../lib/badge-service";
 
 /**
  * Router pour les prêts.
@@ -295,7 +296,7 @@ export const loansRouter = router({
         });
       }
 
-      return ctx.prisma.loan.create({
+      const loan = await ctx.prisma.loan.create({
         data: {
           objectId: input.objectId,
           ownerId: ctx.userId,
@@ -317,6 +318,25 @@ export const loansRouter = router({
           },
         },
       });
+
+      // Notification à l'emprunteur
+      if (borrowerId) {
+        await ctx.prisma.notification.create({
+          data: {
+            userId: borrowerId,
+            type: "RETURN_REMINDER",
+            title: "Nouvel emprunt",
+            message: `${loan.object.name} vous a été prêté. Retour prévu: ${input.returnDueDate ? new Date(input.returnDueDate).toLocaleDateString("fr-BE") : "non défini"}.`,
+            relatedId: loan.id,
+            relatedType: "loan",
+          },
+        });
+      }
+
+      // Sync badges pour le prêteur
+      syncUserBadges(ctx.prisma, ctx.userId).catch(() => {});
+
+      return loan;
     }),
 
   /**

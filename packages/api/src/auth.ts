@@ -29,6 +29,14 @@ export interface AuthOptions {
     minPasswordLength: 8;
     autoSignIn: true;
   };
+  additionalFields?: {
+    user?: Record<string, {
+      type: string;
+      required?: boolean;
+      output?: { type: string; nullable?: boolean };
+      input?: { type: string; nullable?: boolean };
+    }>;
+  };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   socialProviders?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,6 +59,18 @@ function baseAuthConfig(overrides?: {
       enabled: true,
       minPasswordLength: 8,
       autoSignIn: true,
+    },
+    additionalFields: {
+      user: {
+        name: {
+          type: "string",
+          required: false,
+          output: {
+            type: "string",
+            nullable: true,
+          },
+        },
+      },
     },
     // OAuth providers — commented out for future use
     // socialProviders: {
@@ -145,52 +165,80 @@ export async function getSession(
   request: Request,
 ): Promise<BetterAuthSession | null> {
   try {
-    // Try cookie-based session first
+    // Get raw session from BetterAuth
     const cookieSession = await auth.api.getSession({
       headers: request.headers,
     });
-    if (cookieSession) return cookieSession as unknown as BetterAuthSession;
 
-    // Fall back to Bearer token (used by tRPC client from web app AND E2E tests)
-    const authHeader = request.headers.get("authorization");
-    if (authHeader?.toLowerCase().startsWith("bearer ")) {
-      const token = authHeader.slice(7).trim();
-      if (token) {
-        // BetterAuth stores the signed token in session.token and the raw ID in session.id.
-        // The /sign-up /sign-in API returns data.token = session.id (raw).
-        // Try looking up by session.id first (E2E tests use raw token),
-        // then by session.token (web app uses signed token).
-        let dbSession = await prisma.session.findUnique({
-          where: { id: token },
-          include: { user: true },
-        });
-        if (!dbSession) {
-          dbSession = await prisma.session.findUnique({
-            where: { token },
+    // If no session, check Authorization Bearer header as fallback
+    if (!cookieSession) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.toLowerCase().startsWith("bearer ")) {
+        const token = authHeader.slice(7).trim();
+        if (token) {
+          let dbSession = await prisma.session.findUnique({
+            where: { id: token },
             include: { user: true },
           });
-        }
-        if (dbSession && dbSession.expiresAt > new Date()) {
-          return {
-            session: {
-              id: dbSession.id,
-              token: dbSession.token,
-              userId: dbSession.userId,
-              expiresAt: dbSession.expiresAt,
-            },
-            user: {
-              id: dbSession.user.id,
-              email: dbSession.user.email,
-              name: dbSession.user.name ?? null,
-              emailVerified: dbSession.user.emailVerified ?? false,
-              image: dbSession.user.image ?? null,
-            },
-          };
+          if (!dbSession) {
+            dbSession = await prisma.session.findUnique({
+              where: { token },
+              include: { user: true },
+            });
+          }
+          if (dbSession && dbSession.expiresAt > new Date()) {
+            return {
+              session: {
+                id: dbSession.id,
+                token: dbSession.token,
+                userId: dbSession.userId,
+                expiresAt: dbSession.expiresAt,
+              },
+              user: {
+                id: dbSession.user.id,
+                email: dbSession.user.email,
+                name: dbSession.user.name ?? null,
+                emailVerified: dbSession.user.emailVerified ?? false,
+                image: dbSession.user.image ?? null,
+              },
+            };
+          }
         }
       }
+      return null;
     }
 
-    return null;
+    // Even when BetterAuth returns a session, fetch user.name from DB
+    // because additionalFields may not be applied in the cookie path.
+    // First, try to get the full user from the session's userId.
+    // Build BetterAuthSession from cookie session + DB lookup for name
+    const sessionId = cookieSession.session?.id;
+    if (!sessionId) return cookieSession as unknown as BetterAuthSession;
+
+    const dbSession = await prisma.session.findUnique({
+      where: { id: sessionId },
+      include: { user: true },
+    });
+
+    if (dbSession && dbSession.expiresAt > new Date()) {
+      return {
+        session: {
+          id: dbSession.id,
+          token: dbSession.token,
+          userId: dbSession.userId,
+          expiresAt: dbSession.expiresAt,
+        },
+        user: {
+          id: dbSession.user.id,
+          email: dbSession.user.email,
+          name: dbSession.user.name ?? null,
+          emailVerified: dbSession.user.emailVerified ?? false,
+          image: dbSession.user.image ?? null,
+        },
+      };
+    }
+
+    return cookieSession as unknown as BetterAuthSession;
   } catch (err) {
     console.error("[getSession] failed:", String(err));
     return null;

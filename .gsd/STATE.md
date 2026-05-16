@@ -16,6 +16,7 @@
 - ✅ **M011:** Photos sur les objets
 - ✅ **M012:** Dashboard UX & Navigation
 - ⬜ **M013:** Enhanced Object Creation - Type-specific fields, photos, QR, and pricing
+- ✅ **M014:** Profil, Notifications, Tiers et Badges
 
 ## Recent Decisions
 - None recorded

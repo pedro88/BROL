@@ -1,7 +1,5 @@
 /**
  * Test setup for @brol/api.
- * Runs before all tests: push Prisma schema to test DB.
- *
  * @package @brol/api
  */
 
@@ -14,25 +12,14 @@ const dbUrl = process.env.DATABASE_URL ??
   "postgresql://piet:brolpass@localhost:5432/brol_test?schema=public";
 
 if (!process.env.DATABASE_URL) {
-  // eslint-disable-next-line no-console
-  console.warn(
-    "[test] DATABASE_URL not set — falling back to hardcoded brol_test URL"
-  );
+  console.warn("[test] DATABASE_URL not set — falling back to hardcoded brol_test URL");
 }
 
-/**
- * Global test DB client (used in tests).
- * Created directly from @prisma/client to avoid workspace resolution issues in vitest.
- */
 export const prisma = new PrismaClient({
-  datasources: {
-    db: { url: dbUrl },
-  },
+  datasources: { db: { url: dbUrl } },
 });
 
 beforeAll(async () => {
-  // Push Prisma schema to test DB
-  // __dirname = packages/api/src/test → go up 4 levels to root, then into packages/db
   const dbPkgDir = path.resolve(__dirname, "../../../../packages/db");
   const schemaPath = path.resolve(dbPkgDir, "prisma/schema.prisma");
   const prismaBin = path.resolve(dbPkgDir, "node_modules/.bin/prisma");
@@ -48,12 +35,10 @@ beforeAll(async () => {
 }, 60000);
 
 afterAll(async () => {
-  // Clean up: delete all tables
   try {
     await prisma.$executeRawUnsafe(`
       DO $$
-      DECLARE
-        r RECORD;
+      DECLARE r RECORD;
       BEGIN
         FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
           EXECUTE 'DROP TABLE IF EXISTS public.' || quote_ident(r.tablename) || ' CASCADE';
@@ -68,11 +53,7 @@ afterAll(async () => {
 });
 
 /**
- * Create a test user in the DB and return their ID.
- */
-/**
  * Simple CUID v1-like generator (matches Prisma cuid format).
- * Format: c + timestamp + random hex
  */
 function generateCuid(): string {
   const timestamp = Date.now().toString(36);
@@ -96,9 +77,6 @@ export async function createTestUser(overrides: Partial<{
   });
 }
 
-/**
- * Create a test collection owned by a user.
- */
 export async function createTestCollection(ownerId: string, overrides: Partial<{
   name: string;
   description: string | null;
@@ -115,9 +93,6 @@ export async function createTestCollection(ownerId: string, overrides: Partial<{
   });
 }
 
-/**
- * Create a test contact owned by a user, optionally linked to a borrower User.
- */
 export async function createTestContact(
   ownerId: string,
   overrides: Partial<{
@@ -141,9 +116,6 @@ export async function createTestContact(
   });
 }
 
-/**
- * Create a test object in a collection.
- */
 export async function createTestObject(collectionId: string, overrides: Partial<{
   name: string;
   author: string | null;
@@ -162,4 +134,12 @@ export async function createTestObject(collectionId: string, overrides: Partial<
       collectionId,
     },
   });
+}
+
+/**
+ * Create a test context: user + profile.
+ */
+export async function createTestContext() {
+  const user = await createTestUser();
+  return { userId: user.id, prisma };
 }

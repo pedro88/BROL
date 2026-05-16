@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-14T06:18:17Z | Files: 152 | Described: 0/152
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-14T06:18:17Z","fingerprint":"06e0a90f3b4d8b563038a820faea310275c12330","fileCount":152,"truncated":false} -->
+Generated: 2026-05-16T09:16:26Z | Files: 173 | Described: 0/173
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-16T09:16:26Z","fingerprint":"94bf870ffcae049e8d0a8207048d0dc9c0d8f86c","fileCount":173,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -104,6 +104,9 @@ Generated: 2026-05-14T06:18:17Z | Files: 152 | Described: 0/152
 ### apps/web/src/app/loans/
 - `apps/web/src/app/loans/page.tsx`
 
+### apps/web/src/app/notifications/
+- `apps/web/src/app/notifications/page.tsx`
+
 ### apps/web/src/app/objects/
 - `apps/web/src/app/objects/page.tsx`
 
@@ -116,11 +119,17 @@ Generated: 2026-05-14T06:18:17Z | Files: 152 | Described: 0/152
 ### apps/web/src/app/objects/add/
 - `apps/web/src/app/objects/add/page.tsx`
 
+### apps/web/src/app/profile/[id]/
+- `apps/web/src/app/profile/[id]/page.tsx`
+
 ### apps/web/src/app/qr/
 - `apps/web/src/app/qr/page.tsx`
 
 ### apps/web/src/app/qr/[code]/
 - `apps/web/src/app/qr/[code]/page.tsx`
+
+### apps/web/src/app/requests/
+- `apps/web/src/app/requests/page.tsx`
 
 ### apps/web/src/app/settings/
 - `apps/web/src/app/settings/page.tsx`
@@ -149,10 +158,21 @@ Generated: 2026-05-14T06:18:17Z | Files: 152 | Described: 0/152
 - `apps/web/src/components/photos/photo-capture.tsx`
 - `apps/web/src/components/photos/photo-gallery.tsx`
 
+### apps/web/src/components/profile/
+- `apps/web/src/components/profile/leave-review-dialog.tsx`
+- `apps/web/src/components/profile/review-card.tsx`
+- `apps/web/src/components/profile/star-rating.tsx`
+- `apps/web/src/components/profile/user-avatar.tsx`
+
 ### apps/web/src/components/qr/
 - `apps/web/src/components/qr/assign-qr-dialog.tsx`
 - `apps/web/src/components/qr/qr-code-image.tsx`
 - `apps/web/src/components/qr/qr-scanner.tsx`
+
+### apps/web/src/components/requests/
+- `apps/web/src/components/requests/create-request-dialog.tsx`
+- `apps/web/src/components/requests/request-card.tsx`
+- `apps/web/src/components/requests/requests-list.tsx`
 
 ### apps/web/src/components/ui/
 - `apps/web/src/components/ui/button.tsx`
@@ -162,6 +182,7 @@ Generated: 2026-05-14T06:18:17Z | Files: 152 | Described: 0/152
 - `apps/web/src/components/ui/input.tsx`
 - `apps/web/src/components/ui/label.tsx`
 - `apps/web/src/components/ui/switch.tsx`
+- `apps/web/src/components/ui/textarea.tsx`
 
 ### apps/web/src/lib/
 - `apps/web/src/lib/api-client.ts`
@@ -194,23 +215,32 @@ Generated: 2026-05-14T06:18:17Z | Files: 152 | Described: 0/152
 - `packages/api/src/emails/reminder.tsx`
 
 ### packages/api/src/lib/
+- `packages/api/src/lib/badge-service.ts`
 - `packages/api/src/lib/s3.ts`
 
 ### packages/api/src/routers/
+- `packages/api/src/routers/badge.ts`
 - `packages/api/src/routers/collections.ts`
+- `packages/api/src/routers/community-request.ts`
 - `packages/api/src/routers/contacts.ts`
 - `packages/api/src/routers/loans.ts`
+- `packages/api/src/routers/notification.ts`
 - `packages/api/src/routers/objects.ts`
 - `packages/api/src/routers/photos.ts`
+- `packages/api/src/routers/profile.ts`
 - `packages/api/src/routers/qr.ts`
+- `packages/api/src/routers/review.ts`
+- `packages/api/src/routers/tier.ts`
 
 ### packages/api/src/routers/__tests__/
+- `packages/api/src/routers/__tests__/badge.test.ts`
 - `packages/api/src/routers/__tests__/collections.test.ts`
 - `packages/api/src/routers/__tests__/contacts.test.ts`
 - `packages/api/src/routers/__tests__/loans.test.ts`
 - `packages/api/src/routers/__tests__/objects.test.ts`
 - `packages/api/src/routers/__tests__/photos.test.ts`
 - `packages/api/src/routers/__tests__/qr.test.ts`
+- `packages/api/src/routers/__tests__/tier.test.ts`
 
 ### packages/api/src/test/
 - `packages/api/src/test/setup.ts`
@@ -224,6 +254,7 @@ Generated: 2026-05-14T06:18:17Z | Files: 152 | Described: 0/152
 
 ### packages/db/prisma/
 - `packages/db/prisma/schema.prisma`
+- `packages/db/prisma/seed.ts`
 
 ### packages/db/prisma/migrations/
 - `packages/db/prisma/migrations/migration_lock.toml`

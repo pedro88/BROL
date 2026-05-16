@@ -336,6 +336,14 @@ export default function ObjectDetailPage() {
             <User className="w-4 h-4 mr-2" />
             {hasActiveLoan ? "Prêt en cours" : "Prêter cet objet"}
           </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => router.push("/requests")}
+          >
+            <User className="w-4 h-4 mr-2" />
+            Demander à la communauté
+          </Button>
         </div>
       </main>
 

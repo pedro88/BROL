@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure, TRPCError } from "../trpc";
 import {
   paginationSchema,
 } from "@brol/shared";
@@ -204,6 +204,25 @@ export const collectionsRouter = router({
   create: protectedProcedure
     .input(createCollectionSchema)
     .mutation(async ({ ctx, input }) => {
+      // Vérifier les limites de tier avant création
+      const profile = await ctx.prisma.profile.findUnique({
+        where: { userId: ctx.userId },
+      });
+      const tier = profile?.tier ?? "FREE";
+      const tierLimits = { FREE: { collections: 5 }, TIER_2: { collections: 10 }, TIER_3: { collections: null } };
+      const limits = tierLimits[tier as keyof typeof tierLimits] ?? tierLimits.FREE;
+      const maxCollections = limits.collections;
+
+      if (maxCollections !== null) {
+        const count = await ctx.prisma.collection.count({ where: { userId: ctx.userId } });
+        if (count >= maxCollections) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `Limite de ${maxCollections} collections atteinte. Upgradez vers un plan supérieur pour continuer.`,
+          });
+        }
+      }
+
       // Force type from input (do not default here — let the DB default handle it)
       const data: Record<string, unknown> = {
         name: input.name,
