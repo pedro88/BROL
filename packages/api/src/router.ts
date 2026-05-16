@@ -16,7 +16,7 @@ import { badgeRouter } from "./routers/badge";
 import { communityRequestRouter } from "./routers/community-request";
 import { notificationRouter } from "./routers/notification";
 import { tierRouter } from "./routers/tier";
-import { auth } from "./auth";
+import { getSession } from "./auth";
 
 /**
  * Auth router — public endpoints for session management.
@@ -27,9 +27,11 @@ const authRouter = router({
    * Public: returns null for anonymous users, session+user when logged in.
    */
   me: publicProcedure.query(async ({ ctx }) => {
-    const session = await auth.api.getSession({
-      headers: { cookie: ctx.headers["cookie"] ?? "" },
-    });
+    const session = await getSession(
+      new Request(`http://localhost:3001`, {
+        headers: ctx.headers,
+      }),
+    );
     return {
       sessionToken: session?.session?.token ?? null,
       user: session?.user ?? null,
