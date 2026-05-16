@@ -5,7 +5,7 @@
  * Auth flow:
  * - On mount: syncSession() to restore session from secure storage
  * - If authenticated + on /sign-in or /sign-up: redirect to /home
- * - If not authenticated + on (tabs) routes: redirect to /sign-in
+ * - If not authenticated + on tab routes: redirect to /sign-in
  *
  * @package @brol/mobile
  */
@@ -15,14 +15,19 @@ import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { TRPCProvider } from "../src/lib/trpc-provider";
 import { syncSession } from "../src/lib/session-sync";
-import { authAtom } from "../src/lib/auth-store";
 import { useAuth } from "../src/lib/use-auth";
 import { colors } from "../src/theme";
 
 /**
- * Auth screen paths (not inside tabs group).
+ * Routes that are considered auth screens (not protected).
  */
-const AUTH_SCREENS = ["sign-in", "sign-up"];
+const AUTH_ROUTES = ["sign-in", "sign-up"];
+
+/**
+ * Routes that are inside the protected tab group.
+ * These require authentication.
+ */
+const PROTECTED_ROUTES = ["home", "collections", "objects", "loans", "profile"];
 
 /**
  * Root layout component.
@@ -50,29 +55,17 @@ export default function RootLayout() {
     if (!isReady) return;
 
     const isAuthenticated = user !== null && sessionToken !== null;
-
-    // Get the first segment (top-level route)
     const firstSegment = segments[0] ?? "";
 
-    // Check if we're on an auth screen
-    const isAuthScreen = AUTH_SCREENS.includes(firstSegment);
-
-    // Check if we're inside the tabs group
-    const isTabScreen = firstSegment === "(tabs)";
-
-    console.log("[root-layout] Route check:", {
-      isAuthenticated,
-      firstSegment,
-      isAuthScreen,
-      isTabScreen,
-    });
-
-    if (!isAuthenticated && isTabScreen) {
-      // Not authenticated and trying to access protected route (tabs)
+    // If we're on a protected route without auth, redirect to sign-in
+    if (!isAuthenticated && PROTECTED_ROUTES.includes(firstSegment)) {
       console.log("[root-layout] Not authenticated, redirecting to /sign-in");
       router.replace("/sign-in");
-    } else if (isAuthenticated && isAuthScreen) {
-      // Authenticated and on auth screen — redirect to home
+      return;
+    }
+
+    // If authenticated and on auth screen, redirect to home
+    if (isAuthenticated && AUTH_ROUTES.includes(firstSegment)) {
       console.log("[root-layout] Authenticated, on auth screen, redirecting to /home");
       router.replace("/home");
     }
@@ -95,11 +88,10 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
-        {/* Auth screens — always accessible */}
         <Stack.Screen name="sign-in" options={{ title: "Connexion" }} />
         <Stack.Screen name="sign-up" options={{ title: "Créer un compte" }} />
 
-        {/* Protected tab screens */}
+        {/* Protected tab screens — will redirect to /sign-in if not authenticated */}
         <Stack.Screen
           name="(tabs)"
           options={{

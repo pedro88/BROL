@@ -18,9 +18,7 @@ const STORAGE_KEYS = {
  */
 export async function setItem(key: string, value: string): Promise<void> {
   try {
-    await SecureStore.setItemAsync(key, value, {
-      requireBPOSDeviceEncryption: false,
-    });
+    await SecureStore.setItemAsync(key, value);
   } catch (err) {
     console.error(`[secure-storage] setItem("${key}") failed:`, err);
     throw err;

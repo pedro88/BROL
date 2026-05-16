@@ -9,12 +9,14 @@ import { atom } from "nanostores";
 
 /**
  * User type matching BetterAuth user shape.
+ * Matches the AuthUser interface from auth-client.ts.
  */
 export interface User {
   id: string;
   email: string;
-  name: string;
-  // Add more fields as needed
+  name: string | null;
+  emailVerified: boolean | null;
+  image: string | null;
 }
 
 /**
