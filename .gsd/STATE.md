@@ -17,6 +17,7 @@
 - ✅ **M012:** Dashboard UX & Navigation
 - ⬜ **M013:** Enhanced Object Creation - Type-specific fields, photos, QR, and pricing
 - ✅ **M014:** Profil, Notifications, Tiers et Badges
+- ⬜ **M015:** Infrastructure Mobile — tRPC + Auth + Navigation
 
 ## Recent Decisions
 - None recorded
