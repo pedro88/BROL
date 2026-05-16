@@ -11,6 +11,12 @@
       ],
       "@brol/shared/*": [
         "../../packages/shared/src/*"
+      ],
+      "@brol/api": [
+        "../../packages/api/src"
+      ],
+      "@brol/api/*": [
+        "../../packages/api/src/*"
       ]
     },
     "moduleResolution": "bundler",
