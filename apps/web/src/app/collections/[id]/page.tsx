@@ -75,14 +75,14 @@ export default function CollectionDetailPage() {
   const { data: collection, isFetching: isFetchingAuth } =
     trpc.collections.get.useQuery(
       { id: collectionId },
-      { enabled: !!collectionId },
+      { enabled: !!collectionId, staleTime: 0 },
     );
 
   // Requête publique (collections publiques)
   const { data: publicCollection, isFetching: isFetchingPublic } =
     trpc.collections.getPublic.useQuery(
       { id: collectionId },
-      { enabled: !!collectionId },
+      { enabled: !!collectionId, staleTime: 0 },
     );
 
   // isLoading reflète l'état de chargement effectif (au moins une requête en cours)

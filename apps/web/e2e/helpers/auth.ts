@@ -223,24 +223,16 @@ export async function signUp(
 export async function clearSession(page: Page): Promise<void> {
   // Clear cookies FIRST — this is the critical step
   await page.context().clearCookies();
-  // Now call sign-out (will likely 401 since cookies are gone, that's OK)
-  try {
-    const result = await page.evaluate(async (baseUrl) => {
-      const response = await fetch(`${baseUrl}/api/auth/sign-out`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: "{}",
-      });
-      return { ok: response.ok, status: response.status };
-    }, WEB_BASE);
-    if (!result.ok) {
-      console.warn(`clearSession: sign-out returned ${result.status} (expected since cookies were cleared)`);
-    }
-  } catch (err) {
-    // Sign-out endpoint may fail if session already expired — that's OK
-    console.warn(`clearSession: fetch failed (${String(err)}), session may already be cleared`);
-  }
+  // Navigate to about:blank to completely destroy the React component tree
+  // This ensures the QueryClient cache is cleared (it's per-component-tree)
+  await page.goto("about:blank");
+  // Also clear storage to break any persisted cache
+  await page.evaluate(() => {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
+  });
 }
 
 /**

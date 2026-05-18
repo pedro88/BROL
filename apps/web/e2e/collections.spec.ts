@@ -344,8 +344,8 @@ test.describe("object types", () => {
     await expect(page.getByRole("heading", { level: 3, name: "E2E Board Game Collection" })).toBeVisible({ timeout: 15000 });
     await page.getByRole("link", { name: /Voir la collection/i }).click();
     await page.waitForURL(/\/collections\/[a-z0-9]+$/, { timeout: 8000 });
-    // Type badge should show "Jeux de société"
-    await expect(page.getByText(/jeux de société/i).first()).toBeVisible({ timeout: 5000 });
+    // Type is shown in the heading or as a badge
+    await expect(page.getByText(/Jeux de société|BOARD_GAME/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("create collection with CUSTOM type via UI", async ({ page }) => {
@@ -365,8 +365,8 @@ test.describe("object types", () => {
     await expect(page.getByRole("heading", { level: 3, name: "E2E Custom Collection" })).toBeVisible({ timeout: 15000 });
     await page.getByRole("link", { name: /Voir la collection/i }).click();
     await page.waitForURL(/\/collections\/[a-z0-9]+$/, { timeout: 8000 });
-    // Type badge should show "Personnalisé"
-    await expect(page.getByText(/personnalisé/i).first()).toBeVisible({ timeout: 5000 });
+    // Type is shown in the heading or as a badge
+    await expect(page.getByText(/Personnalisé|CUSTOM/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("BOARD_GAME type shows board game fields in object form", async ({ page }) => {

@@ -113,11 +113,11 @@ test.describe("objects/add", () => {
     await page.waitForTimeout(1000);
     // Fill the name field
     await page.getByLabel(/nom/i).fill("E2E Test Object");
-    // Submit
+    // Submit and wait for navigation to collection detail
     await page.locator('button[type="submit"]').click();
-    await page.waitForLoadState("networkidle");
-    // Should navigate away from /objects/add (success)
-    expect(page.url()).not.toContain("/objects/add");
+    await page.waitForURL(/\/collections\/.+/, { timeout: 10000 }).catch(() => {});
+    // Should navigate to collection detail page
+    expect(page.url()).toContain("/collections/");
   });
 
   test("redirects to /sign-in without auth", async ({ page }) => {
