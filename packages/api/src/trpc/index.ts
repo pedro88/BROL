@@ -22,6 +22,7 @@ export interface Context {
 /**
  * Création du context pour chaque requête (fetch adapter).
  * Intègre BetterAuth pour récupérer le userId depuis les cookies/session.
+ * getSession already checks both cookies AND Bearer token (see auth.ts).
  */
 export async function createContext(opts: FetchCreateContextFnOptions): Promise<Context> {
   const session = await getSession(opts.req);

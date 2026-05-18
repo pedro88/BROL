@@ -117,8 +117,11 @@ test.describe("private access", () => {
   });
 
   test("redirects to /sign-in without auth when isPublic=false", async ({ page }) => {
+    // Clear any session before testing
+    await clearSession(page);
     await page.goto(`${WEB_BASE}/collections/${collectionId}`);
-    // Without auth, should either redirect to sign-in OR show not-found (tRPC returns 404 for private)
+    await page.waitForLoadState("networkidle");
+    // Without auth, should either redirect to sign-in OR show not-found
     const url = page.url();
     const isSignIn = /\/sign-in/.test(url);
     const isNotFound = await page.getByText(/non trouvé|intouvable|not found/i).first().isVisible().catch(() => false);
@@ -128,11 +131,20 @@ test.describe("private access", () => {
   test("accessible to owner when authenticated", async ({ page }) => {
     // Ensure clean session before sign-in
     await clearSession(page);
-    const password = "TestPass123!";
-    await signIn(page, testEmail, password);
-    await page.waitForLoadState("networkidle");
+    await signIn(page, testEmail, "TestPass123!");
+    // Navigate directly to the collection URL
     await page.goto(`${WEB_BASE}/collections/${collectionId}`);
-    await expect(page).not.toHaveURL(/\/sign-in/);
+    await page.waitForLoadState("networkidle");
+    // Verify we're NOT on sign-in page (session was established)
+    const onSignIn = page.url().includes("/sign-in");
+    if (onSignIn) {
+      throw new Error(`signIn did not establish session — still on /sign-in`);
+    }
+    // Verify the collection is accessible (not "not found")
+    const notFound = await page.getByText(/COLLECTION NON TROUVÉE|non trouvé/i).first().isVisible().catch(() => false);
+    if (notFound) {
+      throw new Error(`Collection ${collectionId} not accessible to owner — shows not-found`);
+    }
     await expect(page.getByText(/Private Access Collection/i)).toBeVisible({ timeout: 5000 });
   });
 });

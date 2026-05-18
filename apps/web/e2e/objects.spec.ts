@@ -94,43 +94,27 @@ test.describe("objects/add", () => {
   });
 
   test("form validation — name required", async ({ page }) => {
-    await page.goto(`${WEB_BASE}/objects/add`);
-    // Wait for form to load and collections to be fetched + auto-selected
+    await page.goto(`${WEB_BASE}/objects/add?collectionId=${collectionId}`);
+    // Wait for form to load
     await page.waitForLoadState("networkidle");
-    // Wait for the auto-selected collection to be set (the useEffect fires after collections load)
-    await page.waitForTimeout(1000);
-    const nameField = page.locator("#name");
-    if (await nameField.isVisible().catch(() => false)) {
-      await nameField.clear();
-    }
-    const submitBtn = page.locator('button[type="submit"]');
-    await submitBtn.click();
-    // Zod validation prevents submission — error message should appear
+    await page.waitForTimeout(500);
+    // Submit without filling name
+    await page.locator('button[type="submit"]').click();
+    // Zod validation error should appear
     await expect(
       page.locator("p.text-destructive").first()
     ).toBeVisible({ timeout: 3000 });
   });
 
   test("creates object in collection", async ({ page }) => {
-    await page.goto(`${WEB_BASE}/objects/add`);
-    // Wait for form to load and collections to be fetched + auto-selected
+    await page.goto(`${WEB_BASE}/objects/add?collectionId=${collectionId}`);
+    // Wait for form to load
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
-    // Clear any leftover form state
-    const nameField = page.locator("#name");
-    if (await nameField.isVisible().catch(() => false)) {
-      await nameField.clear();
-    }
+    // Fill the name field
     await page.getByLabel(/nom/i).fill("E2E Test Object");
-    // Verify collection is selected (auto-selected from the dropdown)
-    const collectionSelect = page.locator("#collectionId");
-    const selectedValue = await collectionSelect.inputValue().catch(() => "");
-    if (!selectedValue) {
-      // Pick the first real option from the dropdown
-      await collectionSelect.selectOption({ index: 1 });
-    }
-    const submitBtn = page.locator('button[type="submit"]');
-    await submitBtn.click();
+    // Submit
+    await page.locator('button[type="submit"]').click();
     await page.waitForLoadState("networkidle");
     // Should navigate away from /objects/add (success)
     expect(page.url()).not.toContain("/objects/add");

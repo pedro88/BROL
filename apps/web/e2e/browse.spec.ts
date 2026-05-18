@@ -158,8 +158,8 @@ test.describe("homepage", () => {
     await page.goto(`${WEB_BASE}/collections`);
     const logo = page.locator("text=BROL").first();
     await logo.click();
-    // Wait for navigation to actually happen (client-side React navigation)
-    await page.waitForURL((url) => !url.pathname.startsWith("/collections"), { timeout: 5000 }).catch(() => {});
+    // React client-side nav: wait for URL to change away from /collections, then wait for /
+    await page.waitForURL((url) => url.pathname !== "/collections", { timeout: 5000 }).catch(() => {});
     await expect(page).toHaveURL(/\/$/);
   });
 });

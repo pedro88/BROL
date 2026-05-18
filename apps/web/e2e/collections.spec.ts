@@ -210,7 +210,7 @@ test.describe("create collection dialog", () => {
     const col = await createCollectionAPI(testToken, "Private Col E2E");
     await page.goto(`${WEB_BASE}/collections`);
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/Private Col E2E/i)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/Private Col E2E/i).first()).toBeVisible({ timeout: 8000 });
   });
 
   test("creates collection with isPublic=true", async ({ page }) => {

@@ -216,11 +216,14 @@ export async function signUp(
 }
 
 /**
- * Clears the current session by calling the sign-out endpoint from the browser
- * AND wiping all cookies.  This works regardless of whether a sign-out button
- * exists in the UI.
+ * Clears the current session by wiping all cookies first,
+ * then calling the sign-out API (which may fail since cookies are already gone —
+ * that's fine, the important part is the cookie deletion).
  */
 export async function clearSession(page: Page): Promise<void> {
+  // Clear cookies FIRST — this is the critical step
+  await page.context().clearCookies();
+  // Now call sign-out (will likely 401 since cookies are gone, that's OK)
   try {
     const result = await page.evaluate(async (baseUrl) => {
       const response = await fetch(`${baseUrl}/api/auth/sign-out`, {
@@ -232,15 +235,12 @@ export async function clearSession(page: Page): Promise<void> {
       return { ok: response.ok, status: response.status };
     }, WEB_BASE);
     if (!result.ok) {
-      console.warn(`clearSession: sign-out returned ${result.status}`);
+      console.warn(`clearSession: sign-out returned ${result.status} (expected since cookies were cleared)`);
     }
   } catch (err) {
     // Sign-out endpoint may fail if session already expired — that's OK
     console.warn(`clearSession: fetch failed (${String(err)}), session may already be cleared`);
   }
-  // Wipe all cookies so the session is gone even if the API call succeeded
-  // but did not delete the cookie (BetterAuth quirk).
-  await page.context().clearCookies();
 }
 
 /**
