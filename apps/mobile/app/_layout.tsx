@@ -67,7 +67,7 @@ export default function RootLayout() {
     // If authenticated and on auth screen, redirect to home
     if (isAuthenticated && AUTH_ROUTES.includes(firstSegment)) {
       console.log("[root-layout] Authenticated, on auth screen, redirecting to /home");
-      router.replace("/home");
+      router.replace("/");
     }
   }, [isReady, user, sessionToken, segments]);
 

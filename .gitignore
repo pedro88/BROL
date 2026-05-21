@@ -55,3 +55,4 @@ packages/*/src/**/*.d.ts.map
 
 # ── GSD worktrees ──
 .gsd/worktrees/
+.expo/

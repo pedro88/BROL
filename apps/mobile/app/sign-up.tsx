@@ -69,7 +69,7 @@ export default function SignUpScreen() {
         // Update auth atom
         setAuth(result.sessionToken, result.user);
         // Navigate to home
-        router.replace("/home");
+        router.replace("/");
       } else {
         setError("Réponse inattendue du serveur");
       }

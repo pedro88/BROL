@@ -24,6 +24,7 @@ export interface AuthOptions {
   secret: string | undefined;
   baseURL: string;
   basePath: "/api/auth";
+  trustedOrigins: string[];
   emailAndPassword: {
     enabled: true;
     minPasswordLength: 8;
@@ -43,6 +44,31 @@ export interface AuthOptions {
   plugins?: any[];
 }
 
+/**
+ * Construit la liste des origins acceptés par Better-auth.
+ * Better-auth bloque toute requête (CSRF check) venant d'un origin
+ * non présent dans cette liste → indispensable quand le web (app.brol.dev)
+ * et l'API (api.brol.dev) sont sur des sous-domaines différents.
+ *
+ * Extensible via la var d'env `BETTER_AUTH_TRUSTED_ORIGINS`
+ * (séparés par virgule) — utile pour ajouter dev/staging sans recompiler.
+ */
+function buildTrustedOrigins(): string[] {
+  const envOrigins = (process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return [
+    "https://app.brol.dev",
+    "https://api.brol.dev",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:8081", // Expo Metro
+    "http://localhost:19006", // Expo web
+    ...envOrigins,
+  ];
+}
+
 function baseAuthConfig(overrides?: {
   baseURL?: string;
   plugins?: AuthOptions["plugins"];
@@ -55,6 +81,7 @@ function baseAuthConfig(overrides?: {
     secret: process.env.BETTER_AUTH_SECRET,
     baseURL: overrides?.baseURL ?? "http://localhost:3001",
     basePath: "/api/auth",
+    trustedOrigins: buildTrustedOrigins(),
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
