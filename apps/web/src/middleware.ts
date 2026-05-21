@@ -23,6 +23,35 @@ const PROTECTED_PATTERNS = [
   "/scan",
 ];
 
+/**
+ * Construit une URL absolue en respectant les headers de proxy.
+ *
+ * Next.js standalone derrière nginx/Cloudflare construit `request.url` à
+ * partir de `process.env.HOSTNAME + ':' + PORT` (ici `127.0.0.1:3000`), pas
+ * du Host original. On lit donc explicitement x-forwarded-host / x-forwarded-proto.
+ */
+function buildAbsoluteUrl(request: NextRequest, pathname: string) {
+  const forwardedHost =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
+
+  // Fallback : si aucun header proxy (dev local), on utilise request.nextUrl
+  if (!forwardedHost) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    url.search = "";
+    return url;
+  }
+
+  return new URL(`${forwardedProto}://${forwardedHost}${pathname}`);
+}
+
+function redirectToSignIn(request: NextRequest, callbackPath: string) {
+  const loginUrl = buildAbsoluteUrl(request, "/sign-in");
+  loginUrl.searchParams.set("callbackUrl", callbackPath);
+  return NextResponse.redirect(loginUrl);
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -30,9 +59,7 @@ export function middleware(request: NextRequest) {
   if (pathname === "/") {
     const sessionCookie = request.cookies.get("better-auth.session_token");
     if (!sessionCookie) {
-      const loginUrl = new URL("/sign-in", request.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+      return redirectToSignIn(request, pathname);
     }
     return NextResponse.next();
   }
@@ -60,9 +87,7 @@ export function middleware(request: NextRequest) {
   ) {
     const sessionCookie = request.cookies.get("better-auth.session_token");
     if (!sessionCookie) {
-      const loginUrl = new URL("/sign-in", request.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+      return redirectToSignIn(request, pathname);
     }
     return NextResponse.next();
   }
@@ -78,9 +103,7 @@ export function middleware(request: NextRequest) {
     if (pathname.startsWith(pattern)) {
       const sessionCookie = request.cookies.get("better-auth.session_token");
       if (!sessionCookie) {
-        const loginUrl = new URL("/sign-in", request.url);
-        loginUrl.searchParams.set("callbackUrl", pathname);
-        return NextResponse.redirect(loginUrl);
+        return redirectToSignIn(request, pathname);
       }
     }
   }

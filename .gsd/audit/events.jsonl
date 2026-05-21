@@ -1,0 +1,1 @@
+{"version":"1","eventId":"c1411f2f-6869-4f16-8f3e-3bb4013707af","traceId":"validate-milestone:M004","turnId":"M004:validate","category":"gate","type":"gate-run","ts":"2026-05-18T16:14:15.120Z","payload":{"gateId":"milestone-validation-gates","gateType":"verification","outcome":"manual-attention","failureClass":"manual-attention","attempt":1,"maxAttempts":1,"retryable":false}}

@@ -42,8 +42,8 @@ test.describe("homepage", () => {
   test("logo click returns to homepage", async ({ page }) => {
     await page.goto(`${WEB_BASE}/browse`);
     await page.locator("text=BROL").first().click();
-    // Wait for navigation to actually happen (client-side React navigation)
-    await page.waitForURL((url) => !url.pathname.startsWith("/browse"), { timeout: 5000 }).catch(() => {});
+    // React client-side nav: wait for URL to change away from /browse, then wait for /
+    await page.waitForURL((url) => url.pathname !== "/browse", { timeout: 5000 }).catch(() => {});
     await expect(page).toHaveURL(/\/$/);
   });
 

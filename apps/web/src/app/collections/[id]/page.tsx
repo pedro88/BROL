@@ -15,8 +15,6 @@ import { Header, Navigation } from "../../../components/navigation";
 import { Button } from "../../../components/ui/button";
 import { ObjectCard } from "../../../components/objects/object-card";
 import { trpc } from "../../../lib/trpc";
-import { getSessionToken } from "../../../lib/auth-store";
-import { useState } from "react";
 
 // Transform a private collection object (with loans) to ObjectCard format
 function transformPrivateObject(obj: {
@@ -69,29 +67,29 @@ function transformPublicObject(obj: {
 export default function CollectionDetailPage() {
   const params = useParams();
   const collectionId = params.id as string;
-  // Check auth state synchronously from stored token to avoid double-query flicker
-  const [isAuthenticated] = useState(() => !!getSessionToken());
 
-  // Requête authentifiée (collections privées)
+  // Always enable both queries — they run in parallel and each returns
+  // based on auth context (cookie). The private query returns data if the
+  // user owns the collection; the public query returns data if it's public.
+  // This avoids the useState caching issue where signIn state wasn't reflected.
   const { data: collection, isFetching: isFetchingAuth } =
     trpc.collections.get.useQuery(
       { id: collectionId },
-      { enabled: !!collectionId && isAuthenticated },
+      { enabled: !!collectionId, staleTime: 0 },
     );
 
   // Requête publique (collections publiques)
   const { data: publicCollection, isFetching: isFetchingPublic } =
     trpc.collections.getPublic.useQuery(
       { id: collectionId },
-      {
-        enabled: !!collectionId && !isAuthenticated,
-        // Retry a few times in case of race with auth check
-        retry: 1,
-      },
+      { enabled: !!collectionId, staleTime: 0 },
     );
 
   // isLoading reflète l'état de chargement effectif (au moins une requête en cours)
   const isLoading = isFetchingAuth || isFetchingPublic;
+
+  // Authenticated view if the private query returned data
+  const isAuthenticated = !!collection;
 
   // Use authenticated collection data or public data
   const collectionData = isAuthenticated ? collection : publicCollection;

@@ -7,21 +7,17 @@
  * @package @brol/web
  */
 
+/**
+ * URL de base de l'API Better-auth.
+ * En prod : `https://api.brol.dev` (via NEXT_PUBLIC_API_URL inliné au build).
+ * En dev local : fallback `http://localhost:3001`.
+ *
+ * IMPORTANT : on utilise NEXT_PUBLIC_API_URL (l'API tRPC), pas NEXT_PUBLIC_APP_URL
+ * (le frontend Next), car Better-auth est hébergé côté API.
+ */
 function getBaseUrl(): string {
-  if (typeof window !== "undefined") {
-    const win = window as unknown as Record<string, string>;
-    return (
-      win["__NEXT_PUBLIC_APP_URL__"] ??
-      win["NEXT_PUBLIC_APP_URL"] ??
-      "http://localhost:3000"
-    );
-  }
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.NEXT_PUBLIC_VERCEL_URL
-      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-      : "http://localhost:3000"
-  );
+  // process.env.NEXT_PUBLIC_* est inliné par Next au build → fonctionne côté client ET serveur
+  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 }
 
 const baseUrl = getBaseUrl();

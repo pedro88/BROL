@@ -106,7 +106,7 @@ export const collectionsRouter = router({
       });
 
       if (!collection) {
-        throw new Error("Collection non trouvée");
+        return null;
       }
 
       return collection;
@@ -177,7 +177,7 @@ export const collectionsRouter = router({
       });
 
       if (!collection) {
-        throw new Error("Collection non trouvée");
+        return null;
       }
 
       return {

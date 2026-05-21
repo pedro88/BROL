@@ -127,13 +127,28 @@ function withCors(
   return (req: IncomingMessage, res: { statusCode: number; setHeader: (k: string, v: string) => void; end: (data?: string) => void }) => {
     // Get the origin of the request
     const origin = req.headers.origin;
-    // Set CORS headers: allow the web app origin (or localhost in dev)
+    // Origines autorisées pour CORS — extensible via env var ALLOWED_ORIGINS
+    // (séparées par virgule). Par défaut on autorise la prod + le dev local.
+    const envOrigins = (process.env.ALLOWED_ORIGINS ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const allowedOrigins = [
+      "https://app.brol.dev",
       "http://localhost:3000",
-      "http://10.24.149.185:3000", // network URL seen in startup logs
+      "http://localhost:8081", // Expo Metro
+      "http://localhost:19006", // Expo web
+      ...envOrigins,
     ];
-    const corsOrigin = allowedOrigins.includes(origin ?? "") ? origin : "*";
-    res.setHeader("Access-Control-Allow-Origin", corsOrigin);
+    // /!\ Quand le client envoie `credentials: 'include'`, le spec interdit
+    // Access-Control-Allow-Origin: *. On renvoie donc l'origin précis si
+    // autorisé, sinon on ne renvoie pas l'header (le browser bloquera).
+    if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    }
+    // L'header `Vary: Origin` est requis pour que les caches (Cloudflare, etc.)
+    // ne servent pas une réponse "mauvaise origin" à un autre client.
+    res.setHeader("Vary", "Origin");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.setHeader("Access-Control-Allow-Credentials", "true");

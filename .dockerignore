@@ -1,0 +1,50 @@
+# Ne pas envoyer le poids du repo dans le contexte de build Docker
+# Ordre : on exclut large, puis on ré-inclut le prebuilt Next standalone à la fin.
+
+# --- Exclusions générales ---
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/build
+**/.expo
+**/coverage
+**/test-results
+**/playwright-report
+.git
+.github
+.gsd
+.agents
+.artifacts
+.bg-shell
+*.log
+tsconfig.tsbuildinfo
+
+# Env locaux — les vraies valeurs viennent du .env du VPS
+.env
+.env.local
+**/.env
+**/.env.local
+
+# Fichiers de doc et artefacts qui ne sont pas nécessaires au build
+RAPPORT.md
+TESTS.md
+todo.md
+DECISIONS.md
+MAINTENANCE.md
+
+# --- Réinclusions pour le build de l'image web (artefact prebuilt) ---
+# Ces lignes doivent rester EN DERNIER pour annuler les exclusions ci-dessus
+# sur les chemins du standalone Next.js, qui contient node_modules et dist.
+!apps/web/.next
+apps/web/.next/cache
+apps/web/.next/server
+apps/web/.next/types
+apps/web/.next/trace
+apps/web/.next/diagnostics
+apps/web/.next/BUILD_ID
+apps/web/.next/*.json
+!apps/web/.next/standalone
+!apps/web/.next/standalone/**
+!apps/web/.next/static
+!apps/web/.next/static/**

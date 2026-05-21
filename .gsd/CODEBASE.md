@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-16T09:16:26Z | Files: 173 | Described: 0/173
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-16T09:16:26Z","fingerprint":"94bf870ffcae049e8d0a8207048d0dc9c0d8f86c","fileCount":173,"truncated":false} -->
+Generated: 2026-05-20T12:19:56Z | Files: 187 | Described: 0/187
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-20T12:19:56Z","fingerprint":"7106cbe59d75adf0b386bcdcace2665ef0b77e75","fileCount":187,"truncated":false} -->
 
 ### (root)/
 - `.env.example`
@@ -21,6 +21,9 @@ Generated: 2026-05-16T09:16:26Z | Files: 173 | Described: 0/173
 - `tsconfig.tsbuildinfo`
 - `turbo.json`
 
+### .github/workflows/
+- `.github/workflows/ci.yml`
+
 ### apps/mobile/
 - `apps/mobile/.gitignore`
 - `apps/mobile/app.json`
@@ -38,13 +41,30 @@ Generated: 2026-05-16T09:16:26Z | Files: 173 | Described: 0/173
 
 ### apps/mobile/app/
 - `apps/mobile/app/_layout.tsx`
-- `apps/mobile/app/collections.tsx`
-- `apps/mobile/app/index.tsx`
-- `apps/mobile/app/loans.tsx`
-- `apps/mobile/app/scan.tsx`
+- `apps/mobile/app/sign-in.tsx`
+- `apps/mobile/app/sign-up.tsx`
+
+### apps/mobile/app/(tabs)/
+- `apps/mobile/app/(tabs)/_layout.tsx`
+- `apps/mobile/app/(tabs)/collections.tsx`
+- `apps/mobile/app/(tabs)/index.tsx`
+- `apps/mobile/app/(tabs)/loans.tsx`
+- `apps/mobile/app/(tabs)/objects.tsx`
+- `apps/mobile/app/(tabs)/profile.tsx`
 
 ### apps/mobile/src/i18n/
 - `apps/mobile/src/i18n/index.ts`
+
+### apps/mobile/src/lib/
+- `apps/mobile/src/lib/auth-client.ts`
+- `apps/mobile/src/lib/auth-store.ts`
+- `apps/mobile/src/lib/query-client.ts`
+- `apps/mobile/src/lib/secure-storage.ts`
+- `apps/mobile/src/lib/session-sync.ts`
+- `apps/mobile/src/lib/sign-out.ts`
+- `apps/mobile/src/lib/trpc-provider.tsx`
+- `apps/mobile/src/lib/trpc.ts`
+- `apps/mobile/src/lib/use-auth.ts`
 
 ### apps/mobile/src/theme/
 - `apps/mobile/src/theme/index.ts`

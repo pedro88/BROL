@@ -1,60 +1,73 @@
 /**
- * Écran d'accueil principal.
+ * Dashboard / Home screen.
+ * Shows stats and quick actions.
  * @package @brol/mobile
  */
 
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
-import { Link } from "expo-router";
-import { colors, spacing, typography } from "../src/theme";
+import { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
+import { colors, spacing, typography } from "../../src/theme";
+import { useAuth } from "../../src/lib/use-auth";
 
 /**
- * Écran d'accueil avec navigation et actions rapides.
+ * Dashboard screen.
+ * Shows: nb objets, prêts actifs, contacts, actions rapides.
+ * Data will come from tRPC queries in M016.
  */
 export default function HomeScreen() {
+  const { user, isLoading } = useAuth();
+
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.logo}>BROL</Text>
-        <Text style={styles.subtitle}>&gt; Gestion de pret _</Text>
+        <Text style={styles.subtitle}>&gt; Dashboard _</Text>
+        {user && (
+          <Text style={styles.userEmail}>{user.email}</Text>
+        )}
       </View>
 
       {/* Stats */}
       <View style={styles.stats}>
-        <StatBox label="Objets" value="24" />
-        <StatBox label="Pretes" value="3" variant="warning" />
-        <StatBox label="Contacts" value="12" />
+        <StatBox label="Objets" value="--" variant="default" />
+        <StatBox label="Pretes" value="--" variant="warning" />
+        <StatBox label="Contacts" value="--" />
       </View>
 
       {/* Actions rapides */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>// ACTIONS</Text>
 
-        <Link href="/scan" asChild>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPrimary]}>
-            <Text style={styles.actionTitle}>SCANNER</Text>
-            <Text style={styles.actionDesc}>QR code ou ISBN</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.actionPrimary]}
+          onPress={() => router.push("/scan")}
+        >
+          <Text style={styles.actionTitle}>SCANNER</Text>
+          <Text style={styles.actionDesc}>QR code ou ISBN</Text>
+        </TouchableOpacity>
 
-        <Link href="/loans/new" asChild>
-          <TouchableOpacity style={[styles.actionButton, styles.actionSecondary]}>
-            <Text style={styles.actionTitle}>NOUVEAU PRET</Text>
-            <Text style={styles.actionDesc}>Preter un objet</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.actionSecondary]}
+          onPress={() => router.push("/loans/new")}
+        >
+          <Text style={styles.actionTitle}>NOUVEAU PRET</Text>
+          <Text style={styles.actionDesc}>Preter un objet</Text>
+        </TouchableOpacity>
 
-        <Link href="/collections/new" asChild>
-          <TouchableOpacity style={[styles.actionButton, styles.actionAccent]}>
-            <Text style={styles.actionTitle}>AJOUTER</Text>
-            <Text style={styles.actionDesc}>Nouvel objet</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.actionAccent]}
+          onPress={() => router.push("/objects/add")}
+        >
+          <Text style={styles.actionTitle}>AJOUTER</Text>
+          <Text style={styles.actionDesc}>Nouvel objet</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Objets pretés */}
+      {/* Prets recents */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>// RETOURS RECENTS</Text>
+        <Text style={styles.sectionTitle}>// PRETS RECENTS</Text>
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>Aucun pret recent</Text>
         </View>
@@ -64,7 +77,7 @@ export default function HomeScreen() {
 }
 
 /**
- * Boîte statistique.
+ * Stat box component.
  */
 function StatBox({
   label,
@@ -113,6 +126,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.mutedForeground,
     marginTop: spacing.sm,
+  },
+  userEmail: {
+    fontFamily: typography.fontFamily,
+    fontSize: 10,
+    color: colors.mutedForeground,
+    marginTop: spacing.xs,
   },
   stats: {
     flexDirection: "row",

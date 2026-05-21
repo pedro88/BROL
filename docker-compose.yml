@@ -1,0 +1,49 @@
+# =============================================================================
+# Stack de production Brol — API + Web
+# Postgres reste natif sur l'host (déjà installé), nginx fait le reverse proxy
+# depuis 443 vers les ports 3000/3001 bindés sur 127.0.0.1.
+#
+# Usage VPS :
+#   docker compose up -d --build       # build + démarre
+#   docker compose logs -f api         # logs live
+#   docker compose exec api node -v    # entrer dans un container
+# =============================================================================
+
+services:
+
+  api:
+    container_name: brol-api
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    restart: unless-stopped
+    # network_mode: host pour que l'API puisse joindre Postgres natif via localhost:5432
+    # et pour que nginx puisse la joindre via 127.0.0.1:3001 sans port mapping
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      # DATABASE_URL, BETTER_AUTH_SECRET, S3_*, RESEND_*, OAUTH_* viennent du .env
+    # Pas de healthcheck pour l'instant — l'API n'expose pas /health.
+    # À ajouter quand un endpoint dédié sera implémenté.
+
+  web:
+    container_name: brol-web
+    # IMPORTANT : avant de build, le standalone Next.js doit avoir été construit
+    # localement et synchronisé. Voir deploy/build-web.sh.
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 127.0.0.1
+    depends_on:
+      api:
+        condition: service_started

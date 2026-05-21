@@ -28,3 +28,12 @@ export function setSessionToken(token: string | undefined) {
 export function getSessionToken(): string | undefined {
   return sessionTokenStore.get();
 }
+
+/**
+ * Clear the session token from the global store.
+ * Call this when signing out or clearing session to ensure
+ * the tRPC client stops sending a stale Bearer token.
+ */
+export function clearSessionToken(): void {
+  sessionTokenStore.set(undefined);
+}
