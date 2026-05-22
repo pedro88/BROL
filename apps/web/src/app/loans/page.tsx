@@ -274,7 +274,7 @@ export default function LoansPage() {
 
       <main className="px-4 py-6 max-w-lg mx-auto">
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
           <div>
             <h1 className="font-display text-3xl vhs-text-glow text-primary">
               PRÊTS
@@ -285,7 +285,7 @@ export default function LoansPage() {
           </div>
           <Button
             onClick={() => setShowObjectPicker(true)}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
             NOUVEAU PRÊT
@@ -293,12 +293,12 @@ export default function LoansPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-muted/50 p-1 rounded-lg">
+        <div className="flex gap-1 mb-6 bg-muted/50 p-1 rounded-lg overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-md text-xs font-mono uppercase transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1 py-2 px-2 sm:px-3 rounded-md text-[10px] sm:text-xs font-mono uppercase transition-all whitespace-nowrap ${
                 activeTab === tab.id
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"

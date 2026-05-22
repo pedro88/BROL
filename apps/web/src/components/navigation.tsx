@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut, Bell } from "lucide-react";
+import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut, Bell, Menu } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { signOut } from "@/lib/auth-client";
 import { setSessionToken, sessionTokenStore, getSessionToken } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 /**
  * React hook to read the session token store.
@@ -37,16 +44,16 @@ const navItems = [
 
 export function Navigation() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur border-t border-border">
-      <div className="flex items-center justify-around py-2 max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur border-t border-border pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center justify-around py-2 sm:py-3 max-w-lg mx-auto">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="flex flex-col items-center gap-1 px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
+            className="flex flex-col items-center gap-1 px-2 sm:px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
           >
             <item.icon className="w-5 h-5" strokeWidth={1.5} />
-            <span className="text-xs font-mono uppercase tracking-wider">
+            <span className="text-[10px] sm:text-xs font-mono uppercase tracking-wider">
               {item.label}
             </span>
           </Link>
@@ -59,6 +66,8 @@ export function Navigation() {
 /**
  * Header principal de l'application.
  * Affiche le logo BROL et un bouton Login/Logout selon l'état de session.
+ * - Mobile: menu hamburger avec DropdownMenu
+ * - Desktop: actions inline (notifications, login/logout, settings)
  */
 export function Header() {
   const token = useSessionToken();
@@ -76,7 +85,6 @@ export function Header() {
     <header className="sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          {/* Logo — links to homepage */}
           <Link href="/" className="relative no-underline">
             <span className="font-display text-3xl vhs-text-glow text-primary">
               BROL
@@ -87,7 +95,62 @@ export function Header() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-1">
+        {/* Mobile: Hamburger menu */}
+        <div className="md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="flex items-center justify-center w-10 h-10 text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Menu"
+              >
+                <Menu className="w-5 h-5" strokeWidth={1.5} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {isAuthenticated && (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/notifications" className="flex items-center gap-2">
+                      <Bell className="w-4 h-4" />
+                      Notifications
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {isAuthenticated ? (
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    Paramètres
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link href="/sign-in" className="flex items-center gap-2">
+                    <LogIn className="w-4 h-4" />
+                    Connexion
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              {isAuthenticated && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Déconnexion
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Desktop: Inline actions */}
+        <div className="hidden md:flex items-center gap-1">
           {isAuthenticated && (
             <Link
               href="/notifications"
@@ -118,7 +181,6 @@ export function Header() {
             </Link>
           )}
 
-          {/* Settings — always visible, protected by middleware */}
           <Link
             href="/settings"
             className="p-2 text-muted-foreground hover:text-foreground transition-colors"

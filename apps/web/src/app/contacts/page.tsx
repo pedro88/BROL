@@ -343,7 +343,7 @@ export default function ContactsPage() {
 
       <main className="px-4 py-6 max-w-lg mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <h1 className="font-display text-3xl vhs-text-glow text-primary">
               CONTACTS
@@ -352,7 +352,7 @@ export default function ContactsPage() {
               {contacts.length} contact{contacts.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button onClick={() => setIsCreateOpen(true)}>
+          <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             Nouveau
           </Button>

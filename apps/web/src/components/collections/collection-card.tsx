@@ -98,7 +98,7 @@ export function CollectionCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-9 w-9 sm:h-10 sm:w-10 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <MoreVertical className="w-4 h-4" />
               </Button>
