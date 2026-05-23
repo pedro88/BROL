@@ -43,6 +43,7 @@ model User {
   userBadges      UserBadge[]
   communityRequests CommunityRequest[]
   notifications   Notification[]
+  messages        Message[]
 
   @@map("users")
 }
@@ -178,6 +179,7 @@ model Object {
   qrStock    QrStock?   @relation(fields: [qrStockId], references: [id])
   qrStockId  String?    @unique
   photos     Photo[]
+  messages   Message[]
 
   @@index([collectionId])
   @@index([isbn])
@@ -435,4 +437,27 @@ model QrStock {
   @@index([userId])
   @@index([code])
   @@map("qr_stocks")
+}
+
+// ============================================
+// MESSAGES (contact depuis scan QR public)
+// ============================================
+
+model Message {
+  id        String   @id @default(cuid())
+  objectId  String
+  ownerId   String
+  fromName  String
+  fromEmail String
+  content   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  object Object @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  owner  User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([objectId])
+  @@index([createdAt])
+  @@map("messages")
 }
