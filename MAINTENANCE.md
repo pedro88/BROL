@@ -109,12 +109,34 @@ cd ~/Projets/webDev/BROL
 
 # 1. Build web localement (le build Docker pour Next 15 a un bug de prerender,
 #    on utilise donc la stratégie "prebuilt artifact")
-cd apps/web && pnpm run build && cd ../..
+#
+#    /!\ Les `NEXT_PUBLIC_*` sont inlinés au moment du build. Sans override,
+#    Next prend `apps/web/.env.local` qui pointe vers `http://localhost:3001`
+#    → le bundle envoyé au navigateur fait des requêtes à localhost et le
+#    sign-in échoue (ERR_CONNECTION_REFUSED). On force donc les URLs prod ici.
+cd apps/web && \
+  NEXT_PUBLIC_API_URL=https://api.brol.dev \
+  NEXT_PUBLIC_APP_URL=https://app.brol.dev \
+  NODE_ENV=production \
+  pnpm run build && \
+  cd ../..
 
 # 2. Sync code + artefact prebuilt vers le VPS
+#    .pnpm-store/ est exclu : inutile côté VPS (le Dockerfile API a son
+#    propre store via cache mount) et créé en root sur le VPS lors d'un
+#    précédent run → rsync ne peut pas l'effacer (Permission denied) si on
+#    ne l'exclut pas.
+#
+#    /!\ Les excludes `.next/*` sont ANCRÉS (préfixe `/`). Sans ancrage,
+#    rsync matche le pattern n'importe où dans le path et exclut aussi
+#    `.next/standalone/apps/web/.next/server/` — qui contient le middleware
+#    bundle. Résultat : le middleware ne se met JAMAIS à jour côté VPS.
 rsync -az --delete \
-  --exclude=node_modules --exclude='.next/cache' \
-  --exclude='.next/types' --exclude='.next/server' \
+  --exclude=node_modules \
+  --exclude='/apps/web/.next/cache' \
+  --exclude='/apps/web/.next/types' \
+  --exclude='/apps/web/.next/server' \
+  --exclude='.pnpm-store' \
   --exclude=.git --exclude=.env --exclude='**/.env' \
   ./ piet@91.98.87.65:/opt/brol/
 
@@ -214,6 +236,10 @@ Sur Expo Go (ou le dev build), scanner le QR ou ouvrir : `exp://dev.brol.dev`.
 DATABASE_URL=postgresql://piet:<password>@127.0.0.1:5432/brol?schema=public
 BETTER_AUTH_SECRET=<32 bytes base64>
 BETTER_AUTH_URL=https://api.brol.dev
+# Permet au cookie de session d'être partagé entre app.brol.dev et api.brol.dev.
+# /!\ ne définir QU'EN PROD — en local, laisser vide (Better-auth utilisera le
+# cookie host-only sur localhost, ce qui suffit).
+BETTER_AUTH_COOKIE_DOMAIN=.brol.dev
 NEXT_PUBLIC_API_URL=https://api.brol.dev
 NEXT_PUBLIC_APP_URL=https://app.brol.dev
 API_URL=https://api.brol.dev
@@ -249,17 +275,137 @@ EXPO_PUBLIC_API_URL=https://api.brol.dev
 
 → Le `.dockerignore` exclut les fichiers du standalone Next. Vérifier qu'il contient les `!apps/web/.next/standalone/**` et `!apps/web/.next/static/**` en fin de fichier.
 
-### `Cannot find Prisma Query Engine for runtime`
+### `Cannot find Prisma Query Engine for runtime "debian-openssl-1.1.x"`
 
-→ Le standalone Next n'a pas tracé les `.node` binaries Prisma. Vérifier que `next.config.js` contient :
+Deux causes possibles :
+
+1. **Engine pas tracé dans le bundle Next** : vérifier que `next.config.js` contient :
 ```js
 serverExternalPackages: ["@prisma/client", "@prisma/engines", "prisma"],
 outputFileTracingIncludes: { "/**/*": ["../../node_modules/.pnpm/@prisma+client*/**", ...] },
 ```
 
+2. **OpenSSL pas installé dans l'image runtime** : `node:bookworm-slim` n'inclut PAS openssl, donc Prisma ne peut pas détecter `3.0.x` au runtime, défaut sur `1.1.x`, et cherche un engine qui n'a pas été bundlé. Les deux Dockerfiles (`apps/web/Dockerfile` et `packages/api/Dockerfile`) doivent installer `openssl` :
+```dockerfile
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+```
+
 ### `useContext null` au build Next dans Docker
 
 Bug Next 15 + Docker spécifique au prerender. Solution actuelle : on build localement et on COPY l'artefact `.next/standalone` dans une image Docker minimale (cf. `apps/web/Dockerfile`).
+
+### `/api/auth/get-session` renvoie 500 sur app.brol.dev
+
+Better-auth tourne en **double** : une fois dans l'API (`packages/api/src/auth.ts`)
+et une fois dans le web (`apps/web/src/app/api/auth/[...all]/route.ts`). Les deux
+DOIVENT partager exactement la même config (secret, trustedOrigins,
+crossSubDomainCookies, defaultCookieAttributes) pour que le cookie posé par l'une
+soit reconnu par l'autre. Si tu modifies l'une, vérifie l'autre.
+
+À terme, factoriser la config dans `@brol/api` et l'importer côté web (cf. la
+fonction `createAuthWithPlugins` déjà exportée).
+
+### tRPC crashe avec `The table public.<name> does not exist`
+
+Le code Prisma utilise un modèle (`prisma.profile.findUnique()`, etc.) dont la
+table n'existe pas en prod. Cause classique : le `schema.prisma` a été modifié
+en dev (ajout de modèles) sans `prisma migrate dev` pour créer la migration.
+
+Vérif rapide de l'état des migrations en prod :
+```bash
+ssh piet@91.98.87.65 'sudo -u postgres psql brol -c "SELECT migration_name, finished_at FROM _prisma_migrations ORDER BY started_at;"'
+ssh piet@91.98.87.65 'ls /opt/brol/packages/db/prisma/migrations/'   # ce qui est déployé
+ls packages/db/prisma/migrations/                                     # ce qui est local
+```
+
+Fix : générer une migration qui rattrape le delta entre la DB et le schéma
+(via tunnel SSH postgres → `prisma migrate diff`), la rsync, puis
+`migrate deploy` :
+
+```bash
+# 1. Tunnel SSH temporaire vers postgres (port local 15432 → 5432 sur VPS)
+ssh -L 15432:127.0.0.1:5432 piet@91.98.87.65 -N -f
+
+# 2. Générer le SQL via migrate diff (DB url depuis /opt/brol/.env sur le VPS)
+DBURL="postgresql://piet:<password>@127.0.0.1:15432/brol?schema=public"
+npx -y prisma@6.19.3 migrate diff \
+  --from-url "$DBURL" \
+  --to-schema-datamodel packages/db/prisma/schema.prisma \
+  --script > /tmp/delta.sql
+# Retirer les éventuels `npm warn ...` qui se glissent en tête du fichier
+
+# 3. Créer le dossier de migration et le syncer
+NAME=20260522060000_descriptive_name
+mkdir -p packages/db/prisma/migrations/$NAME
+cp /tmp/delta.sql packages/db/prisma/migrations/$NAME/migration.sql
+rsync -az packages/db/prisma/migrations/$NAME/ \
+  piet@91.98.87.65:/opt/brol/packages/db/prisma/migrations/$NAME/
+
+# 4. Apply (cf. section "Migrations Prisma")
+ssh piet@91.98.87.65 'cd /opt/brol && docker run --rm --network host \
+  -e DATABASE_URL="$(grep ^DATABASE_URL /opt/brol/.env | cut -d= -f2-)" \
+  -v /opt/brol/packages/db/prisma:/prisma \
+  node:24-bookworm-slim sh -c "npx -y prisma@6.19.3 migrate deploy --schema=/prisma/schema.prisma"'
+
+# 5. Fermer le tunnel
+pkill -f "ssh -L 15432"
+```
+
+À terme : enforcer `prisma migrate dev` dès qu'on modifie `schema.prisma`, et
+ne JAMAIS faire `prisma db push` même en dev (sinon on n'a pas l'historique).
+
+### Le sign-in fait `ERR_CONNECTION_REFUSED` sur `localhost:3001`
+
+Le navigateur essaie de joindre `http://localhost:3001/api/auth/sign-in/email`
+au lieu de `https://api.brol.dev/...`. Cause : `NEXT_PUBLIC_API_URL` est
+inliné dans le bundle JS au moment du `pnpm run build`. Si la build a lu
+`apps/web/.env.local` (qui pointe vers `localhost` pour le dev), tous les
+appels du client le feront aussi en prod.
+
+Vérif :
+```bash
+grep -o "localhost:3001\|api.brol.dev" apps/web/.next/static/chunks/*.js | sort | uniq -c
+```
+
+Fix : rebuild avec les bons `NEXT_PUBLIC_*` en variables d'environnement
+(cf. section "Déployer une nouvelle version"). Ne pas commiter ces URLs dans
+`.env.local` — ce fichier reste réservé au dev.
+
+### Les modifs du middleware ne s'appliquent pas sur le VPS
+
+Symptôme : tu modifies `apps/web/src/middleware.ts`, tu rebuild, tu rsync, tu
+rebuild docker, mais le comportement ne change pas — comme si le container
+servait toujours l'ancienne version.
+
+Cause : ton `rsync` exclut `.next/server` sans ancrage. Comme rsync matche les
+patterns relatifs **n'importe où** dans le path, il exclut aussi
+`apps/web/.next/standalone/apps/web/.next/server/`, qui contient le bundle du
+middleware. Du coup le code dans le standalone reste figé à la version qu'il
+avait quand le dossier a été créé pour la première fois.
+
+Vérif :
+```bash
+ssh piet@91.98.87.65 'ls -la /opt/brol/apps/web/.next/standalone/apps/web/.next/'
+# Si `server/` a une date plus vieille que les autres fichiers, c'est ça.
+```
+
+Fix : ancrer les excludes avec `/` initial (cf. section "Déployer une nouvelle
+version"). `--exclude='/apps/web/.next/server'` ne matchera que le `server/`
+à la racine d'`apps/web/.next/` et laissera passer le sous-chemin imbriqué.
+
+### Redirection infinie après sign-in
+
+Diagnostic : ouvre Devtools → Application → Cookies sur `app.brol.dev`. Cherche
+`__Secure-better-auth.session_token` (ou `better-auth.session_token` en dev).
+
+- Si absent : le cookie n'est pas posé. Vérifie `BETTER_AUTH_COOKIE_DOMAIN=.brol.dev`
+  dans `/opt/brol/.env`, et que la config Better-auth (api ET web) contient
+  `advanced.crossSubDomainCookies.enabled = true`.
+- Si présent : le middleware ne le détecte pas. Vérifie que `getSessionCookie`
+  dans `apps/web/src/middleware.ts` essaie bien les trois variantes
+  (`__Secure-`, `__Host-`, brut).
 
 ### nginx ne se reload pas
 
@@ -301,6 +447,13 @@ sudo systemctl status certbot.timer
 | 2026-05-20 | Setup déploiement VPS : Docker + nginx + reverse tunnel SSH | Indépendance vis-à-vis du hotspot et de ngrok |
 | 2026-05-20 | Stratégie "prebuilt artifact" pour Next.js (build local + COPY) | Bug Next 15 useContext lors du prerender Docker |
 | 2026-05-20 | `output: 'standalone'` + `serverExternalPackages` Prisma | Image Docker minimale incluant les binaires Prisma |
+| 2026-05-21 | Better-auth `trustedOrigins` + `crossSubDomainCookies` (domain `.brol.dev`) | Sign-in/sign-up entre app.* et api.* (CSRF check + cookie partagé) |
+| 2026-05-21 | Middleware Next lit `__Secure-` / `__Host-` / brut pour le cookie session | En prod HTTPS Better-auth préfixe le cookie, le middleware doit suivre |
+| 2026-05-21 | Web Better-auth aligné sur la config de l'API | Les deux instances partagent le même cookie : configs doivent matcher |
+| 2026-05-21 | Install `openssl` dans les images runtime web + api | Prisma défaut sur engine 1.1.x sans openssl → crash, get-session 500 |
+| 2026-05-22 | Ancrage `/apps/web/.next/{server,cache,types}` dans les excludes rsync | Sans ancrage, le pattern matchait aussi `.next/standalone/apps/web/.next/server/` → middleware jamais re-sync sur le VPS |
+| 2026-05-22 | Override `NEXT_PUBLIC_*` à la commande build (au lieu de se reposer sur `.env.local`) | `.env.local` du dev pointe vers `localhost:3001`, et `NEXT_PUBLIC_*` est inliné au build → le bundle prod aurait des appels à localhost |
+| 2026-05-22 | Migration `20260522060000_add_social_and_rental_fields` (profiles, reviews, badges, requests, notifications + champs rental/clothing/tool sur objects) | Le dev avait modifié `schema.prisma` sans créer de migration → tRPC `collections.create` crashait en prod sur `prisma.profile.findUnique()` (table absente). Migration générée via `prisma migrate diff --from-url <prod> --to-schema-datamodel` |
 
 ---
 
@@ -308,7 +461,6 @@ sudo systemctl status certbot.timer
 
 - [ ] L'API tRPC redirige vers `https://localhost:3000` au lieu de `https://app.brol.dev` (BETTER_AUTH_URL ? middleware ?)
 - [ ] Ajouter un endpoint `/health` sur l'API pour réactiver le healthcheck Docker
-- [ ] Ajouter `openssl` au Dockerfile API (warnings Prisma libssl)
 - [ ] Cron de backup Postgres automatique
 - [ ] Logs persistants (actuellement perdus quand on recycle les containers — ajouter `logging:` driver json-file avec rotation)
 - [ ] Setup CI/CD avec git push au lieu de rsync manuel

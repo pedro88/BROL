@@ -8,6 +8,16 @@
 FROM node:22-bookworm-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+# OpenSSL est requis par Prisma à DEUX moments :
+#   1. `prisma generate` (stage builder) — pour détecter la cible et bundler
+#      le bon engine .node
+#   2. Au runtime (stage runner) — pour charger l'engine
+# On l'installe dans `base` pour qu'il soit dispo dans les deux stages.
+# Sans openssl ici, `prisma generate` génère un engine 1.1.x mais le runtime
+# (qui a openssl 3 via la même `base`) cherche un engine 3.0.x → crash.
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
@@ -43,6 +53,7 @@ RUN pnpm --filter @brol/api run build
 # ---------- Runner : image finale ----------
 FROM base AS runner
 ENV NODE_ENV=production
+# openssl est déjà installé via le stage `base` (cf. commentaire là-haut).
 # On n'embarque que ce qui est strictement nécessaire au runtime :
 #   - dist/server.js (le bundle esbuild)
 #   - @prisma/client + .prisma/client (générés, externalisés par esbuild)

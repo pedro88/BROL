@@ -205,11 +205,20 @@ export const qrRouter = router({
               name: true,
               author: true,
               condition: true,
+              coverImage: true,
             },
           },
           user: {
             select: {
+              id: true,
               name: true,
+              image: true,
+              profile: {
+                select: {
+                  bio: true,
+                  avatarUrl: true,
+                },
+              },
             },
           },
         },

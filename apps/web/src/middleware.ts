@@ -15,6 +15,21 @@ const PUBLIC_PATHS = [
   "/browse",
 ];
 
+/**
+ * Lit le cookie de session Better-auth.
+ *
+ * En prod (HTTPS), Better-auth utilise le préfixe `__Secure-` (et `__Host-`
+ * pour les cookies non cross-subdomain). En dev local (HTTP), il utilise le
+ * nom brut. On essaie les deux pour rester robuste.
+ */
+function getSessionCookie(request: NextRequest) {
+  return (
+    request.cookies.get("__Secure-better-auth.session_token") ??
+    request.cookies.get("__Host-better-auth.session_token") ??
+    request.cookies.get("better-auth.session_token")
+  );
+}
+
 const PROTECTED_PATTERNS = [
   "/collections",
   "/objects",
@@ -57,7 +72,7 @@ export function middleware(request: NextRequest) {
 
   // Root page / → protected: redirect to sign-in if no session, show dashboard if logged in
   if (pathname === "/") {
-    const sessionCookie = request.cookies.get("better-auth.session_token");
+    const sessionCookie = getSessionCookie(request);
     if (!sessionCookie) {
       return redirectToSignIn(request, pathname);
     }
@@ -85,7 +100,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/collections/") &&
     pathname.includes("/edit")
   ) {
-    const sessionCookie = request.cookies.get("better-auth.session_token");
+    const sessionCookie = getSessionCookie(request);
     if (!sessionCookie) {
       return redirectToSignIn(request, pathname);
     }
@@ -101,7 +116,7 @@ export function middleware(request: NextRequest) {
   // Check for session cookie on protected paths
   for (const pattern of PROTECTED_PATTERNS) {
     if (pathname.startsWith(pattern)) {
-      const sessionCookie = request.cookies.get("better-auth.session_token");
+      const sessionCookie = getSessionCookie(request);
       if (!sessionCookie) {
         return redirectToSignIn(request, pathname);
       }

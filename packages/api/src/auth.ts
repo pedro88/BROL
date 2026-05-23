@@ -82,6 +82,23 @@ function baseAuthConfig(overrides?: {
     baseURL: overrides?.baseURL ?? "http://localhost:3001",
     basePath: "/api/auth",
     trustedOrigins: buildTrustedOrigins(),
+    // Cross-subdomain cookies — l'API tourne sur api.brol.dev et le web sur
+    // app.brol.dev. Sans ce réglage Better-auth pose le cookie host-only sur
+    // api.brol.dev, et le middleware Next côté app.brol.dev ne le voit pas →
+    // après sign-in, l'utilisateur est redirigé en boucle vers /sign-in.
+    // En dev local on désactive (les deux sont sur localhost).
+    advanced: process.env.BETTER_AUTH_COOKIE_DOMAIN
+      ? {
+          crossSubDomainCookies: {
+            enabled: true,
+            domain: process.env.BETTER_AUTH_COOKIE_DOMAIN,
+          },
+          defaultCookieAttributes: {
+            sameSite: "lax",
+            secure: true,
+          },
+        }
+      : undefined,
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,

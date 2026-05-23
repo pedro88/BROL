@@ -17,6 +17,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=127.0.0.1
 
+# OpenSSL est requis par Prisma au runtime pour détecter quelle variante de
+# Query Engine charger. node:bookworm-slim ne l'inclut PAS → Prisma défaut sur
+# "openssl-1.1.x" alors qu'on a bundlé l'engine "3.0.x", crash "Query Engine
+# not found". cf. MAINTENANCE.md §7.
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 # L'artefact standalone contient déjà server.js + node_modules minimal.
 COPY apps/web/.next/standalone ./
 COPY apps/web/.next/static ./apps/web/.next/static

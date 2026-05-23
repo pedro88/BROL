@@ -8,7 +8,7 @@
 
 "use client";
 
-import { signInEmailPassword, signUpEmailPassword } from "@/lib/auth-client";
+import { signInEmailPassword, signUpEmailPassword, getSession } from "@/lib/auth-client";
 import { setSessionToken } from "@/lib/auth-store";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -116,8 +116,12 @@ export default function SignInPage() {
 
   async function syncTokenToStore(): Promise<void> {
     try {
-      const res = await fetch(`/api/auth/get-session`, { credentials: "include" });
-      const data = await res.json();
+      // /!\ getSession() utilise NEXT_PUBLIC_API_URL en interne — il faut taper
+      // l'API Better-auth (api.brol.dev), pas le web (app.brol.dev) qui n'a pas
+      // de handler /api/auth/*. Garder ce détour évite un 500 dans la console.
+      const data = (await getSession()) as
+        | { session?: { token?: string }; token?: string }
+        | null;
       const token = data?.session?.token ?? data?.token;
       if (token) setSessionToken(token);
     } catch {
