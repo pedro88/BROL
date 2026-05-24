@@ -459,7 +459,6 @@ sudo systemctl status certbot.timer
 
 ## 9. À faire (dette technique)
 
-- [ ] L'API tRPC redirige vers `https://localhost:3000` au lieu de `https://app.brol.dev` (BETTER_AUTH_URL ? middleware ?)
 - [ ] Ajouter un endpoint `/health` sur l'API pour réactiver le healthcheck Docker
 - [ ] Cron de backup Postgres automatique
 - [ ] Logs persistants (actuellement perdus quand on recycle les containers — ajouter `logging:` driver json-file avec rotation)

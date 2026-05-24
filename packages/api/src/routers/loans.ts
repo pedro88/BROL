@@ -232,6 +232,7 @@ export const loansRouter = router({
   /**
    * Crée un nouveau prêt.
    * Résout contactId → borrowerId (si compte) ou borrowerContactId (si pas de compte).
+   * userId (optionnel) → emprunt direct à un utilisateur Brol via ID/QR.
    */
   create: protectedProcedure
     .input(createLoanSchema)
@@ -268,32 +269,38 @@ export const loansRouter = router({
         });
       }
 
-      // Vérifier que le contact existe et appartient à l'utilisateur
-      const contact = await ctx.prisma.contact.findFirst({
-        where: {
-          id: input.contactId,
-          userId: ctx.userId,
-        },
-      });
+      let borrowerId: string | null = null;
+      let borrowerContactId: string | null = null;
 
-      if (!contact) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Contact non trouvé.",
+      if (input.userId) {
+        // Emprunt direct à un utilisateur Brol (via ID/QR)
+        const user = await ctx.prisma.user.findUnique({ where: { id: input.userId } });
+        if (!user) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur non trouvé." });
+        }
+        if (user.id === ctx.userId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Vous ne pouvez pas vous prêter à vous-même." });
+        }
+        borrowerId = user.id;
+      } else if (input.contactId) {
+        // Emprunt via un contact de la liste
+        const contact = await ctx.prisma.contact.findFirst({
+          where: { id: input.contactId, userId: ctx.userId },
         });
-      }
 
-      // Résoudre : si le contact a un borrowerId (compte), utiliser ce compte
-      // Sinon, utiliser borrowerContactId (prêt à un contact sans compte)
-      const borrowerId = contact.borrowerId ?? null;
-      const borrowerContactId = borrowerId ? null : contact.id;
+        if (!contact) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Contact non trouvé." });
+        }
 
-      // Si ni l'un ni l'autre, c'est un contact orphan — avertir (ne devrait pas arriver)
-      if (!borrowerId && !borrowerContactId) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Impossible de déterminer l'emprunteur pour ce contact.",
-        });
+        borrowerId = contact.borrowerId ?? null;
+        borrowerContactId = borrowerId ? null : contact.id;
+
+        if (!borrowerId && !borrowerContactId) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Impossible de déterminer l'emprunteur pour ce contact.",
+          });
+        }
       }
 
       const loan = await ctx.prisma.loan.create({
