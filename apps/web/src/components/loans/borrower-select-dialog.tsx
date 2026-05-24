@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { Button } from "../../components/ui/button";
 import { trpc } from "../../lib/trpc";
 import { Loader2, Search, User, UserPlus, QrCode, Hash, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { QrScanner } from "../qr/qr-scanner";
 
 type Tab = "contacts" | "id-qr" | "new-contact";
 
@@ -38,7 +39,7 @@ export function BorrowerSelectDialog({
   const [tab, setTab] = useState<Tab>("contacts");
   const [contactSearch, setContactSearch] = useState("");
   const [userIdInput, setUserIdInput] = useState("");
-  const [selectedContact, setSelectedContact] = useState<ContactItem | null>(null);
+  const [showQrScanner, setShowQrScanner] = useState(false);
 
   // New contact form
   const [newName, setNewName] = useState("");
@@ -53,8 +54,8 @@ export function BorrowerSelectDialog({
 
   const contacts: ContactItem[] = contactsData?.items ?? [];
 
-  // User search query (for ID/QR tab - search by name/email)
-  const { data: userResults, isLoading: isSearchingUsers } =
+  // User search query (for contacts tab - live search for Brol users)
+  const { data: userResults } =
     trpc.users.search.useQuery({ query: contactSearch }, { enabled: tab === "contacts" && contactSearch.length > 0 });
 
   // Lookup user by ID
@@ -78,7 +79,7 @@ export function BorrowerSelectDialog({
     setTab("contacts");
     setContactSearch("");
     setUserIdInput("");
-    setSelectedContact(null);
+    setShowQrScanner(false);
     setNewName("");
     setNewEmail("");
     setNewPhone("");
@@ -86,7 +87,6 @@ export function BorrowerSelectDialog({
   }
 
   function handleSelectContact(contact: ContactItem) {
-    setSelectedContact(contact);
     onSelect({ type: "contact", contactId: contact.id });
     handleClose();
   }
@@ -106,9 +106,34 @@ export function BorrowerSelectDialog({
     });
   }
 
+  async function handleQrScanned(code: string) {
+    let extractedId: string | null = null;
+
+    if (code.includes("/profile/")) {
+      extractedId = code.split("/profile/").pop()!;
+    } else if (code.includes("/qr/")) {
+      toast.error("Ce QR code n'est pas un profil utilisateur");
+      setShowQrScanner(false);
+      return;
+    } else {
+      extractedId = code;
+    }
+
+    const user = await utils.users.getById.fetch({ id: extractedId });
+    if (user) {
+      toast.success(`Utilisateur trouvé: ${user.name ?? user.email}`);
+      onSelect({ type: "user", userId: user.id });
+      handleClose();
+    } else {
+      toast.error("Aucun utilisateur trouvé pour ce QR code");
+      setShowQrScanner(false);
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Ajouter un emprunteur</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
@@ -312,7 +337,7 @@ export function BorrowerSelectDialog({
                 </p>
               )}
 
-              {/* QR Scan button - placeholder for future QR scanner integration */}
+              {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-border" />
@@ -326,10 +351,7 @@ export function BorrowerSelectDialog({
                 type="button"
                 variant="outline"
                 className="w-full gap-2"
-                onClick={() => {
-                  // TODO: integrate QR scanner
-                  alert("Scanner QR à implémenter");
-                }}
+                onClick={() => setShowQrScanner(true)}
               >
                 <QrCode className="w-4 h-4" />
                 Scanner un QR code
@@ -394,7 +416,13 @@ export function BorrowerSelectDialog({
         </div>
       </DialogContent>
     </Dialog>
+
+    {showQrScanner && (
+      <QrScanner
+        onCodeScanned={handleQrScanned}
+        onClose={() => setShowQrScanner(false)}
+      />
+    )}
+    </>
   );
 }
-
-// Import toast from sonner (assumed to be available globally)
