@@ -11,6 +11,9 @@ import {
   deleteS3Object,
   extractKeyFromUrl,
 } from "../lib/s3";
+import { logger } from "../lib/logger";
+
+const log = logger.child("photos");
 
 // ===========================================
 // SCHÉMAS
@@ -147,7 +150,7 @@ export const photosRouter = router({
           await deleteS3Object(key);
         } catch (err) {
           // Log l'erreur mais ne bloque pas la suppression en base
-          console.error("[photo.remove] Failed to delete S3 object:", err);
+          log.error("Failed to delete S3 object on photo.remove", { err });
         }
       }
 

@@ -12,6 +12,9 @@ import { auth } from "./auth";
 import { appRouter } from "./router";
 import { createContext } from "./trpc";
 import { prisma } from "@brol/db";
+import { logger } from "./lib/logger";
+
+const log = logger.child("server");
 
 /**
  * Configuration du port.
@@ -92,7 +95,7 @@ async function handleTrpc(req: IncomingMessage, res: { statusCode: number; setHe
     onError:
       process.env.NODE_ENV === "development"
         ? ({ path, error }) => {
-            console.error(`tRPC error on ${path ?? "<no-path>"}:`, error);
+            log.error("tRPC procedure error", { path: path ?? null, err: error });
           }
         : undefined,
   }).then((r) => {
@@ -227,7 +230,9 @@ const server = createServer(handler);
  * Démarrage du serveur.
  */
 server.listen(PORT, () => {
-  console.log(`🚀 API Brol running on ${API_BASE_URL}`);
-  console.log(`📡 tRPC endpoint: ${API_BASE_URL}/api/trpc`);
-  console.log(`🔑 Auth endpoint: ${API_BASE_URL}/api/auth`);
+  log.info("API server ready", {
+    baseUrl: API_BASE_URL,
+    trpcEndpoint: `${API_BASE_URL}/api/trpc`,
+    authEndpoint: `${API_BASE_URL}/api/auth`,
+  });
 });

@@ -1,5 +1,4 @@
 import { defineConfig } from "vitest/config";
-import path from "path";
 
 export default defineConfig({
   resolve: {
@@ -14,6 +13,26 @@ export default defineConfig({
     poolOptions: {
       forks: {
         singleFork: true,
+      },
+    },
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "lcov"],
+      reportsDirectory: "./coverage",
+      include: ["src/**/*.ts"],
+      exclude: [
+        "src/test/**",
+        "src/**/__tests__/**",
+        "src/**/*.test.ts",
+        "src/**/*.d.ts",
+        "src/server.ts",
+        "src/emails/**",
+      ],
+      thresholds: {
+        statements: 60,
+        branches: 50,
+        functions: 60,
+        lines: 60,
       },
     },
   },

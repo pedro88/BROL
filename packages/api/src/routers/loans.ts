@@ -17,6 +17,9 @@ import {
 } from "@brol/shared";
 import { sendReminderEmail } from "../emails";
 import { syncUserBadges } from "../lib/badge-service";
+import { logger } from "../lib/logger";
+
+const log = logger.child("loans.remind");
 
 /**
  * Router pour les prêts.
@@ -428,7 +431,7 @@ export const loansRouter = router({
       });
 
       if (!emailResult.success) {
-        console.error(`[loans.remind] Email failed: ${emailResult.message}`);
+        log.error("Reminder email failed", { reason: emailResult.message });
       }
 
       await ctx.prisma.loan.update({

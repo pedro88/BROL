@@ -7,11 +7,14 @@ import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import { syncUserBadges } from "../lib/badge-service";
+import { logger } from "../lib/logger";
 import {
   createObjectSchema,
   updateObjectSchema,
   paginationSchema,
 } from "@brol/shared";
+
+const log = logger.child("objects.lookupIsbn");
 
 /**
  * Router pour les objets.
@@ -372,7 +375,7 @@ export const objectsRouter = router({
         };
       } catch (err) {
         // ISBN non trouvé ou erreur réseau — retourne null silencieusement
-        console.warn(`[lookupIsbn] Failed for ISBN ${isbn}:`, err);
+        log.warn("ISBN lookup failed", { isbn, err });
         return null;
       }
     }),

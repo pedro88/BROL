@@ -6,6 +6,9 @@
 import { z } from "zod";
 import { router, publicProcedure, TRPCError } from "../trpc";
 import { Resend } from "resend";
+import { logger } from "../lib/logger";
+
+const log = logger.child("messages.sendOwnerContactEmail");
 
 /**
  * Schema for sending a message to an object owner.
@@ -94,7 +97,7 @@ async function sendOwnerContactEmail(params: {
 }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn("[sendOwnerContactEmail] RESEND_API_KEY not configured, skipping email");
+    log.warn("RESEND_API_KEY not configured, skipping email");
     return;
   }
 
@@ -140,9 +143,9 @@ Voir l'objet: ${params.objectUrl}
       html,
       text,
     });
-    console.info(`[sendOwnerContactEmail] Email sent to ${params.to} for object ${params.objectName}`);
+    log.info("Email sent", { to: params.to, objectName: params.objectName });
   } catch (error) {
-    console.error("[sendOwnerContactEmail] Failed to send email:", error);
+    log.error("Failed to send email", { err: error });
   }
 }
 

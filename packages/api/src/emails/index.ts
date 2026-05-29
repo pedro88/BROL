@@ -5,6 +5,9 @@
 
 import { Resend } from "resend";
 import { reminderEmailTemplate, reminderEmailText } from "./reminder";
+import { logger } from "../lib/logger";
+
+const log = logger.child("emails.sendReminderEmail");
 
 function getResendClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
@@ -24,7 +27,7 @@ export interface ReminderEmailParams {
 export async function sendReminderEmail(params: ReminderEmailParams): Promise<{ success: boolean; message: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.error("[sendReminderEmail] RESEND_API_KEY not configured");
+    log.error("RESEND_API_KEY not configured");
     return {
       success: false,
       message: "Service de rappel désactivé (clé API non configurée)",
@@ -62,20 +65,20 @@ export async function sendReminderEmail(params: ReminderEmailParams): Promise<{ 
     });
 
     if (result.error) {
-      console.error("[sendReminderEmail] Resend error:", result.error);
+      log.error("Resend returned error", { err: result.error });
       return {
         success: false,
         message: `Échec de l'envoi du rappel: ${result.error.message}`,
       };
     }
 
-    console.info(`[sendReminderEmail] Reminder sent to ${to} for object ${objectName}`);
+    log.info("Reminder sent", { to, objectName });
     return {
       success: true,
       message: `Rappel envoyé à ${borrowerName || to}`,
     };
   } catch (error) {
-    console.error("[sendReminderEmail] Unexpected error:", error);
+    log.error("Unexpected error sending reminder", { err: error });
     return {
       success: false,
       message: "Erreur lors de l'envoi du rappel email",

@@ -15,6 +15,9 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 // import { google, github, apple } from "better-auth/social-providers";
 import { prisma } from "@brol/db";
 import { generateHandle } from "./lib/handle";
+import { logger } from "./lib/logger";
+
+const log = logger.child("auth");
 
 // ============================================================================
 // Shared base config — both instances use the same options
@@ -130,7 +133,7 @@ function baseAuthConfig(overrides?: {
                 data: { handle },
               });
             } catch (err) {
-              console.error("[auth] Failed to generate handle for user", user.id, err);
+              log.error("Failed to generate handle for user", { userId: user.id, err });
             }
           },
         },
@@ -304,7 +307,7 @@ export async function getSession(
 
     return cookieSession as unknown as BetterAuthSession;
   } catch (err) {
-    console.error("[getSession] failed:", String(err));
+    log.error("getSession failed", { err: String(err) });
     return null;
   }
 }
