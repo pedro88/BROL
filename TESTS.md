@@ -4,6 +4,20 @@
 
 PostgreSQL doit tourner localement sur le port 5432 avec le rôle `postgres:password`.
 
+Une base **`brol_test`** dédiée aux tests unitaires doit exister. Si
+elle n'existe pas :
+
+```bash
+PGPASSWORD=password psql -h localhost -U postgres -d postgres \
+  -c "CREATE DATABASE brol_test;"
+```
+
+⚠️ **Important** — Vitest **n'utilise jamais** `DATABASE_URL`. Il
+lit uniquement `TEST_DATABASE_URL`, ou tombe sur `brol_test` par
+défaut. Le teardown drop toutes les tables : un garde-fou refuse de
+tourner si le nom de DB ne finit pas par `_test`. Voir
+`packages/api/src/test/setup.ts`.
+
 ## Serveurs
 
 Les tests E2E nécessitent **deux serveurs** en parallèle :
@@ -23,151 +37,146 @@ pnpm --filter=@brol/web dev
 ### Tests unitaires (routers tRPC)
 
 ```bash
-cd packages/api && npx vitest run
+# Depuis la racine
+pnpm test
+
+# Avec coverage HTML + lcov (CI utilise ça)
+pnpm --filter @brol/api test:coverage
+
+# Sur un fichier précis
+cd packages/api && npx vitest run src/routers/__tests__/users.test.ts
+
+# Mode watch
+pnpm --filter @brol/api test:watch
 ```
+
+#### Seuils de coverage actifs
+
+| Type        | Seuil  |
+| ----------- | -----: |
+| Statements  | 60%    |
+| Branches    | 50%    |
+| Functions   | 60%    |
+| Lines       | 60%    |
+
+Configurés dans `packages/api/vitest.config.ts`. Si la PR fait
+descendre la couverture sous ces seuils, le job CI fail.
+
+Rapport HTML après `test:coverage` : `packages/api/coverage/index.html`.
 
 ### Tests E2E (Playwright)
 
 ```bash
-# Assurez-vous que les serveurs tournent (:3000 et :3001)
-npx playwright test --reporter=list
+# Lance API + Web puis tous les tests
+pnpm test:e2e
+
+# Filtrer
+pnpm test:e2e -- --grep "user-handle"
+
+# Mode UI interactif
+pnpm test:e2e:ui
 ```
 
-### Tout lancer
+Le script `scripts/e2e-run.sh` démarre l'API (`tsx src/server.ts`) sur
+:3001 et le web (`next dev`) sur :3000, attend leur disponibilité,
+puis lance Playwright. Cleanup à la fin (kill ports 3000/3001).
 
-```bash
-pnpm test          # unitaires uniquement
-pnpm test:e2e      # E2E uniquement
-```
+## Baseline actuelle — 29 mai 2026 (post-P1)
 
-## Baseline actuelle — 6 mai 2026
+### Tests unitaires : 132/134 (98 %)
 
-### Tests unitaires : ✅ 60/60 (100%)
+| Fichier                  | Tests | Statut |
+| ------------------------ | ----: | :----: |
+| `badge.test.ts`          |     5 |   ✅   |
+| `collections.test.ts`    |    14 |   ⚠️ 2 rouges (auth UNAUTHORIZED) |
+| `contacts.test.ts`       |    12 |   ✅   |
+| `loans.test.ts`          |    11 |   ✅   |
+| `objects.test.ts`        |    11 |   ✅   |
+| `photos.test.ts`         |    13 |   ✅   |
+| **`profile.test.ts`**    |    10 |   ✅ *nouveau (P1)* |
+| `qr.test.ts`             |    12 |   ✅   |
+| **`review.test.ts`**     |    12 |   ✅ *nouveau (P1)* |
+| `tier.test.ts`           |    21 |   ✅   |
+| **`users.test.ts`**      |    13 |   ✅ *nouveau (P1)* |
 
-| Fichier | Tests | Statut |
-|---|---|---|
-| `collections.test.ts` | 14 | ✅ |
-| `loans.test.ts` | 11 | ✅ |
-| `qr.test.ts` | 12 | ✅ |
-| `contacts.test.ts` | 12 | ✅ |
-| `objects.test.ts` | 11 | ✅ |
+11/14 routers ont un fichier de tests. Manquants : `community-request`,
+`messages`, `notification`.
 
-### Tests E2E : ⚠️ 56/76 (74%)
+### Tests E2E : 182/193 (94 %)
 
-#### Passants (56)
+11 rouges chroniques restants (contacts ×5, loans ×4, profile ×1,
+requests ×1). Voir BACKLOG.md §P0 pour le triage individuel.
 
-**auth.spec.ts (24/28)**
-- ✅ sign-up : crée un compte et redirige
-- ✅ sign-up : doublon d'email montre erreur
-- ✅ sign-up : cycle sign-up/sign-in — hash fonctionne en DB
-- ✅ sign-up : mot de passe trop court bloqué
-- ✅ sign-in : credentials valides redirigent
-- ✅ sign-in : cookie de session défini
-- ✅ sign-in : mot de passe erroné montre erreur
-- ✅ sign-in : email inexistant montre erreur
-- ✅ session persistence : persiste après navigation
-- ✅ session persistence : survive au rechargement
-- ✅ session persistence : hasActiveSession après sign-in
-- ✅ sign-out : session authentifiée permet accès /collections
-- ✅ sign-out : sign-out efface la session
-- ✅ sign-out : session effacée → /collections redirige vers sign-in
-- ✅ browse : accessible sans auth
-- ✅ browse : affiche COLLECTIONS PUBLIQUES
-- ✅ toggle : sign-in ↔ sign-up mode
-- ✅ responsive : formulaire à 375px
-- ✅ responsive : browse à 375px
-- ✅ OAuth : boutons Google/GitHub/Apple non affichés (commentés)
-- ✅ form validation : email vide → erreur required
-- ✅ form validation : mot de passe vide → erreur required
-- ✅ form validation : format email invalide → erreur
-- ✅ form validation : mot de passe trop court → erreur
-
-**collections.spec.ts (7/14)**
-- ✅ loads with authenticated session
-- ✅ shows collections heading or title
-- ✅ shows empty state when no collections
-- ✅ redirects to /sign-in without auth
-- ✅ non-existent collection shows not found
-- ✅ button opens dialog
-- ✅ form validation — name required
-
-**objects.spec.ts (2/8)**
-- ✅ objects/add page loads with auth
-- ✅ redirects to /sign-in without auth
-
-**browse.spec.ts (9/18)**
-- ✅ accessible without auth
-- ✅ shows COLLECTIONS PUBLIQUES heading
-- ✅ shows empty state when no public collections
-- ✅ does not show private collections
-- ✅ loads with VHS theme
-- ✅ shows quick actions section
-- ✅ navigation visible in header
-- ✅ quick action links to collections
-- ✅ browse page renders at 375px mobile
-
-**homepage.spec.ts (3/6)**
-- ✅ loads with VHS logo
-- ✅ shows ACTIONS RAPIDES section
-- ✅ navbar visible
-
-**public-collections.spec.ts (0/6)**
-- ❌ Tous échoués
-
-#### Échecs (20) — classés par catégorie
-
-| Catégorie | Fichiers concernés | Nb d'échecs |
-|---|---|---|
-| **Données manquantes** | public-collections.spec.ts, browse.spec.ts | 6 |
-| **Collections CRUD** | collections.spec.ts (create, detail, navigation) | 5 |
-| **Objects add/CRUD** | objects.spec.ts (add, form, detail, navigation) | 4 |
-| **Homepage navigation** | homepage.spec.ts (logo link), browse.spec.ts (logo link) | 2 |
-| **isPublic toggle** | browse.spec.ts (edit page, toggle sync) | 2 |
-| **Responsive** | homepage.spec.ts (375px), browse.spec.ts (375px) | 1 |
-
-### Détail des 20 échecs E2E
-
-```
-browse.spec.ts:80:7        ❌ shows public collections when they exist
-browse.spec.ts:93:7        ❌ clicking collection card navigates to detail
-browse.spec.ts:143:7       ❌ logo links to homepage
-browse.spec.ts:199:7       ❌ edit page shows isPublic toggle
-browse.spec.ts:206:7       ❌ changing isPublic reflects in browse
-collections.spec.ts:139:7  ❌ valid collection shows name
-collections.spec.ts:188:7  ❌ creates collection with isPublic=false
-collections.spec.ts:214:7  ❌ creates collection with isPublic=true
-collections.spec.ts:265:7  ❌ clicking collection card navigates to detail
-collections.spec.ts:285:7  ❌ can navigate back to collections list
-homepage.spec.ts:23:7      ❌ logo click returns to homepage
-homepage.spec.ts:45:7      ❌ renders at 375px mobile
-objects.spec.ts:93:7       ❌ form validation — name required
-objects.spec.ts:105:7      ❌ creates object in collection
-objects.spec.ts:116:7      ❌ redirects to /sign-in without auth
-objects.spec.ts:159:7      ❌ valid object shows name
-objects.spec.ts:183:7      ❌ can navigate to object add page
-public-collections.spec.ts:71:7   ❌ accessible without auth when isPublic=true
-public-collections.spec.ts:78:7   ❌ shows collection name and objects
-public-collections.spec.ts:120:7  ❌ accessible to owner when authenticated
-public-collections.spec.ts:156:7  ❌ public collection visible to non-authenticated users
-```
+Spec récente : `user-handle.spec.ts` — 8 tests couvrant le flux
+handle public + QR add-friend + propagation A→B sur `/loans`.
 
 ### Historique
 
-| Date | Unitaires | E2E | Notes |
-|---|---|---|---|
-| Avant M004 | 60/60 | 28/76 (37%) | Fetch failed massifs, API non démarrée |
-| 5 mai 2026 (S01) | 60/60 | 56/76 (74%) | +28 tests fixés : config BetterAuth, DB, double serveur |
-| 6 mai 2026 | 60/60 | 56/76 (74%) | Stable — même baseline, serveurs manuels requis |
+| Date            | Unit             | E2E              | Notes |
+| --------------- | ---------------- | ---------------- | ----- |
+| Avant M004      | 60/60            | 28/76 (37 %)     | Fetch failed massifs, API non démarrée |
+| 5 mai 2026 (S01)| 60/60            | 56/76 (74 %)     | +28 fixés : config BetterAuth, DB, double serveur |
+| 6 mai 2026      | 60/60            | 56/76 (74 %)     | Stable |
+| **29 mai 2026** | **132/134 (98%)** | **182/193 (94%)** | P0+P1 : +35 unit tests, middleware fixé, RSC split QR, coverage v8 |
 
-## Objectif M004
+## Écrire un test unitaire
 
-- ≥95% E2E (≥72/76)
-- 60/60 unitaires maintenus
-- Commande unique sans setup manuel
-- Bug homepage (logo → /browse) corrigé
+Pattern actuel (cf. `users.test.ts` / `profile.test.ts`) :
 
-## Notes connues
+```ts
+import { describe, it, expect, beforeEach } from "vitest";
+import { appRouter } from "../../router";
+import { prisma, createTestUser } from "../../test/setup";
 
-- `BETTER_AUTH_SECRET` dans `.env` est court (warning BetterAuth). Suffisant pour les tests.
-- Les tests E2E créent et nettoient eux-mêmes leurs données via les helpers `apps/web/e2e/helpers/auth.ts`.
-- Les tests public-collections nécessitent des collections existantes en DB créées via `beforeEach`.
+function callerFor(userId: string) {
+  return appRouter.createCaller({
+    prisma,
+    userId,
+    session: { user: { id: userId } },   // requis si la procédure lit ctx.session
+    headers: {},
+  });
+}
+
+function publicCaller() {
+  return appRouter.createCaller({
+    prisma, userId: null, session: null, headers: {},
+  });
+}
+
+describe("monRouter", () => {
+  beforeEach(async () => {
+    // Cleanup tables touchées (l'ordre compte à cause des FK).
+    await prisma.review.deleteMany();
+    await prisma.user.deleteMany();
+  });
+
+  it("retourne le user", async () => {
+    const u = await createTestUser({ name: "Alice" });
+    const res = await callerFor(u.id).users.me();
+    expect(res?.id).toBe(u.id);
+  });
+});
+```
+
+## Écrire un test E2E
+
+Pattern dans `apps/web/e2e/user-handle.spec.ts`. Helpers utiles :
+
+| Helper                             | Quoi                                                  |
+| ---------------------------------- | ----------------------------------------------------- |
+| `createUserAPI(email, pw, name)`   | Crée un user via `/api/auth/sign-up/email`, retourne `{ token, user }` |
+| `signIn(page, email, password)`    | Form-submit + attend la redirection                   |
+| `clearSession(page)`               | Wipe cookies + storage avant test cross-user          |
+| `cleanupUser(email)`               | Supprime user + données via `/api/test/cleanup-user`  |
+| `uniqueEmail()`                    | Email unique horodaté (évite les collisions parallèles) |
+
+Pour multi-user (A prête à B) : `cleanupUser` les deux dans
+`afterEach`.
+
+## Notes
+
+- `BETTER_AUTH_SECRET` dans `.env` est court (warning BetterAuth) —
+  suffisant pour les tests.
+- Endpoints `/api/test/*` (cleanup-user, get-token) sont publics et
+  doivent être gatés derrière `NODE_ENV !== "production"` avant tout
+  déploiement (cf. AUDIT.md §5).
