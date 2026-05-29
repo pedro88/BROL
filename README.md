@@ -66,11 +66,28 @@ pnpm test:e2e         # Tests E2E (Playwright)
 
 ## Développement
 
+Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour le workflow détaillé.
+
+Quickstart :
+
 1. Créer une branche: `git checkout -b feature/nom`
-2. Implémenter
+2. Implémenter + tests
 3. Commits conventionnels: `git commit -m "feat: description"`
 4. Push: `git push -u origin feature/nom`
 5. Créer une PR sur GitHub
+
+## Documentation
+
+| Doc                                  | Quoi                                       |
+| ------------------------------------ | ------------------------------------------ |
+| [ARCHITECTURE.md](ARCHITECTURE.md)   | Diagrammes Mermaid (topo, ER, auth, prêt)  |
+| [CONTRIBUTING.md](CONTRIBUTING.md)   | Workflow git, tests, style code            |
+| [TESTS.md](TESTS.md)                 | Comment lancer / écrire des tests          |
+| [MAINTENANCE.md](MAINTENANCE.md)     | Runbook ops (VPS, nginx, S3, déploiement)  |
+| [DECISIONS.md](DECISIONS.md)         | ADR — registre des choix techniques        |
+| [AUDIT.md](AUDIT.md)                 | Audit du projet — scores par dimension     |
+| [BACKLOG.md](BACKLOG.md)             | Backlog priorisé P0 → P3                   |
+| [RAPPORT.md](RAPPORT.md)             | Historique des milestones (M001 → M015)    |
 
 ## Variables d'environnement
 
