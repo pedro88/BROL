@@ -36,6 +36,8 @@ const PROTECTED_PATTERNS = [
   "/settings",
   "/loans",
   "/scan",
+  "/contacts",
+  "/notifications",
 ];
 
 /**
@@ -110,6 +112,11 @@ export function middleware(request: NextRequest) {
   // /collections/[id] is a detail page (public if collection isPublic).
   // Allow through — the page handles auth itself.
   if (pathname.startsWith("/collections/") && pathname !== "/collections") {
+    return NextResponse.next();
+  }
+
+  // /profile/[id] is a public profile page (anyone can view).
+  if (pathname.startsWith("/profile/")) {
     return NextResponse.next();
   }
 

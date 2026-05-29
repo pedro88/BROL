@@ -69,7 +69,7 @@ async function generateQrStockAPI(
 
 async function assignQrToObjectAPI(
   userToken: string,
-  qrId: string,
+  qrStockId: string,
   objectId: string,
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/trpc/qr.assignToObject`, {
@@ -78,7 +78,7 @@ async function assignQrToObjectAPI(
       "Content-Type": "application/json",
       Authorization: `Bearer ${userToken}`,
     },
-    body: JSON.stringify({ qrId, objectId }),
+    body: JSON.stringify({ qrStockId, objectId }),
   });
   const data = await res.json();
   if (data.error) throw new Error(`assignQrToObjectAPI: ${JSON.stringify(data.error)}`);
@@ -139,9 +139,9 @@ test.describe("QR public scan page — /qr/[code]", () => {
     await page.goto(`${WEB_BASE}/qr/${qrResult.codes[0].code}`);
     await page.waitForLoadState("networkidle");
 
-    // QR code canvas/image should be present
-    const qrCanvas = page.locator("canvas, svg").first();
-    await expect(qrCanvas).toBeVisible({ timeout: 5000 });
+    // QrCodeImage renders an <img alt="QR Code: {code}"> — assert that.
+    const qrImage = page.locator(`img[alt*="${qrResult.codes[0].code}"]`).first();
+    await expect(qrImage).toBeVisible({ timeout: 5000 });
 
     await cleanupUser(email).catch(() => {});
   });

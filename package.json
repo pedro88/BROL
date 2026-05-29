@@ -2,6 +2,7 @@
   "name": "brol",
   "private": true,
   "scripts": {
+    "postinstall": "pnpm --filter @brol/db generate",
     "build": "turbo build",
     "dev": "turbo dev --parallel",
     "lint": "turbo lint",

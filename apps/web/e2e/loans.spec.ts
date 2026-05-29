@@ -274,6 +274,24 @@ test.describe("create loan dialog", () => {
     await expect(page).toHaveURL(/\/loans/, { timeout: 8000 });
   });
 
+  test("lending to a non-Brol contact (no borrowerId) succeeds without 500", async () => {
+    // Regression for M008-2: previously threw "Emprunteur non trouvé" when
+    // the selected Contact had no linked Brol account. Now must fall back
+    // to borrowerContactId silently.
+    const res = await fetch(`${API_BASE}/api/trpc/loans.create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${testToken}`,
+      },
+      body: JSON.stringify({ objectId, contactId }),
+    });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.error).toBeUndefined();
+    expect(data.result?.data?.id).toBeTruthy();
+  });
+
   test("can create a new contact from within the loan dialog", async ({ page }) => {
     await page.goto(`${WEB_BASE}/objects/${objectId}`);
     await page.waitForLoadState("networkidle");

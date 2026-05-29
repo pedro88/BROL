@@ -94,7 +94,7 @@ export function ObjectCard({
                 <div className="mt-2 flex items-center gap-2 text-secondary">
                   <User className="w-3 h-3" />
                   <span className="font-mono text-xs">
-                    Prêté à {currentLoan.borrower.name}
+                    Prêté à {currentLoan.borrower.name ?? "Inconnu"}
                   </span>
                 </div>
               )}
