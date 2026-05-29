@@ -8,11 +8,34 @@ import { execSync } from "child_process";
 import path from "path";
 import { PrismaClient } from "@prisma/client";
 
-const dbUrl = process.env.DATABASE_URL ??
-  "postgresql://piet:brolpass@localhost:5432/brol_test?schema=public";
+// SAFETY: the teardown in `afterAll` below drops every table in the
+// connected schema. If we accept a DATABASE_URL that points at the live
+// dev/prod DB (e.g. `brol`), running `vitest` wipes real user data.
+//
+// We require an explicit opt-in via `TEST_DATABASE_URL`. If that's not set
+// we fall back to a clearly-named `brol_test` DB. We refuse to proceed if
+// the resolved URL doesn't end with `_test` (extra belt-and-braces guard).
+const dbUrl =
+  process.env.TEST_DATABASE_URL ??
+  "postgresql://postgres:password@localhost:5432/brol_test?schema=public";
 
-if (!process.env.DATABASE_URL) {
-  console.warn("[test] DATABASE_URL not set — falling back to hardcoded brol_test URL");
+{
+  const dbName = new URL(dbUrl).pathname.replace(/^\//, "").split("?")[0];
+  if (!dbName.endsWith("_test")) {
+    throw new Error(
+      `[test setup] Refusing to run tests against DB "${dbName}" — ` +
+        `the teardown drops every table. Use TEST_DATABASE_URL pointing at ` +
+        `a database whose name ends with "_test" (e.g. "brol_test").`,
+    );
+  }
+}
+
+if (!process.env.TEST_DATABASE_URL) {
+  // Intentionally use stderr directly here — the structured logger may not
+  // be wired up yet at test boot time.
+  process.stderr.write(
+    "[test] TEST_DATABASE_URL not set — falling back to brol_test\n",
+  );
 }
 
 export const prisma = new PrismaClient({
