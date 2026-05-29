@@ -111,6 +111,8 @@ Web a 19 pages, mobile a 12 écrans. Écrans à porter :
   dépassé.
 - [ ] **Tech** — Audit trail sur actions sensibles (sign-in/out, delete
   account, password change). Table `AuditLog` simple.
+- [x] **Tech** — ~~Backup Postgres automatique~~ — `scripts/db-backup.sh`
+  livré 2026-05-29. À déployer sur VPS via crontab (cf. MAINTENANCE §3).
 
 ---
 
@@ -149,9 +151,13 @@ Web a 19 pages, mobile a 12 écrans. Écrans à porter :
 
 Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
 
-- **2026-05-29** — Audit + P0 + P1 : 4 commits (3382fae, 2dad4c9,
-  cf34b91, 1a22d72, e6de769). 18 → 11 E2E rouges. +35 unit tests.
-  Logger structuré déployé. Migrations Prisma reconciliées.
+- **2026-05-29** — Audit + P0 + P1 + P3 : 8 commits (3382fae, 2dad4c9,
+  cf34b91, 1a22d72, e6de769, 10d6508, c74d921, ce ci). 18 → 11 E2E rouges.
+  +35 unit tests. Logger structuré déployé. Migrations Prisma
+  reconciliées. **Incident** : test setup a wipé la dev DB (DATABASE_URL
+  pris au lieu de TEST_DATABASE_URL) — restauration via `migrate deploy`,
+  données utilisateurs perdues. Garde-fou ajouté + script
+  `db-backup.sh` livré.
 - **2026-05-28** — Handle public `#piet1234` + QR profil (commits
   `a96739c`, `d2cbdd0`).
 - **2026-05-20** — Déploiement initial OK (cf. MAINTENANCE §1).

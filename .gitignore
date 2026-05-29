@@ -56,3 +56,6 @@ packages/*/src/**/*.d.ts.map
 # ── GSD worktrees ──
 .gsd/worktrees/
 .expo/
+
+# ── DB backups (scripts/db-backup.sh) ──
+backups/

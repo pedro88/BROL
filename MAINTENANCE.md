@@ -153,17 +153,64 @@ ssh piet@91.98.87.65 'cd /opt/brol && docker run --rm --network host \
   node:24-bookworm-slim sh -c "npx -y prisma@6.19.3 migrate deploy --schema=/prisma/schema.prisma"'
 ```
 
-### Backup Postgres (manuel)
+### Backup Postgres
+
+Le script `scripts/db-backup.sh` automatise pg_dump + rotation. Il lit
+`DATABASE_URL` depuis `.env`, dump en gzip, et garde les `BACKUP_RETAIN`
+derniers (défaut 14).
+
+#### Dev local — daily cron
 
 ```bash
-ssh piet@91.98.87.65 'sudo -u postgres pg_dump brol | gzip > /opt/brol/backups/brol-$(date +%Y%m%d-%H%M).sql.gz'
+crontab -e
+# Ajouter :
+0 3 * * * cd /home/piet/Projets/webDev/BROL && bash scripts/db-backup.sh >> /var/log/brol-backup.log 2>&1
+```
+
+Test à chaud :
+
+```bash
+bash scripts/db-backup.sh
+ls -lah backups/
+```
+
+#### VPS prod — hourly retention 72h
+
+```bash
+ssh piet@91.98.87.65 'sudo crontab -e'
+# Ajouter :
+0 * * * * cd /opt/brol && BACKUP_RETAIN=72 bash scripts/db-backup.sh /opt/brol/backups >> /var/log/brol-backup.log 2>&1
+```
+
+Vérifier les logs :
+
+```bash
+ssh piet@91.98.87.65 'tail -20 /var/log/brol-backup.log'
+```
+
+#### Backup ponctuel manuel
+
+```bash
+# Local
+bash scripts/db-backup.sh
+
+# Prod (via SSH)
+ssh piet@91.98.87.65 'cd /opt/brol && bash scripts/db-backup.sh /opt/brol/backups'
 ```
 
 ### Restore
 
 ```bash
-ssh piet@91.98.87.65 'gunzip -c /opt/brol/backups/brol-YYYYMMDD-HHMM.sql.gz | sudo -u postgres psql brol'
+# Décompresser + injecter dans une DB vide
+gunzip -c backups/brol-YYYYMMDD-HHMMSS.sql.gz | psql "$DATABASE_URL"
+
+# Prod
+ssh piet@91.98.87.65 \
+  'gunzip -c /opt/brol/backups/brol-YYYYMMDD-HHMMSS.sql.gz | sudo -u postgres psql brol'
 ```
+
+⚠️ Avant restore en prod, **arrêter le container `brol-api`** pour éviter
+les écritures concurrentes pendant le replay.
 
 ### Renouvellement TLS
 
@@ -460,7 +507,7 @@ sudo systemctl status certbot.timer
 ## 9. À faire (dette technique)
 
 - [ ] Ajouter un endpoint `/health` sur l'API pour réactiver le healthcheck Docker
-- [ ] Cron de backup Postgres automatique
+- [x] ~~Cron de backup Postgres automatique~~ — `scripts/db-backup.sh` + cron documenté §3
 - [ ] Logs persistants (actuellement perdus quand on recycle les containers — ajouter `logging:` driver json-file avec rotation)
 - [ ] Setup CI/CD avec git push au lieu de rsync manuel
 - [ ] Compléter les credentials OAuth (Google/GitHub/Apple) et Resend dans `.env`
