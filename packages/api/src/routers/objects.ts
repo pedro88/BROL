@@ -27,7 +27,7 @@ export const objectsRouter = router({
       z.object({
         collectionId: z.string().cuid().optional(),
         status: z.enum(["all", "available", "lent", "borrowed"]).default("all"),
-        condition: z.string().optional(),
+        condition: z.enum(["NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR"]).optional(),
         search: z.string().optional(),
         ...paginationSchema.shape,
       })
@@ -49,7 +49,7 @@ export const objectsRouter = router({
                 ],
               }
             : {}),
-          ...(input.condition ? { condition: input.condition as any } : {}),
+          ...(input.condition ? { condition: input.condition } : {}),
         },
         include: {
           collection: {

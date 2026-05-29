@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { router, publicProcedure, protectedProcedure, TRPCError } from "../trpc";
 import {
   paginationSchema,
@@ -253,8 +254,9 @@ export const collectionsRouter = router({
         throw new Error("Collection non trouvée");
       }
 
-      // Build update data, excluding undefined fields
-      const updateData: Record<string, unknown> = {};
+      // Build update data, excluding undefined fields. Typed via Prisma's
+      // own update-input shape so we don't need an `as any` escape hatch.
+      const updateData: Prisma.CollectionUpdateInput = {};
       if (input.data.name !== undefined) updateData.name = input.data.name;
       if (input.data.description !== undefined) updateData.description = input.data.description;
       if (input.data.coverImage !== undefined) updateData.coverImage = input.data.coverImage;
@@ -265,8 +267,7 @@ export const collectionsRouter = router({
 
       return ctx.prisma.collection.update({
         where: { id: input.id },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data: updateData as any,
+        data: updateData,
       });
     }),
 
