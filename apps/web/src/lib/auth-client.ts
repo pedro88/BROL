@@ -7,6 +7,10 @@
  * @package @brol/web
  */
 
+import type { AuthUser, AuthSession, GetSessionResult } from "@brol/shared";
+
+export type { AuthUser, AuthSession };
+
 /**
  * URL de base de l'API Better-auth.
  * En prod : `https://api.brol.dev` (via NEXT_PUBLIC_API_URL inliné au build).
@@ -27,14 +31,14 @@ const baseUrl = getBaseUrl();
 // ============================================================================
 
 export interface SignInResult {
-  session?: unknown;
-  user?: unknown;
+  session?: AuthSession;
+  user?: AuthUser;
   error?: string;
 }
 
 export interface SignUpResult {
-  session?: unknown;
-  user?: unknown;
+  session?: AuthSession;
+  user?: AuthUser;
   error?: string;
 }
 
@@ -66,7 +70,10 @@ export async function signInEmailPassword(
       return { error: data.message ?? "Sign-in failed" };
     }
 
-    return { session: data.session, user: data.user };
+    return {
+      session: data.session as AuthSession,
+      user: data.user as AuthUser,
+    };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Network error" };
   }
@@ -96,7 +103,10 @@ export async function signUpEmailPassword(
       return { error: data.message ?? "Sign-up failed" };
     }
 
-    return { session: data.session, user: data.user };
+    return {
+      session: data.session as AuthSession,
+      user: data.user as AuthUser,
+    };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Network error" };
   }
@@ -115,15 +125,23 @@ export async function signOut(): Promise<void> {
 
 /**
  * Fetches the current session from BetterAuth.
- * Returns the session object or null if not authenticated.
+ * Returns { session, user } or { session: null, user: null } if not authenticated.
  */
-export async function getSession(): Promise<unknown> {
+export async function getSession(): Promise<GetSessionResult> {
   try {
     const res = await fetch(`${baseUrl}/api/auth/get-session`, {
       credentials: "include",
     });
-    return res.json();
+    if (!res.ok) return { session: null, user: null };
+    const data = await res.json();
+    if (data?.session && data?.user) {
+      return {
+        session: data.session as AuthSession["session"],
+        user: data.user as AuthUser,
+      };
+    }
+    return { session: null, user: null };
   } catch {
-    return null;
+    return { session: null, user: null };
   }
 }

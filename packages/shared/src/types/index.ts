@@ -189,6 +189,40 @@ export interface QrPdfDocument {
 }
 
 // ============================================
+// TYPES AUTH (Better Auth)
+// ============================================
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string | null;
+  emailVerified: boolean | null;
+  image: string | null;
+}
+
+export interface AuthSession {
+  session: {
+    id: string;
+    token: string;
+    userId: string;
+    expiresAt: Date | string;
+  };
+  user: AuthUser;
+}
+
+export interface AuthResult {
+  session?: AuthSession;
+  user?: AuthUser;
+  sessionToken?: string;
+  error?: string;
+}
+
+export interface GetSessionResult {
+  session: AuthSession["session"] | null;
+  user: AuthUser | null;
+}
+
+// ============================================
 // TYPES API
 // ============================================
 

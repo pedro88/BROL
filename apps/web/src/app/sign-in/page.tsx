@@ -119,11 +119,8 @@ export default function SignInPage() {
       // /!\ getSession() utilise NEXT_PUBLIC_API_URL en interne — il faut taper
       // l'API Better-auth (api.brol.dev), pas le web (app.brol.dev) qui n'a pas
       // de handler /api/auth/*. Garder ce détour évite un 500 dans la console.
-      const data = (await getSession()) as
-        | { session?: { token?: string }; token?: string }
-        | null;
-      const token = data?.session?.token ?? data?.token;
-      if (token) setSessionToken(token);
+      const { session } = await getSession();
+      if (session?.token) setSessionToken(session.token);
     } catch {
       // Non-critical — cookie auth still works
     }

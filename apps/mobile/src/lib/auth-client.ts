@@ -9,6 +9,9 @@
  */
 
 import Constants from "expo-constants";
+import type { AuthUser, AuthSession } from "@brol/shared";
+
+export type { AuthUser, AuthSession };
 
 /**
  * Get API base URL from environment.
@@ -34,24 +37,6 @@ const baseUrl = getBaseUrl();
 // ============================================================================
 // Types
 // ============================================================================
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string | null;
-  emailVerified: boolean | null;
-  image: string | null;
-}
-
-export interface AuthSession {
-  session: {
-    id: string;
-    token: string;
-    userId: string;
-    expiresAt: Date | string;
-  };
-  user: AuthUser;
-}
 
 export interface SignInResult {
   session?: AuthSession;
