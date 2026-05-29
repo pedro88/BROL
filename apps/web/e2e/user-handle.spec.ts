@@ -12,6 +12,7 @@
 import { test, expect, Page } from "@playwright/test";
 import {
   signIn,
+  clearSession,
   createUserAPI,
   cleanupUser,
   uniqueEmail,
@@ -65,6 +66,21 @@ async function createObjectAPI(
   });
   const data = await res.json();
   if (data.error) throw new Error(`createObjectAPI: ${JSON.stringify(data.error)}`);
+  return { id: data.result?.data?.id };
+}
+
+async function createLoanToUserAPI(
+  ownerToken: string,
+  objectId: string,
+  borrowerUserId: string,
+): Promise<{ id: string }> {
+  const res = await fetch(`${API_BASE}/api/trpc/loans.create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${ownerToken}` },
+    body: JSON.stringify({ objectId, userId: borrowerUserId }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(`createLoanToUserAPI: ${JSON.stringify(data.error)}`);
   return { id: data.result?.data?.id };
 }
 
@@ -226,5 +242,64 @@ test.describe("borrower-select dialog — ID/handle lookup", () => {
     await expect(
       page.getByText(/ajouter un emprunteur/i),
     ).not.toBeVisible({ timeout: 3000 });
+  });
+});
+
+// ============================================================================
+// Loan propagation — borrower sees the loan in "Empruntés"
+// ============================================================================
+
+test.describe("loan A → B propagates to borrower's Empruntés tab", () => {
+  let ownerEmail: string;
+  let ownerToken: string;
+  let borrowerEmail: string;
+  let borrowerPassword: string;
+  let borrowerUserId: string;
+  let objectName: string;
+
+  test.beforeEach(async () => {
+    const password = "TestPass123!";
+
+    // Owner (A): creates collection + object, then lends to B.
+    ownerEmail = uniqueEmail();
+    const owner = await createUserAPI(ownerEmail, password, "Lender Alice");
+    ownerToken = owner.token;
+    const col = await createCollectionAPI(ownerToken, "Alice Collection");
+    objectName = `Borrowed Book ${Date.now()}`;
+    const obj = await createObjectAPI(ownerToken, col.id, objectName);
+
+    // Borrower (B): the target user receiving the loan.
+    borrowerEmail = uniqueEmail();
+    borrowerPassword = password;
+    const borrower = await createUserAPI(borrowerEmail, password, "Borrower Bob");
+    borrowerUserId = borrower.user.id;
+
+    // A creates the loan to B directly via API (mirrors what the UI flow
+    // posts after selecting B by handle/QR in the borrower-select dialog).
+    await createLoanToUserAPI(ownerToken, obj.id, borrowerUserId);
+  });
+
+  test.afterEach(async () => {
+    await cleanupUser(ownerEmail).catch(() => {});
+    await cleanupUser(borrowerEmail).catch(() => {});
+  });
+
+  test("borrower sees the loaned object under Empruntés with the owner's name", async ({
+    page,
+  }) => {
+    // Sign in as B (the borrower).
+    await clearSession(page);
+    await signIn(page, borrowerEmail, borrowerPassword);
+
+    await page.goto(`${WEB_BASE}/loans`);
+    await page.waitForLoadState("networkidle");
+
+    // Switch to the "Empruntés" tab (rendered as a plain <button>, not role=tab).
+    await page.getByRole("button", { name: /empruntés/i }).first().click();
+    await page.waitForLoadState("networkidle");
+
+    // The object name and the owner's name must appear in B's borrowed list.
+    await expect(page.getByText(objectName).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Lender Alice/i).first()).toBeVisible({ timeout: 5000 });
   });
 });
