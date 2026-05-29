@@ -14,6 +14,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 // OAuth providers — commented out for future use
 // import { google, github, apple } from "better-auth/social-providers";
 import { prisma } from "@brol/db";
+import { generateHandle } from "./lib/handle";
 
 // ============================================================================
 // Shared base config — both instances use the same options
@@ -38,6 +39,8 @@ export interface AuthOptions {
       input?: { type: string; nullable?: boolean };
     }>;
   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  databaseHooks?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   socialProviders?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -112,6 +115,23 @@ function baseAuthConfig(overrides?: {
           output: {
             type: "string",
             nullable: true,
+          },
+        },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user: { id: string; name?: string | null }) => {
+            try {
+              const handle = await generateHandle(prisma, user.name);
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { handle },
+              });
+            } catch (err) {
+              console.error("[auth] Failed to generate handle for user", user.id, err);
+            }
           },
         },
       },

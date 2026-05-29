@@ -15,10 +15,15 @@ export const profileRouter = router({
   get: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: input.userId },
+      // Accept cuid OR handle (with optional "#" prefix)
+      const raw = input.userId.trim();
+      const handleCandidate = raw.replace(/^#/, "").toLowerCase();
+
+      const user = await ctx.prisma.user.findFirst({
+        where: { OR: [{ id: raw }, { handle: handleCandidate }] },
         select: {
           id: true,
+          handle: true,
           name: true,
           email: true,
           image: true,
@@ -38,14 +43,14 @@ export const profileRouter = router({
 
       // Calculer la note moyenne
       const reviews = await ctx.prisma.review.aggregate({
-        where: { targetId: input.userId },
+        where: { targetId: user.id },
         _avg: { rating: true },
         _count: { id: true },
       });
 
       // Récupérer les badges
       const badges = await ctx.prisma.userBadge.findMany({
-        where: { userId: input.userId },
+        where: { userId: user.id },
         include: {
           badge: {
             select: {
@@ -61,6 +66,7 @@ export const profileRouter = router({
 
       return {
         id: user.id,
+        handle: user.handle,
         name: user.name,
         email: user.email,
         image: user.image,

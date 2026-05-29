@@ -26,10 +26,12 @@ export const usersRouter = router({
           OR: [
             { name: { contains: q, mode: "insensitive" } },
             { email: { contains: q, mode: "insensitive" } },
+            { handle: { contains: q.replace(/^#/, "").toLowerCase(), mode: "insensitive" } },
           ],
         },
         select: {
           id: true,
+          handle: true,
           name: true,
           email: true,
           image: true,
@@ -44,6 +46,7 @@ export const usersRouter = router({
 
       return users.map((user) => ({
         id: user.id,
+        handle: user.handle,
         name: user.name,
         email: user.email,
         image: user.image,
@@ -52,16 +55,22 @@ export const usersRouter = router({
     }),
 
   /**
-   * Récupère un utilisateur par son ID.
-   * Utilisé pour le lookup direct (ID tapé ou QR scan).
+   * Récupère un utilisateur par son ID (cuid) ou son handle.
+   * Accepte: cuid brut, handle brut ("piet1234"), ou handle préfixé ("#piet1234").
    */
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: input.id },
+      const raw = input.id.trim();
+      const handleCandidate = raw.replace(/^#/, "").toLowerCase();
+
+      const user = await ctx.prisma.user.findFirst({
+        where: {
+          OR: [{ id: raw }, { handle: handleCandidate }],
+        },
         select: {
           id: true,
+          handle: true,
           name: true,
           email: true,
           image: true,
@@ -79,12 +88,62 @@ export const usersRouter = router({
 
       return {
         id: user.id,
+        handle: user.handle,
         name: user.name,
         email: user.email,
         image: user.image,
         avatarUrl: user.profile?.avatarUrl,
       };
     }),
+
+  /**
+   * Récupère un utilisateur par son handle public ("piet1234").
+   * Tolère le préfixe "#" optionnel.
+   */
+  getByHandle: protectedProcedure
+    .input(z.object({ handle: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const handle = input.handle.trim().replace(/^#/, "").toLowerCase();
+
+      const user = await ctx.prisma.user.findUnique({
+        where: { handle },
+        select: {
+          id: true,
+          handle: true,
+          name: true,
+          email: true,
+          image: true,
+          profile: {
+            select: {
+              avatarUrl: true,
+            },
+          },
+        },
+      });
+
+      if (!user) return null;
+
+      return {
+        id: user.id,
+        handle: user.handle,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        avatarUrl: user.profile?.avatarUrl,
+      };
+    }),
+
+  /**
+   * Récupère le handle de l'utilisateur authentifié.
+   * Utilisé par les pages de profil/settings pour afficher le QR.
+   */
+  me: protectedProcedure.query(async ({ ctx }) => {
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: ctx.userId },
+      select: { id: true, handle: true, name: true, email: true, image: true },
+    });
+    return user;
+  }),
 });
 
 export type UsersRouter = typeof usersRouter;

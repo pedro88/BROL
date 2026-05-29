@@ -18,6 +18,7 @@ generator client {
 
 model User {
   id        String   @id @default(cuid())
+  handle    String?  @unique // Public handle e.g. "piet1234" (slug + 4 random digits)
   email     String   @unique
   name      String?
   image     String?  // BetterAuth: avatarUrl → image

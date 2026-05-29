@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Header, Navigation } from "@/components/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Crown, Zap, User, ExternalLink } from "lucide-react";
+import { Crown, Zap, User, ExternalLink, Copy, Check, QrCode } from "lucide-react";
 import { UserAvatar } from "@/components/profile/user-avatar";
+import { QrCodeImage } from "@/components/qr/qr-code-image";
+import { toast } from "sonner";
 
 function ProgressBar({
   current,
@@ -61,8 +64,29 @@ const TIER_INFO = {
 export default function SettingsPage() {
   const { data, isLoading: tierLoading } = trpc.tier.getLimits.useQuery();
   const { data: sessionData, isLoading: sessionLoading } = trpc.auth.me.useQuery();
+  const { data: meData } = trpc.users.me.useQuery();
   const user = sessionData?.user;
+  const handle = meData?.handle ?? null;
   const isLoading = tierLoading || sessionLoading;
+  const [showQr, setShowQr] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const profileUrl =
+    handle && typeof window !== "undefined"
+      ? `${window.location.origin}/profile/${handle}`
+      : null;
+
+  async function handleCopyHandle() {
+    if (!handle) return;
+    try {
+      await navigator.clipboard.writeText(`#${handle}`);
+      setCopied(true);
+      toast.success("Handle copié");
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Impossible de copier");
+    }
+  }
 
   if (isLoading) {
     return (
@@ -111,13 +135,56 @@ export default function SettingsPage() {
                 {user?.email || ""}
               </p>
             </div>
-            <Link href={user?.id ? `/profile/${user.id}` : "#"}>
+            <Link href={user?.id ? `/profile/${handle ?? user.id}` : "#"}>
               <Button variant="outline" size="sm">
                 <ExternalLink className="w-4 h-4 mr-1" />
                 Voir
               </Button>
             </Link>
           </div>
+
+          {/* Handle + QR */}
+          {handle && (
+            <div className="pt-4 border-t border-border space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                    Mon identifiant
+                  </p>
+                  <p className="font-mono text-lg text-primary truncate">
+                    #{handle}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyHandle}
+                  aria-label="Copier l'identifiant"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowQr((v) => !v)}
+                  aria-label="Afficher le QR code"
+                >
+                  <QrCode className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {showQr && profileUrl && (
+                <div className="flex flex-col items-center gap-2 pt-2">
+                  <QrCodeImage code={profileUrl} size={200} />
+                  <p className="font-mono text-xs text-muted-foreground text-center">
+                    Scannez pour m'ajouter comme ami
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tier section */}

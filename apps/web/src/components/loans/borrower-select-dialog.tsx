@@ -280,13 +280,13 @@ export function BorrowerSelectDialog({
           {tab === "id-qr" && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="userIdInput">ID Utilisateur</Label>
+                <Label htmlFor="userIdInput">Identifiant ou ID</Label>
                 <div className="relative">
                   <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     id="userIdInput"
                     type="text"
-                    placeholder="Tappez un ID utilisateur..."
+                    placeholder="#piet1234 ou ID brut"
                     value={userIdInput}
                     onChange={(e) => setUserIdInput(e.target.value)}
                     className="w-full bg-input border-2 border-border pl-10 pr-10 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
