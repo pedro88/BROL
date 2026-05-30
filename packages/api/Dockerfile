@@ -34,7 +34,7 @@ COPY apps/web/package.json apps/web/
 COPY apps/mobile/package.json apps/mobile/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store && \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --ignore-scripts
 
 # ---------- Builder : génération Prisma + bundle esbuild ----------
 FROM deps AS builder
@@ -47,7 +47,12 @@ COPY packages/api/src packages/api/src
 COPY packages/api/tsconfig.json packages/api/
 COPY packages/tsconfig packages/tsconfig
 COPY tsconfig.json ./
-RUN pnpm --filter @brol/db exec prisma generate
+# Postinstall équivalent : générer le client Prisma, puis créer le symlink
+# node_modules/.prisma vers la copie hoistée par pnpm. Cf. scripts/postinstall.sh
+# (non copié dans l'image car la logique est inlinée ici).
+RUN pnpm --filter @brol/db exec prisma generate \
+ && GEN_DIR=$(find node_modules/.pnpm -maxdepth 4 -type d -name ".prisma" 2>/dev/null | head -1) \
+ && if [ -n "$GEN_DIR" ]; then REL=$(realpath --relative-to=node_modules "$GEN_DIR") && ln -sfn "$REL" node_modules/.prisma; fi
 RUN pnpm --filter @brol/api run build
 
 # ---------- Runner : image finale ----------
