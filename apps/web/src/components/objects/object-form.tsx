@@ -101,10 +101,15 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
     }
   }, [collectionId, setValue]);
 
+  // Track the currently-selected collectionId (prop OR form-watched value, so the
+  // dropdown sélection se propage à `objectType`).
+  const watchedCollectionId = watch("collectionId");
+  const effectiveCollectionId = collectionId ?? watchedCollectionId;
+
   // Fetch the target collection to get its type
   const { data: targetCollection } = trpc.collections.get.useQuery(
-    { id: collectionId ?? "" },
-    { enabled: !!collectionId }
+    { id: effectiveCollectionId ?? "" },
+    { enabled: !!effectiveCollectionId }
   );
 
   // Determine objectType from collection.type — use state to update when collection changes
@@ -128,7 +133,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   // Fetch QR codes
   const { data: qrCodes } = trpc.qr.listStock.useQuery(
     { used: false },
-    { enabled: !!collectionId }
+    { enabled: !!effectiveCollectionId }
   );
 
   // QR state
@@ -391,17 +396,20 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         )}
       </div>
 
-      {/* Author / type-specific */}
-      <div className="space-y-2">
-        <Label htmlFor="author" className="font-mono text-xs uppercase">
-          {authorInfo.label}
-        </Label>
-        <Input
-          id="author"
-          placeholder={authorInfo.placeholder}
-          {...register("author")}
-        />
-      </div>
+      {/* Author / type-specific — CLOTHING + TOOL ont leur propre champ `brand`
+          dans la section dédiée. */}
+      {objectType !== "CLOTHING" && objectType !== "TOOL" && (
+        <div className="space-y-2">
+          <Label htmlFor="author" className="font-mono text-xs uppercase">
+            {authorInfo.label}
+          </Label>
+          <Input
+            id="author"
+            placeholder={authorInfo.placeholder}
+            {...register("author")}
+          />
+        </div>
+      )}
 
       {/* Edition / Model */}
       <div className="space-y-2">

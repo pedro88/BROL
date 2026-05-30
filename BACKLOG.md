@@ -45,6 +45,11 @@
   vérifié 2026-05-30. `loan.returnDueDate` formatté fr-BE,
   `href={\`/objects/${loan.object.id}\`}`
   (`apps/web/src/app/page.tsx:147-149, 159-168`).
+- [x] **Bug** — ~~Card "Objets" hauteur incohérente~~ — fix
+  2026-05-30. `StatCard` réserve maintenant un slot `trend`
+  permanent (espace insécable si vide) + `h-full` + `flex flex-col`
+  sur la card et `h-full` sur le `Link` wrapper. Toutes les cards
+  s'alignent (`apps/web/src/app/page.tsx:222-238, 244`).
 
 ### Création d'objet — par type
 
@@ -63,17 +68,72 @@
 - [x] **Feat** — ~~deposit + rentalPriceDay/Hour/Week sur tout type~~ —
   déjà présents avant ce sprint (`cautionAmount` + `rentalPriceDay`/
   `Hour`/`Week`/`Km` sur `Object`).
+- [x] **Bug** — ~~Champ "Marque" doublé sur TOOL (et CLOTHING)~~ —
+  fix 2026-05-30. Le champ `author` était labellisé "Marque /
+  Fabricant" par `authorLabels[TOOL]`, en plus du nouveau `brand`
+  dédié. Solution : masquer `author` pour CLOTHING + TOOL, ne
+  garder que `brand`. Idem dans `edit-object-dialog.tsx`. Migration
+  data `author → brand` pour les anciens objets : à faire séparément
+  (cf. **Idées non-priorisées**).
 
 ### Flux UX d'ajout d'objet
 
-- [ ] **Feat** — Permettre l'upload de photo dès la **création** (pas
-  uniquement à l'édit). Toucher `apps/web/src/components/objects/object-form.tsx`.
-- [ ] **Feat** — Mobile : scanner QR pour assigner à l'objet créé.
+- [x] **Feat** — ~~Upload de photo dès la création~~ — vérifié
+  2026-05-30. `PhotoPicker` câblé dans `object-form.tsx:372-381`,
+  upload via S3 presigned URL après création
+  (`object-form.tsx:257-267`).
+- [x] **Bug** — ~~Pas de redirect modal d'édit après création~~ —
+  vérifié 2026-05-30. `apps/web/src/app/objects/add/page.tsx:48`
+  redirige vers `/collections/{collectionId}`. Test E2E
+  "object add — no redirect after creation" passe.
+- [x] **Feat** — ~~Modal d'édit objet adaptée au type~~ — vérifié
+  2026-05-30. `EditObjectDialog` rend les sections type-spécifiques
+  (`showBoardGameFields`, `showElectricFields`, `showClothingFields`,
+  `showToolFields`, `showCustomFields` à
+  `edit-object-dialog.tsx:91-95`).
+- [ ] **Feat mobile** — Scanner QR pour assigner à l'objet créé.
   Composant `apps/mobile/src/components/qr-scanner.tsx` + écran
-  `objects/add.tsx`.
-- [ ] **Bug** — Après création, ne PAS rediriger sur la modal d'édit.
-- [ ] **Feat** — Modal d'édit objet adaptée au type (afficher les champs
-  CLOTHING / TOOL spécifiques).
+  `objects/add.tsx`. Bloqué par parité mobile (cf. section dédiée).
+- [x] **Bug** — ~~Action rapide "AJOUTER UN OBJET" toujours BOOK~~ —
+  fix 2026-05-30. `ObjectForm` ne dérivait `objectType` qu'à partir
+  du prop `collectionId` ; quand l'auto-sélection (premier item de
+  `collections.list`) mettait à jour le champ form, la query
+  `collections.get` ne se relançait pas. Maintenant la query suit
+  `watch("collectionId")` via `effectiveCollectionId` =
+  `collectionId ?? watchedCollectionId`, et l'`objectType` se met à
+  jour quand l'utilisateur change de collection dans le dropdown.
+  (`object-form.tsx:103-128`)
+
+### Affichage / accès objet
+
+- [x] **Feat** — ~~Page `/objects/[id]` toujours accessible~~ — livré
+  2026-05-30. Nouvelle procédure `objects.getPublic` (publicProcedure)
+  qui retourne 3 niveaux d'accès :
+  - **owner** : toutes les infos (équivalent ancien `get`) + `loans`
+    + `qrStock` + flags `isOwner=true`.
+  - **viaContact** (caller a un `Contact` lié au `User` propriétaire) :
+    vue enrichie read-only (notes, brand, type-spécifiques, caution
+    + prix de location). Pas de `loans` ni `qrStock` (réservés
+    owner). Flag `viaContact=true`.
+  - **anonyme** : champs publics seuls (nom, auteur, condition,
+    photos, collection name + owner name/handle). Pas de notes,
+    pricing, ni infos privées.
+  - `objects.get` modifié : retourne `null` au lieu de throw quand
+    caller ≠ owner (graceful fallback côté frontend).
+  - Page `/objects/[id]` consomme **les 2 queries en parallèle** :
+    `get` (protégée, owner-only ; retry au cas où le token n'est pas
+    encore sync) → si data, vue owner complète ; sinon fallback sur
+    `getPublic`. Cette stratégie évite que la version anonyme de
+    `getPublic` reste en cache pendant la course init session.
+  - Badge "Via votre contact" / "Objet partagé" en haut quand
+    `!isOwner`. Boutons Modifier / Supprimer / Prêter / QR
+    assign masqués hors owner. Action "Demander à la communauté"
+    reste accessible.
+  - `trpc-provider` : invalide aussi le `QueryClient` quand
+    `sessionTokenStore` change, pour purger les responses anonymes
+    cachées au premier render.
+  - Tests unit : 5 cas pour `getPublic` (anonyme, owner, viaContact,
+    unauthenticated, null id).
 
 ### Loans / contacts
 
@@ -83,13 +143,41 @@
   `BorrowerSelectDialog` qui a une recherche live sur contacts +
   utilisateurs Brol (`borrower-select-dialog.tsx:183-277`). Aucun
   flux divergent à harmoniser.
+- [x] **Bug** — ~~Historique owner/borrower~~ — fix 2026-05-30.
+  `loans.history` expose maintenant `viewAs: "owner" | "borrower"`
+  par item (dérivé de `loan.ownerId === ctx.userId`). `LoanCard`
+  utilise ce flag, affiche "Emprunté le X" au lieu de "Prêté le X"
+  côté borrower, et masque le bouton "Marquer rendu" (déjà gardé
+  par `viewAs === "owner"`). 2 tests unit ajoutés.
+- [x] **Feat** — ~~Cards objets cliquables sur `/loans`~~ — livré
+  2026-05-30. `LoanCard` enveloppe cover + nom + statut dans un
+  `<Link href="/objects/{id}">`. Hover opacity. (`ObjectPickerDialog`
+  laissé tel quel — click = sélection pour prêt.)
+- [x] **Feat** — ~~Auto-ajout du borrower en contact~~ — livré
+  2026-05-30. `loans.create` lookup `Contact` existant
+  (`userId=caller, borrowerId=user.id`). Si absent, crée le contact
+  avec `name` + `email` hydratés du `User`. Best-effort (try/catch
+  silencieux). 2 tests unit (création + idempotent).
 - [x] **Feat** — ~~Créer contact depuis modal de prêt + cohérence
   champs~~ — livré 2026-05-30. Onglet "Nouveau" du
   `BorrowerSelectDialog` accepte maintenant aussi le champ `note`
   (manquait par rapport au `ContactDialog` standalone). Parité
   Nom/Email/Téléphone/Note avec `/contacts`.
 
-### Parité mobile
+### QR codes / impression
+
+- [x] **Feat** — ~~`/qr` affiche l'objet associé~~ — livré 2026-05-30.
+  `qr.listStock` inclut la relation `objects` (cuid + name + cover
+  + collection name/type), aplatie en `object` (1-1). UI : cards
+  utilisées affichent thumbnail + nom + collection, clic → page
+  détail objet. Cards libres montrent le code brut.
+- [x] **Feat** — ~~Multi-sélection + PDF avec choix de taille~~ —
+  livré 2026-05-30. Checkbox par card + bouton "Tout sélectionner /
+  Effacer". Select "Taille des QR" (20/30/40/60 mm). Bouton
+  "Imprimer / PDF" ouvre une fenêtre HTML imprimable avec grille
+  CSS (auto-fill + page-break-inside avoid). Pas de dépendance
+  jsPDF — utilise le dialog d'impression du navigateur pour générer
+  le PDF.
 
 Web a 19 pages, mobile a 12 écrans. Écrans à porter :
 

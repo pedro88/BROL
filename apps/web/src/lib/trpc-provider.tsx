@@ -8,8 +8,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@brol/api";
-import { useState } from "react";
-import { getSessionToken } from "./auth-store";
+import { useEffect, useState } from "react";
+import { getSessionToken, sessionTokenStore } from "./auth-store";
 import { trpc } from "./trpc";
 
 /**
@@ -46,6 +46,24 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       ],
     }),
   );
+
+  // Invalide les queries quand le token de session change (sign-in ou
+  // sync différé par AuthSessionSyncer). Sans ça, les queries qui se
+  // sont firées AVANT que le token soit dispo restent en cache en mode
+  // anonyme — c'est ce qui faisait que `objects.getPublic` retournait
+  // `isOwner=false` même après authentification.
+  useEffect(() => {
+    let prev = sessionTokenStore.get();
+    const unsub = sessionTokenStore.subscribe((token) => {
+      if (token !== prev) {
+        prev = token;
+        queryClient.invalidateQueries();
+      }
+    });
+    return () => {
+      unsub();
+    };
+  }, [queryClient]);
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>

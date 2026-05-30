@@ -211,17 +211,19 @@ export function EditObjectDialog({
             />
           </div>
 
-          {/* Author */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-author" className="font-mono text-xs uppercase">
-              Auteur / Marque
-            </Label>
-            <Input
-              id="edit-author"
-              placeholder="Auteur ou marque"
-              {...register("author")}
-            />
-          </div>
+          {/* Author — CLOTHING + TOOL ont leur propre champ `brand`. */}
+          {!showClothingFields && !showToolFields && (
+            <div className="space-y-2">
+              <Label htmlFor="edit-author" className="font-mono text-xs uppercase">
+                Auteur / Marque
+              </Label>
+              <Input
+                id="edit-author"
+                placeholder="Auteur ou marque"
+                {...register("author")}
+              />
+            </div>
+          )}
 
           {/* Edition */}
           <div className="space-y-2">

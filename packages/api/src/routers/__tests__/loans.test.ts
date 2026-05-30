@@ -132,6 +132,48 @@ describe("loansRouter", () => {
       ).rejects.toThrow("Objet non trouvé");
     });
 
+    it("auto-creates a contact when lending to a Brol user with no existing contact", async () => {
+      // Owner does not yet have `borrower` in their contacts (only `contact`
+      // exists, which is linked to borrower). Cleanup that link first to
+      // simulate a fresh state.
+      await prisma.contact.deleteMany({ where: { userId: owner.id } });
+
+      const before = await prisma.contact.findFirst({
+        where: { userId: owner.id, borrowerId: borrower.id },
+      });
+      expect(before).toBeNull();
+
+      await callerFor(owner.id).loans.create({
+        objectId: object.id,
+        userId: borrower.id,
+      });
+
+      const after = await prisma.contact.findFirst({
+        where: { userId: owner.id, borrowerId: borrower.id },
+      });
+      expect(after).not.toBeNull();
+      expect(after?.name).toBe("Borrower");
+      expect(after?.email).toBe("borrower@example.com");
+    });
+
+    it("does NOT duplicate an existing contact when lending to the same user twice", async () => {
+      // First lend (with contact already pointing to borrower from beforeEach)
+      const contactsBefore = await prisma.contact.count({
+        where: { userId: owner.id, borrowerId: borrower.id },
+      });
+      expect(contactsBefore).toBe(1);
+
+      await callerFor(owner.id).loans.create({
+        objectId: object.id,
+        userId: borrower.id,
+      });
+
+      const contactsAfter = await prisma.contact.count({
+        where: { userId: owner.id, borrowerId: borrower.id },
+      });
+      expect(contactsAfter).toBe(1);
+    });
+
     it("throws when object already on loan", async () => {
       await prisma.loan.create({
         data: {
@@ -220,6 +262,34 @@ describe("loansRouter", () => {
 
       const result = await callerFor(owner.id).loans.history();
       expect(result.items).toHaveLength(1);
+    });
+
+    it("sets viewAs=owner when caller is the lender", async () => {
+      await prisma.loan.create({
+        data: {
+          objectId: object.id,
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          status: "ACTIVE",
+        },
+      });
+
+      const result = await callerFor(owner.id).loans.history();
+      expect(result.items[0].viewAs).toBe("owner");
+    });
+
+    it("sets viewAs=borrower when caller is the borrower", async () => {
+      await prisma.loan.create({
+        data: {
+          objectId: object.id,
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          status: "ACTIVE",
+        },
+      });
+
+      const result = await callerFor(borrower.id).loans.history();
+      expect(result.items[0].viewAs).toBe("borrower");
     });
   });
 

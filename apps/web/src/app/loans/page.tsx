@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Header, Navigation } from "../../components/navigation";
 import { Button } from "../../components/ui/button";
@@ -131,9 +132,12 @@ function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
 
   return (
     <div className={`card-vhs p-4 ${isOverdue ? "border-destructive/50" : ""}`}>
-      {/* Object info */}
-      <div className="flex items-start gap-3 mb-3">
-        <div className="w-12 h-12 rounded bg-muted flex items-center justify-center overflow-hidden">
+      {/* Object info — cover + nom cliquables vers la page détail */}
+      <Link
+        href={`/objects/${loan.object.id}`}
+        className="flex items-start gap-3 mb-3 hover:opacity-80 transition-opacity"
+      >
+        <div className="w-12 h-12 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
           {loan.object.coverImage ? (
             <img
               src={loan.object.coverImage}
@@ -151,11 +155,13 @@ function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
           <p className="text-xs text-muted-foreground">{contactName}</p>
         </div>
         <StatusBadge status={loan.computedStatus} />
-      </div>
+      </Link>
 
       {/* Dates */}
       <div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-3">
-        <span>Prêté le {formatDate(loan.lentAt)}</span>
+        <span>
+          {viewAs === "owner" ? "Prêté" : "Emprunté"} le {formatDate(loan.lentAt)}
+        </span>
         {loan.returnDueDate && (
           <span className={isOverdue ? "text-destructive" : ""}>
             ← {formatRelativeDate(loan.returnDueDate)}
@@ -431,15 +437,27 @@ function LoansContent() {
         {/* Loan list */}
         {!isLoading && currentLoans.length > 0 && (
           <div className="space-y-4">
-            {currentLoans.map((loan) => (
-              <LoanCard
-                key={loan.id}
-                loan={loan}
-                viewAs={activeTab === "borrowed" ? "borrower" : "owner"}
-                onReturn={handleReturn}
-                onRemind={handleRemind}
-              />
-            ))}
+            {currentLoans.map((loan) => {
+              // Sur "history" le serveur fournit `viewAs` par item
+              // (l'utilisateur peut être owner OU borrower). Sur les autres
+              // onglets, la valeur est dérivée du tab.
+              const viewAs: "owner" | "borrower" =
+                activeTab === "history"
+                  ? ((loan as typeof loan & { viewAs?: "owner" | "borrower" })
+                      .viewAs ?? "owner")
+                  : activeTab === "borrowed"
+                    ? "borrower"
+                    : "owner";
+              return (
+                <LoanCard
+                  key={loan.id}
+                  loan={loan}
+                  viewAs={viewAs}
+                  onReturn={handleReturn}
+                  onRemind={handleRemind}
+                />
+              );
+            })}
           </div>
         )}
 

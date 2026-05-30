@@ -35,13 +35,29 @@ export const qrRouter = router({
 
       const qrCodes = await ctx.prisma.qrStock.findMany({
         where,
+        include: {
+          // 1 QR ↔ 1 Object max (Object.qrStockId est `@unique`)
+          objects: {
+            select: {
+              id: true,
+              name: true,
+              coverImage: true,
+              collection: { select: { id: true, name: true, type: true } },
+            },
+          },
+        },
         orderBy: [{ used: "asc" }, { createdAt: "desc" }],
         take: input?.limit ?? 50,
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
       return {
-        items: qrCodes,
+        items: qrCodes.map((qr) => ({
+          ...qr,
+          // Aplatir la relation 1-1 pour simplifier le frontend.
+          object: qr.objects[0] ?? null,
+          objects: undefined,
+        })),
         nextCursor: qrCodes.length === (input?.limit ?? 50)
           ? qrCodes[qrCodes.length - 1].id
           : null,

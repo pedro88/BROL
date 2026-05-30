@@ -220,7 +220,7 @@ function StatCard({
   };
 
   const content = (
-    <div className="card-vhs p-3 text-center">
+    <div className="card-vhs p-3 text-center h-full flex flex-col">
       {icon && (
         <div className="flex justify-center mb-1 text-muted-foreground">
           {icon}
@@ -232,9 +232,10 @@ function StatCard({
       <p className="font-mono text-xs text-muted-foreground uppercase">
         {label}
       </p>
-      {trend && (
-        <p className="font-mono text-xs text-muted-foreground mt-1">{trend}</p>
-      )}
+      {/* Toujours réserver l'espace du trend pour aligner les hauteurs entre cards. */}
+      <p className="font-mono text-xs text-muted-foreground mt-1 min-h-[1rem]">
+        {trend ?? " "}
+      </p>
     </div>
   );
 
@@ -242,7 +243,7 @@ function StatCard({
     return (
       <Link
         href={href}
-        className="block hover:opacity-90 active:scale-[0.98] transition-all"
+        className="block h-full hover:opacity-90 active:scale-[0.98] transition-all"
       >
         {content}
       </Link>

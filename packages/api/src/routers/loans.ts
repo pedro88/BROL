@@ -210,7 +210,10 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
-      // Calculer le statut OVERDUE à la volée
+      // Calculer le statut OVERDUE à la volée + flag viewAs : la page de
+      // l'historique mélange les prêts où le caller est owner ET ceux où
+      // il est borrower. On l'expose ici pour que le frontend rende le bon
+      // libellé / actions.
       const loansWithComputedStatus = loans.map((loan) => ({
         ...loan,
         computedStatus:
@@ -221,6 +224,9 @@ export const loansRouter = router({
             : loan.status,
         borrowerName:
           loan.borrower?.name ?? loan.borrowerContact?.name ?? "Inconnu",
+        viewAs: (loan.ownerId === ctx.userId ? "owner" : "borrower") as
+          | "owner"
+          | "borrower",
       }));
 
       return {
@@ -285,6 +291,28 @@ export const loansRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "Vous ne pouvez pas vous prêter à vous-même." });
         }
         borrowerId = user.id;
+
+        // Auto-ajout en contact : si le caller n'a pas encore ce user
+        // dans ses contacts, en créer un automatiquement (best-effort,
+        // ne fait pas planter la création du prêt en cas d'erreur).
+        try {
+          const existingContact = await ctx.prisma.contact.findFirst({
+            where: { userId: ctx.userId, borrowerId: user.id },
+            select: { id: true },
+          });
+          if (!existingContact) {
+            await ctx.prisma.contact.create({
+              data: {
+                userId: ctx.userId,
+                borrowerId: user.id,
+                name: user.name ?? user.email,
+                email: user.email,
+              },
+            });
+          }
+        } catch {
+          // Silencieux : l'auto-ajout n'est pas critique.
+        }
       } else if (input.contactId) {
         // Emprunt via un contact de la liste
         const contact = await ctx.prisma.contact.findFirst({

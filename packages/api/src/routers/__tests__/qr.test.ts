@@ -85,6 +85,24 @@ describe("qrRouter", () => {
       expect(usedResult.items).toHaveLength(1);
       expect(unusedResult.items).toHaveLength(0);
     });
+
+    it("includes the linked object (with collection) for used QR codes", async () => {
+      const qr = (await callerFor(owner.id).qr.generateStock({ count: 1 })).codes[0];
+      await callerFor(owner.id).qr.assignToObject({ qrStockId: qr.id, objectId: object.id });
+
+      const result = await callerFor(owner.id).qr.listStock({ used: true });
+      expect(result.items[0].object).not.toBeNull();
+      expect(result.items[0].object?.id).toBe(object.id);
+      expect(result.items[0].object?.name).toBe(object.name);
+      expect(result.items[0].object?.collection?.name).toBeDefined();
+    });
+
+    it("returns object=null for unused QR codes", async () => {
+      await callerFor(owner.id).qr.generateStock({ count: 1 });
+
+      const result = await callerFor(owner.id).qr.listStock({ used: false });
+      expect(result.items[0].object).toBeNull();
+    });
   });
 
   describe("assignToObject", () => {

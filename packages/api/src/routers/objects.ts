@@ -267,6 +267,9 @@ export const objectsRouter = router({
 
   /**
    * Récupère un objet par son ID.
+   * Renvoie `null` si l'objet existe mais n'appartient pas au caller — le
+   * frontend peut alors basculer sur `getPublic` pour la vue publique /
+   * enrichie-via-contact (cf. `apps/web/src/app/objects/[id]/page.tsx`).
    */
   get: protectedProcedure
     .input(z.object({ id: z.string().cuid() }))
@@ -295,11 +298,142 @@ export const objectsRouter = router({
         },
       });
 
-      if (!object) {
-        throw new Error("Objet non trouvé");
+      return object;
+    }),
+
+  /**
+   * Récupère un objet avec une vue adaptée au niveau d'accès :
+   * - **owner** : toutes les infos (équivalent `get`).
+   * - **viaContact** : enrichi (caution, prix, photos, fields type-spécifiques)
+   *   mais pas d'historique de prêt ni de qrStock — réservés au propriétaire.
+   * - **anonyme** : infos publiques de base (nom, auteur, condition, photos,
+   *   collection name + owner name/handle).
+   *
+   * Toujours accessible (publicProcedure) — `null` si l'objet n'existe pas.
+   * Les flags `isOwner` + `viaContact` permettent au frontend d'adapter l'UI.
+   */
+  getPublic: publicProcedure
+    .input(z.object({ id: z.string().cuid() }))
+    .query(async ({ ctx, input }) => {
+      const object = await ctx.prisma.object.findUnique({
+        where: { id: input.id },
+        include: {
+          collection: {
+            include: {
+              user: {
+                select: { id: true, name: true, handle: true, image: true },
+              },
+            },
+          },
+          photos: {
+            orderBy: { position: "asc" as const },
+            select: { id: true, url: true, position: true, createdAt: true },
+          },
+          loans: {
+            include: {
+              borrower: {
+                select: { id: true, name: true, image: true },
+              },
+            },
+            orderBy: { lentAt: "desc" },
+          },
+          qrStock: true,
+        },
+      });
+
+      if (!object) return null;
+
+      const ownerId = object.collection.userId;
+      const isOwner = ctx.userId === ownerId;
+
+      let viaContact = false;
+      if (!isOwner && ctx.userId) {
+        const contact = await ctx.prisma.contact.findFirst({
+          where: { userId: ctx.userId, borrowerId: ownerId },
+          select: { id: true },
+        });
+        viaContact = !!contact;
       }
 
-      return object;
+      const owner = {
+        id: object.collection.user.id,
+        name: object.collection.user.name,
+        handle: object.collection.user.handle,
+        image: object.collection.user.image,
+      };
+
+      // Base publique — toujours visible
+      const basePublic = {
+        id: object.id,
+        name: object.name,
+        author: object.author,
+        edition: object.edition,
+        isbn: object.isbn,
+        coverImage: object.coverImage,
+        condition: object.condition,
+        objectType: object.objectType,
+        photos: object.photos,
+        collection: {
+          id: object.collection.id,
+          name: object.collection.name,
+          type: object.collection.type,
+          isPublic: object.collection.isPublic,
+        },
+        owner,
+        isOwner,
+        viaContact,
+      };
+
+      if (!isOwner && !viaContact) {
+        // Vue anonyme — pas de notes, pas de fields type-spécifiques, pas de pricing
+        return basePublic;
+      }
+
+      // Vue enrichie (owner ou viaContact)
+      const enriched = {
+        ...basePublic,
+        barcode: object.barcode,
+        notes: object.notes,
+        // BOARD_GAME
+        playersMin: object.playersMin,
+        playersMax: object.playersMax,
+        playingTimeMinutes: object.playingTimeMinutes,
+        ageMin: object.ageMin,
+        // ELECTRIC
+        powerWatts: object.powerWatts,
+        // CLOTHING
+        clothingSize: object.clothingSize,
+        clothingGender: object.clothingGender,
+        clothingColor: object.clothingColor,
+        clothingMaterial: object.clothingMaterial,
+        // TOOL
+        toolManual: object.toolManual,
+        toolSector: object.toolSector,
+        toolBattery: object.toolBattery,
+        toolPowerSource: object.toolPowerSource,
+        brand: object.brand,
+        // CUSTOM
+        customField1: object.customField1,
+        customField2: object.customField2,
+        // Caution + tarification
+        cautionAmount: object.cautionAmount ? Number(object.cautionAmount) : null,
+        rentalPriceDay: object.rentalPriceDay ? Number(object.rentalPriceDay) : null,
+        rentalPriceHour: object.rentalPriceHour ? Number(object.rentalPriceHour) : null,
+        rentalPriceWeek: object.rentalPriceWeek ? Number(object.rentalPriceWeek) : null,
+        rentalPriceKm: object.rentalPriceKm ? Number(object.rentalPriceKm) : null,
+      };
+
+      if (!isOwner) {
+        // viaContact : pas d'historique de prêt ni de qrStock
+        return enriched;
+      }
+
+      // Owner : toutes les infos
+      return {
+        ...enriched,
+        loans: object.loans,
+        qrStock: object.qrStock,
+      };
     }),
 
   /**

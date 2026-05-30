@@ -34,10 +34,36 @@ export default function ObjectDetailPage() {
   const router = useRouter();
   const objectId = params.id as string;
 
-  const { data: object, isLoading } = trpc.objects.get.useQuery(
-    { id: objectId },
-    { enabled: !!objectId },
-  );
+  // On lance les 2 queries en parallèle :
+  // - `objects.get` (protectedProcedure) renvoie l'objet seulement si on
+  //   en est propriétaire. Renvoie `null` sinon (pas de throw). Sert au
+  //   chemin "owner" complet avec loans + qrStock.
+  // - `objects.getPublic` (publicProcedure) renvoie toujours quelque chose
+  //   pour les objets existants : vue publique anonyme, ou enrichie si on
+  //   a un contact lié au owner. Sert au fallback non-owner.
+  // Si le user est anonyme au moment du fire (race entre AuthSessionSyncer
+  // et le mount), `get` reviendra avec UNAUTHORIZED et React Query re-tente
+  // une fois le token sync — du coup le owner finit toujours par voir sa
+  // vue complète.
+  const { data: privateObject, isLoading: isLoadingPrivate } =
+    trpc.objects.get.useQuery(
+      { id: objectId },
+      { enabled: !!objectId, retry: 2 },
+    );
+  const { data: publicObject, isLoading: isLoadingPublic } =
+    trpc.objects.getPublic.useQuery(
+      { id: objectId },
+      { enabled: !!objectId && !privateObject, retry: 2 },
+    );
+
+  const isOwner = !!privateObject;
+  const object: typeof privateObject | typeof publicObject | null | undefined =
+    privateObject ?? publicObject;
+  const isLoading = isLoadingPrivate || (!privateObject && isLoadingPublic);
+  const viaContact =
+    !isOwner && (publicObject?.viaContact ?? false);
+  const ownerName = !isOwner ? (publicObject?.owner?.name ?? null) : null;
+  const ownerHandle = !isOwner ? (publicObject?.owner?.handle ?? null) : null;
 
   const [assignQrOpen, setAssignQrOpen] = useState(false);
   const [loanDialogOpen, setLoanDialogOpen] = useState(false);
@@ -47,7 +73,12 @@ export default function ObjectDetailPage() {
 
   const deleteMutation = trpc.objects.delete.useMutation({
     onSuccess: () => {
-      router.push(`/collections/${object?.collectionId}`);
+      const collectionId =
+        privateObject?.collectionId ??
+        privateObject?.collection?.id ??
+        publicObject?.collection?.id ??
+        "";
+      router.push(`/collections/${collectionId}`);
     },
   });
 
@@ -106,9 +137,22 @@ export default function ObjectDetailPage() {
     );
   }
 
-  const currentLoan = object.loans?.[0];
+  // `loans` + `qrStock` viennent uniquement du chemin owner.
+  const ownerView = (privateObject ?? {}) as Partial<{
+    loans: Array<{
+      id: string;
+      status: string;
+      returnDueDate: Date | string | null;
+      borrower: { id: string; name: string | null } | null;
+    }>;
+    qrStock: { code: string } | null;
+    notes: string | null;
+    brand: string | null;
+  }>;
+  const currentLoan = ownerView.loans?.[0];
   const hasActiveLoan = currentLoan?.status === "ACTIVE";
-  const pastLoans = object.loans?.slice(1) ?? [];
+  const pastLoans = ownerView.loans?.slice(1) ?? [];
+  const qrStock = ownerView.qrStock ?? null;
 
   return (
     <div className="min-h-screen pb-20">
@@ -117,12 +161,26 @@ export default function ObjectDetailPage() {
       <main className="px-4 py-6 max-w-lg mx-auto">
         {/* Back button */}
         <Link
-          href={`/collections/${object.collectionId}`}
+          href={isOwner ? `/collections/${object.collection?.id ?? ""}` : "/objects"}
           className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          {object.collection?.name ?? "Collection"}
+          {isOwner ? (object.collection?.name ?? "Collection") : "Retour"}
         </Link>
+
+        {/* Owner badge — visible quand la vue n'est pas la nôtre */}
+        {!isOwner && (
+          <div className="card-vhs border-secondary/30 p-3 mb-4 flex items-center gap-2">
+            <User className="w-4 h-4 text-secondary" />
+            <span className="font-mono text-xs text-muted-foreground">
+              {viaContact ? "Via votre contact" : "Objet partagé"}
+            </span>
+            <span className="font-mono text-sm text-secondary">
+              {ownerName ?? "Inconnu"}
+              {ownerHandle ? ` #${ownerHandle}` : ""}
+            </span>
+          </div>
+        )}
 
         {/* Object header */}
         <div className="mb-6">
@@ -138,22 +196,24 @@ export default function ObjectDetailPage() {
               )}
             </div>
 
-            <div className="flex gap-2">
-              <Button variant="outline" size="icon" asChild>
-                <Link href={`/objects/${objectId}/edit`}>
-                  <Pencil className="w-4 h-4" />
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
+            {isOwner && (
+              <div className="flex gap-2">
+                <Button variant="outline" size="icon" asChild>
+                  <Link href={`/objects/${objectId}/edit`}>
+                    <Pencil className="w-4 h-4" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Condition badge */}
@@ -189,29 +249,38 @@ export default function ObjectDetailPage() {
             </div>
           )}
 
-          {object.notes && (
+          {ownerView.notes && (
             <div>
               <p className="font-mono text-xs text-muted-foreground uppercase">
                 Notes
               </p>
-              <p className="font-mono text-sm">{object.notes}</p>
+              <p className="font-mono text-sm">{ownerView.notes}</p>
             </div>
           )}
 
-          {object.qrStock && (
+          {ownerView.brand && (
+            <div>
+              <p className="font-mono text-xs text-muted-foreground uppercase">
+                Marque
+              </p>
+              <p className="font-mono text-sm">{ownerView.brand}</p>
+            </div>
+          )}
+
+          {qrStock && (
             <div>
               <p className="font-mono text-xs text-muted-foreground uppercase">
                 QR Code
               </p>
               <p className="font-mono text-sm text-secondary">
-                {object.qrStock.code}
+                {qrStock.code}
               </p>
             </div>
           )}
         </div>
 
-        {/* Current loan */}
-        {hasActiveLoan && currentLoan && (
+        {/* Current loan — owner only */}
+        {isOwner && hasActiveLoan && currentLoan && (
           <div className="mt-6">
             <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
               PRÊT EN COURS
@@ -238,8 +307,8 @@ export default function ObjectDetailPage() {
           </div>
         )}
 
-        {/* Loan history */}
-        {pastLoans.length > 0 && (
+        {/* Loan history — owner only */}
+        {isOwner && pastLoans.length > 0 && (
           <div className="mt-6">
             <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
               {/* HISTORIQUE */}
@@ -267,15 +336,15 @@ export default function ObjectDetailPage() {
           </div>
         )}
 
-        {/* QR Code section */}
-        {object.qrStock ? (
+        {/* QR Code section — owner only */}
+        {isOwner && (qrStock ? (
           <div className="mt-6">
             <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
               QR Code
             </h2>
             <div className="card-vhs p-4 flex flex-col items-center gap-4">
               <QrCodeImage
-                code={object.qrStock.code}
+                code={qrStock.code}
                 size={180}
                 baseUrl={process.env.NEXT_PUBLIC_APP_URL}
               />
@@ -285,8 +354,8 @@ export default function ObjectDetailPage() {
                     variant="outline"
                     className="flex-1"
                     onClick={() =>
-                      object.qrStock &&
-                      downloadPng(object.qrStock.code, object.name)
+                      qrStock &&
+                      downloadPng(qrStock.code, object.name)
                     }
                   >
                     <Download className="w-4 h-4 mr-2" />
@@ -296,8 +365,8 @@ export default function ObjectDetailPage() {
                     variant="outline"
                     className="flex-1"
                     onClick={() =>
-                      object.qrStock &&
-                      printQr(object.qrStock.code, object.name)
+                      qrStock &&
+                      printQr(qrStock.code, object.name)
                     }
                   >
                     <Printer className="w-4 h-4 mr-2" />
@@ -305,7 +374,7 @@ export default function ObjectDetailPage() {
                   </Button>
                 </div>
                 <p className="font-mono text-xs text-muted-foreground text-center">
-                  {object.qrStock.code}
+                  {qrStock.code}
                 </p>
               </div>
             </div>
@@ -324,44 +393,61 @@ export default function ObjectDetailPage() {
               Assigner un QR code
             </Button>
           </div>
-        )}
+        ))}
 
-        {/* Actions */}
-        <div className="mt-6 space-y-3">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => setLoanDialogOpen(true)}
-          >
-            <User className="w-4 h-4 mr-2" />
-            {hasActiveLoan ? "Prêt en cours" : "Prêter cet objet"}
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => router.push("/requests")}
-          >
-            <User className="w-4 h-4 mr-2" />
-            Demander à la communauté
-          </Button>
-        </div>
+        {/* Actions — owner only ; non-owner peut juste demander à la communauté */}
+        {isOwner ? (
+          <div className="mt-6 space-y-3">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setLoanDialogOpen(true)}
+            >
+              <User className="w-4 h-4 mr-2" />
+              {hasActiveLoan ? "Prêt en cours" : "Prêter cet objet"}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => router.push("/requests")}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Demander à la communauté
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-6">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => router.push("/requests")}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Demander à la communauté
+            </Button>
+          </div>
+        )}
       </main>
 
       <Navigation />
 
-      <CreateLoanDialog
-        open={loanDialogOpen}
-        onOpenChange={setLoanDialogOpen}
-        objectId={objectId}
-        objectName={object.name}
-      />
+      {isOwner && (
+        <>
+          <CreateLoanDialog
+            open={loanDialogOpen}
+            onOpenChange={setLoanDialogOpen}
+            objectId={objectId}
+            objectName={object.name}
+          />
 
-      <AssignQrDialog
-        open={assignQrOpen}
-        onOpenChange={setAssignQrOpen}
-        objectId={objectId}
-        objectName={object.name}
-      />
+          <AssignQrDialog
+            open={assignQrOpen}
+            onOpenChange={setAssignQrOpen}
+            objectId={objectId}
+            objectName={object.name}
+          />
+        </>
+      )}
     </div>
   );
 }

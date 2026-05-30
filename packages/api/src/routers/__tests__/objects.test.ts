@@ -53,14 +53,13 @@ describe("objectsRouter", () => {
   describe("get", () => {
     it("returns own object with collection", async () => {
       const result = await callerFor(owner.id).objects.get({ id: object.id });
-      expect(result.name).toBe("Test Object");
-      expect(result.collection.name).toBe("Test Collection");
+      expect(result?.name).toBe("Test Object");
+      expect(result?.collection.name).toBe("Test Collection");
     });
 
-    it("throws for other user's object", async () => {
-      await expect(
-        callerFor(borrower.id).objects.get({ id: object.id })
-      ).rejects.toThrow();
+    it("returns null for other user's object (graceful — frontend falls back to getPublic)", async () => {
+      const result = await callerFor(borrower.id).objects.get({ id: object.id });
+      expect(result).toBeNull();
     });
   });
 
@@ -171,6 +170,74 @@ describe("objectsRouter", () => {
           toolPowerSource: "NUCLEAR",
         }),
       ).rejects.toThrow();
+    });
+  });
+
+  describe("getPublic", () => {
+    it("returns null for an unknown id", async () => {
+      const res = await callerFor(owner.id).objects.getPublic({
+        id: "clxxxxxxxxxxxxxxxxxxxxxxx",
+      });
+      expect(res).toBeNull();
+    });
+
+    it("returns full data for the owner (isOwner=true)", async () => {
+      const res = await callerFor(owner.id).objects.getPublic({ id: object.id });
+      expect(res?.isOwner).toBe(true);
+      expect(res?.viaContact).toBe(false);
+      // Owner gets loans + qrStock keys
+      expect(res).toHaveProperty("loans");
+      expect(res).toHaveProperty("qrStock");
+      // Owner gets type-specific + pricing fields
+      expect(res).toHaveProperty("cautionAmount");
+      expect(res).toHaveProperty("notes");
+    });
+
+    it("returns anonymous view for an unrelated user (isOwner=false, viaContact=false)", async () => {
+      const res = await callerFor(borrower.id).objects.getPublic({ id: object.id });
+      expect(res?.isOwner).toBe(false);
+      expect(res?.viaContact).toBe(false);
+      expect(res?.id).toBe(object.id);
+      expect(res?.name).toBe("Test Object");
+      // Anonymous view does NOT expose notes / pricing / loans
+      expect(res).not.toHaveProperty("notes");
+      expect(res).not.toHaveProperty("cautionAmount");
+      expect(res).not.toHaveProperty("loans");
+    });
+
+    it("returns enriched view when caller has a contact linking to the owner", async () => {
+      // Borrower adds Owner as a contact
+      await prisma.contact.create({
+        data: {
+          id: `contact-${Date.now()}`,
+          userId: borrower.id,
+          borrowerId: owner.id,
+          name: "Owner via Contact",
+        },
+      });
+
+      const res = await callerFor(borrower.id).objects.getPublic({ id: object.id });
+      expect(res?.isOwner).toBe(false);
+      expect(res?.viaContact).toBe(true);
+      // Enriched view exposes notes + pricing + type-specific fields
+      expect(res).toHaveProperty("notes");
+      expect(res).toHaveProperty("cautionAmount");
+      // But NOT loans nor qrStock (réservés au owner)
+      expect(res).not.toHaveProperty("loans");
+      expect(res).not.toHaveProperty("qrStock");
+    });
+
+    it("returns anonymous view for an unauthenticated caller", async () => {
+      const unauth = appRouter.createCaller({
+        prisma,
+        userId: null,
+        session: null,
+        headers: {},
+      });
+      const res = await unauth.objects.getPublic({ id: object.id });
+      expect(res?.isOwner).toBe(false);
+      expect(res?.viaContact).toBe(false);
+      expect(res?.id).toBe(object.id);
     });
   });
 
