@@ -1,9 +1,19 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Header, Navigation } from "../../../components/navigation";
 import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog";
 import { trpc } from "../../../lib/trpc";
 import {
   ArrowLeft,
@@ -14,6 +24,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  Pencil,
+  Loader2,
 } from "lucide-react";
 
 function StatusBadge({ status }: { status: string }) {
@@ -68,6 +80,7 @@ interface PageProps {
 export default function ContactDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const utils = trpc.useUtils();
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const { data: contactData, isLoading: isLoadingContact } = trpc.contacts.get.useQuery({ id });
   const loansQuery = trpc.contacts.loansForContact.useQuery({ id });
@@ -122,9 +135,20 @@ export default function ContactDetailPage({ params }: PageProps) {
               <User className="w-8 h-8 text-primary" />
             </div>
             <div className="flex-1">
-              <h1 className="font-display text-2xl vhs-text-glow text-primary mb-2">
-                {contact.name}
-              </h1>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h1 className="font-display text-2xl vhs-text-glow text-primary">
+                  {contact.name}
+                </h1>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditOpen(true)}
+                  aria-label="Modifier le contact"
+                >
+                  <Pencil className="w-4 h-4 mr-1" />
+                  Modifier
+                </Button>
+              </div>
               {contact.email && (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                   <Mail className="w-4 h-4 flex-shrink-0" />
@@ -213,6 +237,125 @@ export default function ContactDetailPage({ params }: PageProps) {
       </main>
 
       <Navigation />
+
+      <EditContactDialog
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        contact={{
+          id: contact.id,
+          name: contact.name,
+          email: contact.email ?? "",
+          phone: contact.phone ?? "",
+          note: contact.note ?? "",
+        }}
+        onSuccess={() => {
+          utils.contacts.get.invalidate({ id });
+          utils.contacts.list.invalidate();
+          setIsEditOpen(false);
+        }}
+      />
     </div>
+  );
+}
+
+function EditContactDialog({
+  open,
+  onOpenChange,
+  contact,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  contact: { id: string; name: string; email: string; phone: string; note: string };
+  onSuccess: () => void;
+}) {
+  const [form, setForm] = useState({
+    name: contact.name,
+    email: contact.email,
+    phone: contact.phone,
+    note: contact.note,
+  });
+
+  const updateMutation = trpc.contacts.update.useMutation({
+    onSuccess: () => {
+      toast.success("Contact mis à jour");
+      onSuccess();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erreur lors de la mise à jour");
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim()) {
+      toast.error("Le nom est requis");
+      return;
+    }
+    updateMutation.mutate({
+      id: contact.id,
+      data: {
+        name: form.name.trim(),
+        email: form.email.trim() || undefined,
+        phone: form.phone.trim() || undefined,
+        note: form.note.trim() || undefined,
+      },
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Modifier le contact</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-name">Nom *</Label>
+            <Input
+              id="edit-name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-email">Email</Label>
+            <Input
+              id="edit-email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-phone">Téléphone</Label>
+            <Input
+              id="edit-phone"
+              type="tel"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-note">Note</Label>
+            <Input
+              id="edit-note"
+              value={form.note}
+              onChange={(e) => setForm({ ...form, note: e.target.value })}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -129,6 +129,9 @@ export default function EditObjectPage() {
               toolManual: object.toolManual,
               toolSector: object.toolSector,
               toolBattery: object.toolBattery,
+              toolPowerSource: object.toolPowerSource,
+              // Marque (CLOTHING + TOOL)
+              brand: object.brand,
               // CUSTOM
               customField1: object.customField1,
               customField2: object.customField2,

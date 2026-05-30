@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Header, Navigation } from "../components/navigation";
 import { trpc } from "../lib/trpc";
-import { Package, User, Repeat } from "lucide-react";
+import { Package, User, Repeat, Download } from "lucide-react";
 import { useUserAgent } from "../lib/use-user-agent";
 
 /**
@@ -21,6 +21,9 @@ export default function HomePage() {
   const loansQuery = trpc.loans.lentOut.useQuery(undefined, {
     staleTime: 30_000,
   });
+  const borrowedQuery = trpc.loans.borrowed.useQuery(undefined, {
+    staleTime: 30_000,
+  });
 
   const { isMobile } = useUserAgent();
 
@@ -30,7 +33,12 @@ export default function HomePage() {
       (sum, c) => sum + (c.objectCount ?? 0),
       0,
     ) ?? 0;
-  const activeLoans = loansQuery.data?.items.length ?? 0;
+  const lentItems = loansQuery.data?.items ?? [];
+  const activeLoans = lentItems.length;
+  const overdueLoans = lentItems.filter(
+    (l) => (l as typeof l & { computedStatus?: string }).computedStatus === "OVERDUE",
+  ).length;
+  const borrowedCount = borrowedQuery.data?.items.length ?? 0;
   const totalContacts = contactsQuery.data?.items.length ?? 0;
   const isLoading =
     collectionsQuery.isLoading ||
@@ -53,7 +61,7 @@ export default function HomePage() {
         </section>
 
         {/* Stats — cliquables */}
-        <section className="grid grid-cols-3 gap-3 mb-8">
+        <section className="grid grid-cols-2 gap-3 mb-8">
           <StatCard
             href="/objects"
             label="Objets"
@@ -68,11 +76,22 @@ export default function HomePage() {
             }
           />
           <StatCard
-            href="/loans?tab=lent"
-            label="Prêtés"
+            href={
+              overdueLoans > 0
+                ? "/loans?tab=lent&status=overdue"
+                : "/loans?tab=lent"
+            }
+            label={overdueLoans > 0 ? `Prêtés (${overdueLoans} en retard)` : "Prêtés"}
             value={isLoading ? "..." : String(activeLoans)}
             icon={<Repeat className="w-4 h-4" />}
-            variant={activeLoans > 0 ? "warning" : "default"}
+            variant={overdueLoans > 0 ? "warning" : activeLoans > 0 ? "warning" : "default"}
+          />
+          <StatCard
+            href="/objects?status=borrowed"
+            label="Empruntés"
+            value={borrowedQuery.isLoading ? "..." : String(borrowedCount)}
+            icon={<Download className="w-4 h-4" />}
+            variant={borrowedCount > 0 ? "success" : "default"}
           />
           <StatCard
             href="/contacts"

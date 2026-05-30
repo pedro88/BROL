@@ -11,6 +11,7 @@ import {
   createUserAPI,
   cleanupUser,
   uniqueEmail,
+  getSessionToken,
 } from "./helpers/auth";
 
 const WEB_BASE = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
@@ -132,7 +133,8 @@ test.describe("contacts page", () => {
   });
 
   test("shows contact cards when contacts exist", async ({ page }) => {
-    const token = (await createUserAPI(testEmail, "TestPass123!", "Token User")).token;
+    const token = await getSessionToken(testEmail);
+    if (!token) throw new Error("Could not retrieve session token for test user");
     await createContactAPI(token, "Alice Test", `alice-${testEmail}`);
     await createContactAPI(token, "Bob Test", `bob-${testEmail}`);
 
@@ -213,7 +215,7 @@ test.describe("contact detail", () => {
 
   test("non-existent contact shows not found", async ({ page }) => {
     await page.goto(`${WEB_BASE}/contacts/non-existent-contact-id`);
-    await expect(page.getByText(/non trouvé|intouvable|not found/i).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/non trouvé|introuvable|not found/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("shows contact name, email, phone", async ({ page }) => {

@@ -72,8 +72,10 @@ test.describe("create request dialog (authenticated)", () => {
     await page.goto(`${WEB_BASE}/requests`);
     await page.getByRole("button", { name: /nouvelle demande/i }).click();
     await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 3000 });
-    await page.getByRole("button", { name: /créer/i }).first().click();
-    // Dialog should stay open (browser validation)
+    // Submit button must be disabled when title is empty (form validation)
+    const submitBtn = page.getByRole("button", { name: /créer/i }).first();
+    await expect(submitBtn).toBeDisabled();
+    // Dialog should stay open
     await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 2000 });
   });
 

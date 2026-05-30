@@ -55,6 +55,9 @@ interface EditObjectDialogProps {
     toolManual?: boolean | null;
     toolSector?: string | null;
     toolBattery?: boolean | null;
+    toolPowerSource?: "MANUAL" | "MAINS" | "BATTERY" | null;
+    // Marque (CLOTHING + TOOL)
+    brand?: string | null;
     // CUSTOM
     customField1?: string | null;
     customField2?: string | null;
@@ -121,6 +124,8 @@ export function EditObjectDialog({
       toolManual: initialData?.toolManual ?? null,
       toolSector: initialData?.toolSector ?? null,
       toolBattery: initialData?.toolBattery ?? null,
+      toolPowerSource: initialData?.toolPowerSource ?? null,
+      brand: initialData?.brand ?? null,
       customField1: initialData?.customField1 ?? null,
       customField2: initialData?.customField2 ?? null,
       cautionAmount: initialData?.cautionAmount ?? null,
@@ -418,50 +423,69 @@ export function EditObjectDialog({
                   />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-brand-clothing" className="font-mono text-xs uppercase">
+                  Marque
+                </Label>
+                <Input
+                  id="edit-brand-clothing"
+                  placeholder="Nike, Levi's..."
+                  {...register("brand")}
+                />
+              </div>
             </>
           )}
 
           {/* TOOL specific fields */}
           {showToolFields && (
             <>
-              <div className="space-y-2">
-                <Label htmlFor="edit-toolSector" className="font-mono text-xs uppercase">
-                  Secteur / Usage
-                </Label>
-                <select
-                  id="edit-toolSector"
-                  {...register("toolSector")}
-                  className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
-                >
-                  <option value="">Sélectionner</option>
-                  <option value="Bricolage">Bricolage</option>
-                  <option value="Jardinage">Jardinage</option>
-                  <option value="Automobile">Automobile</option>
-                  <option value="Plomberie">Plomberie</option>
-                  <option value="Électricité">Électricité</option>
-                  <option value="Construction">Construction</option>
-                  <option value="Menuiserie">Menuiserie</option>
-                  <option value="Peinture">Peinture</option>
-                  <option value="Autre">Autre</option>
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-toolSector" className="font-mono text-xs uppercase">
+                    Secteur / Usage
+                  </Label>
+                  <select
+                    id="edit-toolSector"
+                    {...register("toolSector")}
+                    className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+                  >
+                    <option value="">Sélectionner</option>
+                    <option value="Bricolage">Bricolage</option>
+                    <option value="Jardinage">Jardinage</option>
+                    <option value="Automobile">Automobile</option>
+                    <option value="Plomberie">Plomberie</option>
+                    <option value="Électricité">Électricité</option>
+                    <option value="Construction">Construction</option>
+                    <option value="Menuiserie">Menuiserie</option>
+                    <option value="Peinture">Peinture</option>
+                    <option value="Autre">Autre</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-toolPowerSource" className="font-mono text-xs uppercase">
+                    Alimentation
+                  </Label>
+                  <select
+                    id="edit-toolPowerSource"
+                    {...register("toolPowerSource")}
+                    className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+                  >
+                    <option value="">Sélectionner</option>
+                    <option value="MANUAL">Manuel (non alimenté)</option>
+                    <option value="MAINS">Secteur (filaire)</option>
+                    <option value="BATTERY">Sur batterie</option>
+                  </select>
+                </div>
               </div>
-              <div className="flex gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    {...register("toolManual")}
-                    className="w-5 h-5 rounded border-2 border-border bg-input text-primary focus:ring-2 focus:ring-primary"
-                  />
-                  <span className="font-mono text-sm">Manuel (non alimenté)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    {...register("toolBattery")}
-                    className="w-5 h-5 rounded border-2 border-border bg-input text-primary focus:ring-2 focus:ring-primary"
-                  />
-                  <span className="font-mono text-sm">Sur batterie</span>
-                </label>
+              <div className="space-y-2">
+                <Label htmlFor="edit-brand-tool" className="font-mono text-xs uppercase">
+                  Marque
+                </Label>
+                <Input
+                  id="edit-brand-tool"
+                  placeholder="Bosch, Makita..."
+                  {...register("brand")}
+                />
               </div>
             </>
           )}

@@ -70,10 +70,11 @@ export const contactsRouter = router({
         throw new Error("Contact non trouvé");
       }
 
-      // Récupérer l'historique des prêts pour ce contact (via borrowerId ou email)
+      // Récupérer l'historique des prêts pour ce contact (via borrowerContactId, borrowerId ou email)
       const loans = await ctx.prisma.loan.findMany({
         where: {
           OR: [
+            { borrowerContactId: contact.id },
             { borrowerId: contact.borrowerId ?? "__none__" },
             contact.email
               ? { borrower: { email: contact.email } }
@@ -136,6 +137,7 @@ export const contactsRouter = router({
       const loans = await ctx.prisma.loan.findMany({
         where: {
           OR: [
+            { borrowerContactId: contact.id },
             { borrowerId: contact.borrowerId ?? "__none__" },
             contact.email
               ? { borrower: { email: contact.email } }

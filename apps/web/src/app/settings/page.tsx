@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Header, Navigation } from "@/components/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Crown, Zap, User, ExternalLink, Copy, Check, QrCode } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Crown, Zap, User, ExternalLink, Copy, Check, QrCode, Pencil, Loader2, X } from "lucide-react";
 import { UserAvatar } from "@/components/profile/user-avatar";
 import { QrCodeImage } from "@/components/qr/qr-code-image";
 import { toast } from "sonner";
@@ -62,6 +63,7 @@ const TIER_INFO = {
 };
 
 export default function SettingsPage() {
+  const utils = trpc.useUtils();
   const { data, isLoading: tierLoading } = trpc.tier.getLimits.useQuery();
   const { data: sessionData, isLoading: sessionLoading } = trpc.auth.me.useQuery();
   const { data: meData } = trpc.users.me.useQuery();
@@ -70,6 +72,60 @@ export default function SettingsPage() {
   const isLoading = tierLoading || sessionLoading;
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Handle edit state
+  const [isEditingHandle, setIsEditingHandle] = useState(false);
+  const [handleInput, setHandleInput] = useState("");
+  const [debouncedHandle, setDebouncedHandle] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedHandle(handleInput), 400);
+    return () => clearTimeout(t);
+  }, [handleInput]);
+
+  const normalizedInput = debouncedHandle.trim().replace(/^#/, "").toLowerCase();
+  const hasMeaningfulInput = normalizedInput.length >= 3;
+  const isSameAsCurrent = normalizedInput === handle;
+
+  const availabilityQuery = trpc.users.checkHandleAvailability.useQuery(
+    { handle: normalizedInput },
+    {
+      enabled: isEditingHandle && hasMeaningfulInput && !isSameAsCurrent,
+      staleTime: 0,
+    },
+  );
+
+  const updateMutation = trpc.users.updateHandle.useMutation({
+    onSuccess: () => {
+      toast.success("Pseudo mis à jour");
+      utils.users.me.invalidate();
+      setIsEditingHandle(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erreur lors de la mise à jour");
+    },
+  });
+
+  function startEdit() {
+    setHandleInput(handle ?? "");
+    setDebouncedHandle(handle ?? "");
+    setIsEditingHandle(true);
+  }
+
+  function cancelEdit() {
+    setIsEditingHandle(false);
+    setHandleInput("");
+    setDebouncedHandle("");
+  }
+
+  function submitHandle() {
+    const value = handleInput.trim().replace(/^#/, "").toLowerCase();
+    if (!value || value === handle) {
+      cancelEdit();
+      return;
+    }
+    updateMutation.mutate({ handle: value });
+  }
 
   const profileUrl =
     handle && typeof window !== "undefined"
@@ -87,6 +143,28 @@ export default function SettingsPage() {
       toast.error("Impossible de copier");
     }
   }
+
+  const queryData = availabilityQuery.data;
+  const checkStatus: "idle" | "checking" | "available" | "taken" | "reserved" | "invalid" = !isEditingHandle
+    ? "idle"
+    : !hasMeaningfulInput
+      ? "invalid"
+      : isSameAsCurrent
+        ? "idle"
+        : availabilityQuery.isFetching
+          ? "checking"
+          : queryData?.available
+            ? "available"
+            : queryData && !queryData.available && "reason" in queryData
+              ? queryData.reason
+              : "invalid";
+
+  const canSubmit =
+    isEditingHandle &&
+    hasMeaningfulInput &&
+    !isSameAsCurrent &&
+    checkStatus === "available" &&
+    !updateMutation.isPending;
 
   if (isLoading) {
     return (
@@ -146,34 +224,87 @@ export default function SettingsPage() {
           {/* Handle + QR */}
           {handle && (
             <div className="pt-4 border-t border-border space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                    Mon identifiant
+              {isEditingHandle ? (
+                <div className="space-y-2">
+                  <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
+                    Modifier mon pseudo
                   </p>
-                  <p className="font-mono text-lg text-primary truncate">
-                    #{handle}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-lg text-muted-foreground">#</span>
+                    <Input
+                      autoFocus
+                      value={handleInput}
+                      onChange={(e) => setHandleInput(e.target.value.replace(/^#/, ""))}
+                      placeholder="ex. piet1234"
+                      maxLength={20}
+                      className="font-mono"
+                      aria-label="Pseudo"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={cancelEdit}
+                      aria-label="Annuler"
+                      disabled={updateMutation.isPending}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={submitHandle}
+                      disabled={!canSubmit}
+                      aria-label="Enregistrer le pseudo"
+                    >
+                      {updateMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <HandleCheckHint status={checkStatus} />
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyHandle}
-                  aria-label="Copier l'identifiant"
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowQr((v) => !v)}
-                  aria-label="Afficher le QR code"
-                >
-                  <QrCode className="w-4 h-4" />
-                </Button>
-              </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                      Mon identifiant
+                    </p>
+                    <p className="font-mono text-lg text-primary truncate">
+                      #{handle}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={startEdit}
+                    aria-label="Modifier le pseudo"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyHandle}
+                    aria-label="Copier l'identifiant"
+                  >
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowQr((v) => !v)}
+                    aria-label="Afficher le QR code"
+                  >
+                    <QrCode className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
 
               {showQr && profileUrl && (
                 <div className="flex flex-col items-center gap-2 pt-2">
@@ -289,4 +420,24 @@ export default function SettingsPage() {
       <Navigation />
     </div>
   );
+}
+
+function HandleCheckHint({
+  status,
+}: {
+  status: "idle" | "checking" | "available" | "taken" | "reserved" | "invalid";
+}) {
+  if (status === "idle") return null;
+  const map: Record<typeof status, { label: string; color: string }> = {
+    checking: { label: "Vérification…", color: "text-muted-foreground" },
+    available: { label: "✓ Pseudo disponible", color: "text-emerald-500" },
+    taken: { label: "✗ Pseudo déjà utilisé", color: "text-destructive" },
+    reserved: { label: "✗ Pseudo réservé", color: "text-destructive" },
+    invalid: {
+      label: "✗ 3 à 20 caractères, lettres minuscules et chiffres uniquement",
+      color: "text-destructive",
+    },
+  };
+  const { label, color } = map[status];
+  return <p className={`font-mono text-xs ${color}`}>{label}</p>;
 }

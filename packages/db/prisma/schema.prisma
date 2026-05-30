@@ -111,6 +111,13 @@ enum ObjectType {
   CUSTOM      // Personnalisé — champs libres
 }
 
+// Source d'alimentation pour les TOOLs (remplace les booléens toolManual + toolBattery).
+enum ToolPowerSource {
+  MANUAL    // Non alimenté
+  MAINS     // Secteur (filaire)
+  BATTERY   // Sur batterie
+}
+
 model Collection {
   id          String   @id @default(cuid())
   userId      String
@@ -160,9 +167,14 @@ model Object {
   clothingColor    String?  // Couleur principale
   clothingMaterial String?  // Matière (coton, cuir, polyester...)
   // TOOL fields
-  toolManual       Boolean? @default(false) // Manuel (non alimenté)
+  // toolManual + toolBattery sont conservés pour rétro-compatibilité — nouveaux
+  // objets doivent utiliser `toolPowerSource` à la place.
+  toolManual       Boolean? @default(false) // (deprecated) → utiliser toolPowerSource
   toolSector       String?  // Secteur (construction, jardinage, automobile...)
-  toolBattery      Boolean? @default(false) // Sur batterie
+  toolBattery      Boolean? @default(false) // (deprecated) → utiliser toolPowerSource
+  toolPowerSource  ToolPowerSource? // Source d'alimentation (MANUAL/MAINS/BATTERY)
+  // Marque (CLOTHING + TOOL ; usable par n'importe quel type)
+  brand            String?
   // CUSTOM fields (only used when type = CUSTOM)
   customField1     String?
   customField2     String?

@@ -655,50 +655,69 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
               />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="brand" className="font-mono text-xs uppercase">
+              Marque
+            </Label>
+            <Input
+              id="brand"
+              placeholder="Nike, Levi's..."
+              {...register("brand")}
+            />
+          </div>
         </>
       )}
 
       {/* TOOL specific fields */}
       {showToolFields && (
         <>
-          <div className="space-y-2">
-            <Label htmlFor="toolSector" className="font-mono text-xs uppercase">
-              Secteur / Usage
-            </Label>
-            <select
-              id="toolSector"
-              {...register("toolSector")}
-              className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
-            >
-              <option value="">Sélectionner</option>
-              <option value="Bricolage">Bricolage</option>
-              <option value="Jardinage">Jardinage</option>
-              <option value="Automobile">Automobile</option>
-              <option value="Plomberie">Plomberie</option>
-              <option value="Électricité">Électricité</option>
-              <option value="Construction">Construction</option>
-              <option value="Menuiserie">Menuiserie</option>
-              <option value="Peinture">Peinture</option>
-              <option value="Autre">Autre</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="toolSector" className="font-mono text-xs uppercase">
+                Secteur / Usage
+              </Label>
+              <select
+                id="toolSector"
+                {...register("toolSector")}
+                className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+              >
+                <option value="">Sélectionner</option>
+                <option value="Bricolage">Bricolage</option>
+                <option value="Jardinage">Jardinage</option>
+                <option value="Automobile">Automobile</option>
+                <option value="Plomberie">Plomberie</option>
+                <option value="Électricité">Électricité</option>
+                <option value="Construction">Construction</option>
+                <option value="Menuiserie">Menuiserie</option>
+                <option value="Peinture">Peinture</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="toolPowerSource" className="font-mono text-xs uppercase">
+                Alimentation
+              </Label>
+              <select
+                id="toolPowerSource"
+                {...register("toolPowerSource")}
+                className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+              >
+                <option value="">Sélectionner</option>
+                <option value="MANUAL">Manuel (non alimenté)</option>
+                <option value="MAINS">Secteur (filaire)</option>
+                <option value="BATTERY">Sur batterie</option>
+              </select>
+            </div>
           </div>
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                {...register("toolManual")}
-                className="w-5 h-5 rounded border-2 border-border bg-input text-primary focus:ring-2 focus:ring-primary"
-              />
-              <span className="font-mono text-sm">Manuel (non alimenté)</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                {...register("toolBattery")}
-                className="w-5 h-5 rounded border-2 border-border bg-input text-primary focus:ring-2 focus:ring-primary"
-              />
-              <span className="font-mono text-sm">Sur batterie</span>
-            </label>
+          <div className="space-y-2">
+            <Label htmlFor="brand" className="font-mono text-xs uppercase">
+              Marque
+            </Label>
+            <Input
+              id="brand"
+              placeholder="Bosch, Makita..."
+              {...register("brand")}
+            />
           </div>
         </>
       )}

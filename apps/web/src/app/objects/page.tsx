@@ -26,7 +26,7 @@ function formatDate(date: Date | string | null | undefined): string {
   });
 }
 
-type StatusFilter = "all" | "available" | "lent";
+type StatusFilter = "all" | "available" | "lent" | "borrowed";
 
 interface FilterState {
   collectionId: string;
@@ -150,12 +150,12 @@ function ObjectsContent() {
                 <label className="font-mono text-xs text-muted-foreground uppercase">
                   Status
                 </label>
-                <div className="flex gap-2">
-                  {(["all", "available", "lent"] as const).map((status) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {(["all", "available", "lent", "borrowed"] as const).map((status) => (
                     <button
                       key={status}
                       onClick={() => handleFilterChange("status", status)}
-                      className={`flex-1 py-2 px-3 text-xs font-mono border transition-colors ${
+                      className={`py-2 px-3 text-xs font-mono border transition-colors ${
                         filters.status === status
                           ? "border-primary bg-primary/10 text-primary"
                           : "border-border hover:border-primary/50"
@@ -165,7 +165,9 @@ function ObjectsContent() {
                         ? "Tous"
                         : status === "available"
                           ? "Disponible"
-                          : "Prêté"}
+                          : status === "lent"
+                            ? "Prêté"
+                            : "Emprunté"}
                     </button>
                   ))}
                 </div>
@@ -219,7 +221,8 @@ function ObjectsContent() {
             </div>
 
             {objects.map((obj) => {
-              const isLent = !!obj.currentLoan;
+              const isBorrowedView = !!obj.owner;
+              const isLent = !isBorrowedView && !!obj.currentLoan;
               const isOverdue = obj.currentLoan?.isOverdue;
 
               return (
@@ -254,23 +257,43 @@ function ObjectsContent() {
                     <div className="flex flex-col items-end gap-1">
                       <span
                         className={`px-2 py-0.5 text-xs font-mono ${
-                          isLent
+                          isBorrowedView
                             ? isOverdue
                               ? "bg-destructive/10 text-destructive"
-                              : "bg-primary/10 text-primary"
-                            : "bg-secondary/10 text-secondary"
+                              : "bg-accent/10 text-accent"
+                            : isLent
+                              ? isOverdue
+                                ? "bg-destructive/10 text-destructive"
+                                : "bg-primary/10 text-primary"
+                              : "bg-secondary/10 text-secondary"
                         }`}
                       >
-                        {isLent
+                        {isBorrowedView
                           ? isOverdue
                             ? "En retard"
-                            : "Prêté"
-                          : "Disponible"}
+                            : "Emprunté"
+                          : isLent
+                            ? isOverdue
+                              ? "En retard"
+                              : "Prêté"
+                            : "Disponible"}
                       </span>
-                      {obj.currentLoan && (
+                      {isBorrowedView && obj.owner ? (
+                        <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+                          <User className="w-3 h-3" />
+                          ← {obj.owner.name ?? "Inconnu"}
+                          {obj.owner.handle ? ` #${obj.owner.handle}` : ""}
+                        </span>
+                      ) : obj.currentLoan ? (
                         <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
                           <User className="w-3 h-3" />
                           {obj.currentLoan.borrower?.name ?? "Inconnu"}
+                        </span>
+                      ) : null}
+                      {(isBorrowedView || isLent) && obj.currentLoan?.returnDueDate && (
+                        <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {formatDate(obj.currentLoan.returnDueDate)}
                         </span>
                       )}
                       <span className="font-mono text-xs text-muted-foreground">

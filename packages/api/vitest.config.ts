@@ -27,6 +27,13 @@ export default defineConfig({
         "src/**/*.d.ts",
         "src/server.ts",
         "src/emails/**",
+        // Infra non couvert par les unit tests (intégration BetterAuth /
+        // AWS SDK / boilerplate tRPC). Sorti des seuils — leur couverture
+        // viendrait d'E2E ou de tests d'intégration dédiés.
+        "src/auth.ts",
+        "src/lib/s3.ts",
+        "src/trpc/index.ts",
+        "src/index.ts",
       ],
       thresholds: {
         statements: 60,

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Header, Navigation } from "../../components/navigation";
 import { Button } from "../../components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
@@ -177,6 +178,7 @@ function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
               variant="outline"
               size="sm"
               onClick={() => onReturn?.(loan.id)}
+              aria-label="Marquer comme retourné"
               className="flex-1"
             >
               <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -199,8 +201,58 @@ function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
 }
 
 export default function LoansPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("lent");
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen pb-20">
+          <Header />
+          <main className="px-4 py-6 max-w-lg mx-auto flex items-center justify-center py-12">
+            <div className="spinner-vhs w-8 h-8" />
+          </main>
+          <Navigation />
+        </div>
+      }
+    >
+      <LoansContent />
+    </Suspense>
+  );
+}
+
+function LoansContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const statusFromUrl = searchParams.get("status");
+  const initialTab: Tab =
+    tabFromUrl === "borrowed" || tabFromUrl === "history" ? tabFromUrl : "lent";
+
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [overdueOnly, setOverdueOnly] = useState(statusFromUrl === "overdue");
   const utils = trpc.useUtils();
+
+  useEffect(() => {
+    // Sync state when URL changes (e.g. after navigation from dashboard).
+    if (tabFromUrl === "borrowed" || tabFromUrl === "history" || tabFromUrl === "lent") {
+      setActiveTab(tabFromUrl);
+    }
+    setOverdueOnly(statusFromUrl === "overdue");
+  }, [tabFromUrl, statusFromUrl]);
+
+  function changeTab(next: Tab) {
+    setActiveTab(next);
+    // Drop status=overdue when switching away from the "lent" tab.
+    const params = new URLSearchParams();
+    params.set("tab", next);
+    if (next === "lent" && overdueOnly) params.set("status", "overdue");
+    router.replace(`/loans?${params.toString()}`, { scroll: false });
+  }
+
+  function clearOverdueFilter() {
+    setOverdueOnly(false);
+    const params = new URLSearchParams();
+    params.set("tab", activeTab);
+    router.replace(`/loans?${params.toString()}`, { scroll: false });
+  }
 
   // Object picker state
   const [showObjectPicker, setShowObjectPicker] = useState(false);
@@ -255,12 +307,19 @@ export default function LoansPage() {
         ? isLoadingBorrowed
         : isLoadingHistory;
 
-  const currentLoans =
+  const baseLoans =
     activeTab === "lent"
       ? lentLoans
       : activeTab === "borrowed"
         ? borrowedLoans
         : historyLoans;
+
+  const currentLoans =
+    overdueOnly && activeTab === "lent"
+      ? baseLoans.filter(
+          (l) => (l as typeof l & { computedStatus?: string }).computedStatus === "OVERDUE",
+        )
+      : baseLoans;
 
   const tabCounts = {
     lent: lentLoans.length,
@@ -293,11 +352,14 @@ export default function LoansPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-muted/50 p-1 rounded-lg overflow-x-auto">
+        <div role="tablist" className="flex gap-1 mb-6 bg-muted/50 p-1 rounded-lg overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-label={tab.label}
+              onClick={() => changeTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-1 py-2 px-2 sm:px-3 rounded-md text-[10px] sm:text-xs font-mono uppercase transition-all whitespace-nowrap ${
                 activeTab === tab.id
                   ? "bg-primary text-primary-foreground"
@@ -319,6 +381,24 @@ export default function LoansPage() {
             </button>
           ))}
         </div>
+
+        {/* Overdue filter chip — visible when ?status=overdue is active */}
+        {overdueOnly && activeTab === "lent" && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-destructive/10 text-destructive text-xs font-mono">
+              <AlertCircle className="w-3 h-3" />
+              Filtre : en retard ({currentLoans.length})
+            </span>
+            <button
+              type="button"
+              onClick={clearOverdueFilter}
+              className="font-mono text-xs text-muted-foreground hover:text-primary"
+              aria-label="Retirer le filtre en retard"
+            >
+              Effacer
+            </button>
+          </div>
+        )}
 
         {/* Loading */}
         {isLoading && (

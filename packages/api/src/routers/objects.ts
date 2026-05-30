@@ -38,6 +38,84 @@ export const objectsRouter = router({
     .query(async ({ ctx, input }) => {
       const now = new Date();
 
+      // Branche borrowed : objets en possession via Loan actif où l'utilisateur
+      // est borrowerId (et non ownerId). Sortie alignée sur le shape "owned".
+      if (input.status === "borrowed") {
+        const loans = await ctx.prisma.loan.findMany({
+          where: {
+            borrowerId: ctx.userId,
+            status: { in: ["ACTIVE", "OVERDUE"] },
+            ...(input.collectionId ? { object: { collectionId: input.collectionId } } : {}),
+            ...(input.condition ? { object: { condition: input.condition } } : {}),
+            ...(input.search
+              ? {
+                  object: {
+                    OR: [
+                      { name: { contains: input.search, mode: "insensitive" as const } },
+                      { author: { contains: input.search, mode: "insensitive" as const } },
+                    ],
+                  },
+                }
+              : {}),
+          },
+          include: {
+            object: {
+              include: {
+                collection: { select: { id: true, name: true, type: true } },
+              },
+            },
+            owner: { select: { id: true, name: true, image: true, handle: true } },
+          },
+          orderBy: { returnDueDate: "asc" },
+          take: input.limit ?? 100,
+          cursor: input.cursor ? { id: input.cursor } : undefined,
+        });
+
+        return {
+          items: loans.map((loan) => {
+            const obj = loan.object;
+            return {
+              id: obj.id,
+              name: obj.name,
+              author: obj.author,
+              condition: obj.condition,
+              coverImage: obj.coverImage,
+              collection: obj.collection,
+              objectType: obj.objectType,
+              clothingSize: obj.clothingSize,
+              clothingGender: obj.clothingGender,
+              clothingColor: obj.clothingColor,
+              clothingMaterial: obj.clothingMaterial,
+              toolManual: obj.toolManual,
+              toolSector: obj.toolSector,
+              toolBattery: obj.toolBattery,
+              toolPowerSource: obj.toolPowerSource,
+              brand: obj.brand,
+              cautionAmount: obj.cautionAmount ? Number(obj.cautionAmount) : null,
+              rentalPriceDay: obj.rentalPriceDay ? Number(obj.rentalPriceDay) : null,
+              rentalPriceHour: obj.rentalPriceHour ? Number(obj.rentalPriceHour) : null,
+              rentalPriceWeek: obj.rentalPriceWeek ? Number(obj.rentalPriceWeek) : null,
+              rentalPriceKm: obj.rentalPriceKm ? Number(obj.rentalPriceKm) : null,
+              currentLoan: {
+                id: loan.id,
+                status: loan.status,
+                borrower: null as { id: string; name: string | null } | null,
+                returnDueDate: loan.returnDueDate,
+                isOverdue:
+                  loan.status === "ACTIVE" &&
+                  loan.returnDueDate != null &&
+                  loan.returnDueDate < now,
+              },
+              owner: loan.owner,
+            };
+          }),
+          nextCursor:
+            loans.length === (input.limit ?? 100)
+              ? (loans[loans.length - 1]?.id ?? null)
+              : null,
+        };
+      }
+
       const objects = await ctx.prisma.object.findMany({
         where: {
           collection: {
@@ -70,11 +148,9 @@ export const objectsRouter = router({
         cursor: input.cursor ? { id: input.cursor } : undefined,
       });
 
-      // Filtrer par status借贷 après le fetch (plus simple que plusieurs requêtes)
       const filtered = objects.filter((obj) => {
         if (input.status === "available") return obj.loans.length === 0;
         if (input.status === "lent") return obj.loans.length > 0;
-        // "all" et "borrowed" passent (borrowed = pas applicable ici, on filtre côté loans.borrowedId)
         return true;
       });
 
@@ -87,16 +163,15 @@ export const objectsRouter = router({
           coverImage: obj.coverImage,
           collection: obj.collection,
           objectType: obj.objectType,
-          // CLOTHING
           clothingSize: obj.clothingSize,
           clothingGender: obj.clothingGender,
           clothingColor: obj.clothingColor,
           clothingMaterial: obj.clothingMaterial,
-          // TOOL
           toolManual: obj.toolManual,
           toolSector: obj.toolSector,
           toolBattery: obj.toolBattery,
-          // Caution et tarification
+          toolPowerSource: obj.toolPowerSource,
+          brand: obj.brand,
           cautionAmount: obj.cautionAmount ? Number(obj.cautionAmount) : null,
           rentalPriceDay: obj.rentalPriceDay ? Number(obj.rentalPriceDay) : null,
           rentalPriceHour: obj.rentalPriceHour ? Number(obj.rentalPriceHour) : null,
@@ -106,11 +181,12 @@ export const objectsRouter = router({
             ? {
                 id: obj.loans[0].id,
                 status: obj.loans[0].status,
-                borrower: obj.loans[0].borrower,
+                borrower: obj.loans[0].borrower as { id: string; name: string | null } | null,
                 returnDueDate: obj.loans[0].returnDueDate,
                 isOverdue: obj.loans[0].status === "ACTIVE" && obj.loans[0].returnDueDate != null && obj.loans[0].returnDueDate < now,
               }
             : null,
+          owner: null as { id: string; name: string | null; image: string | null; handle: string | null } | null,
         })),
         nextCursor:
           objects.length === (input.limit ?? 100)

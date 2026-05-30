@@ -258,15 +258,20 @@ test.describe("create loan dialog", () => {
     await page.getByRole("button", { name: /prêter/i }).first().click();
     await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 3000 });
 
-    // Search for contact
-    const searchInput = page.locator("input[placeholder*='ontact'], input[placeholder*='echerche']").first();
-    if (await searchInput.isVisible().catch(() => false)) {
-      await searchInput.fill("New Borrower");
-      await page.waitForTimeout(500);
-    }
+    // Open BorrowerSelectDialog
+    await page.getByRole("button", { name: /ajouter un emprunteur/i }).click();
+    const borrowerDialog = page.locator('[role="dialog"]').nth(1);
+    await expect(borrowerDialog).toBeVisible({ timeout: 3000 });
+
+    // Select the existing contact from the list (no search needed, only one contact)
+    await borrowerDialog.getByText("New Borrower").first().click();
+
+    // Borrower chip should now be visible in the loan dialog
+    await expect(page.getByText("New Borrower").first()).toBeVisible({ timeout: 3000 });
 
     // Submit
-    const submitBtn = page.getByRole("button", { name: /confirmer|prêter/i }).first();
+    const submitBtn = page.getByRole("button", { name: /confirmer le prêt/i });
+    await expect(submitBtn).toBeEnabled({ timeout: 3000 });
     await submitBtn.click();
     await page.waitForLoadState("networkidle");
 

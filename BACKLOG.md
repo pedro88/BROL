@@ -14,33 +14,15 @@
 
 ---
 
-## 🔥 P0 — Restants après l'audit du 2026-05-29
+## 🔥 P0 — Bloquants
 
-Items P0 résolus dans les commits `3382fae`, `2dad4c9`. Ce qui reste de
-réellement bloquant :
-
-- [ ] **Bug** — `api/test/cleanup-user` + `api/test/get-token` ne sont pas
-  gatés par `NODE_ENV !== "production"`. Risque expo en prod. Gater le
-  bloc dans `packages/api/src/server.ts` lignes 179 et 200.
-  *Source : AUDIT §5 / ARCHITECTURE §7.*
-- [ ] **Bug** — 11 tests E2E rouges chroniques restants (contacts ×5,
-  loans ×4, profile ×1, requests ×1). Triage par fichier. Cf. `test-results/`.
+**0 item ouvert.** Sprint 2026-05-30 a tout clos (cf. Historique).
 
 ---
 
 ## 🟠 P1 — Hygiène en cours
 
-Items P1 résolus dans `e6de769`. Ce qui reste :
-
-- [ ] **Tech** — Tester les 3 derniers routers : `community-request`,
-  `messages`, `notification`. Pattern : voir
-  `packages/api/src/routers/__tests__/users.test.ts` pour le setup tRPC
-  caller.
-- [ ] **Tech** — 2 tests collections rouges (`get UNAUTHORIZED for other`,
-  `getPublic throws for private`). Pré-existants, à investiguer.
-- [ ] **Tech** — CI : ajouter un job `coverage-gate` qui fail si
-  `pnpm test:coverage` exit ≠ 0 (les seuils 60/50/60/60 sont déjà
-  configurés dans `vitest.config.ts`).
+**0 item ouvert.** Sprint 2026-05-30 a tout clos (cf. Historique).
 
 ---
 
@@ -48,27 +30,39 @@ Items P1 résolus dans `e6de769`. Ce qui reste :
 
 ### Dashboard
 
-- [ ] **Feat** — Card "Objets" : déjà liée à `/objects`. Vérifier que
-  `/objects` propose un tableau filtrable [nom, collection, état,
-  statut].
-- [ ] **Feat** — Card "Prêtés" : pointe sur `/loans?tab=lent`. OK.
-  Ajouter `?status=overdue` dans l'URL si `activeLoans > 0` et en retard.
-- [ ] **Feat** — Section "Prêts récents" — déjà renommée et câblée
-  (cf. `apps/web/src/app/page.tsx:117-171`). Vérifier que la date de
-  retour s'affiche bien et que le lien renvoie vers `/objects/{id}`.
+- [x] **Feat** — ~~Card "Objets" / `/objects` tableau filtrable~~ —
+  vérifié 2026-05-30. Colonnes desktop [Nom / Collection / État /
+  Status] présentes (`apps/web/src/app/objects/page.tsx:213-219`),
+  filtres search + collection + status (all/available/lent/borrowed).
+- [x] **Feat** — ~~Card "Prêtés" : ajouter `?status=overdue` si
+  overdue > 0~~ — livré 2026-05-30. Dashboard dérive `overdueLoans`
+  via `computedStatus === "OVERDUE"`, href devient
+  `/loans?tab=lent&status=overdue` quand > 0 (label inclut le
+  count). `/loans` consomme `?tab` + `?status=overdue` via
+  `useSearchParams` (wrappé Suspense), chip "Filtre : en retard"
+  avec bouton "Effacer".
+- [x] **Feat** — ~~Section "Prêts récents" : date + lien~~ —
+  vérifié 2026-05-30. `loan.returnDueDate` formatté fr-BE,
+  `href={\`/objects/${loan.object.id}\`}`
+  (`apps/web/src/app/page.tsx:147-149, 159-168`).
 
 ### Création d'objet — par type
 
-Schema actuel : pas de fields par type. Ajouter dans
-`packages/db/prisma/schema.prisma` modèle `Object` :
-
-- [ ] **Feat** — Type CLOTHING : champs `size`, `gender`, `color`,
-  `material`, `brand`.
-- [ ] **Feat** — Type TOOL : renommer le tag vers "Outils" + champs
-  `powerSource` (`MANUAL` / `MAINS` / `BATTERY`), `brand`.
-- [ ] **Feat** — Tout type : champ `deposit` (caution, decimal) +
-  `rentalPriceDay`, `rentalPriceHour`, `rentalPriceWeek` (decimal,
-  optionnels).
+- [x] **Feat** — ~~Type CLOTHING : size/gender/color/material/brand~~ —
+  livré 2026-05-30. `size`/`gender`/`color`/`material` existaient
+  déjà ; ajout `brand String?` partagé (CLOTHING + TOOL) au schema +
+  Zod schemas + UI form (create + edit).
+- [x] **Feat** — ~~Type TOOL : label "Outils" + powerSource + brand~~ —
+  livré 2026-05-30. Label "Outils" déjà mappé dans `typeLabels`
+  (`object-form.tsx:25-34`). Nouvel enum `ToolPowerSource`
+  (`MANUAL`/`MAINS`/`BATTERY`) sur `Object`. Migration SQL backfill
+  les anciens booléens (`toolManual=true → MANUAL`, `toolBattery=true
+  → BATTERY`, TOOLs restants → `MAINS`). `toolManual` + `toolBattery`
+  marqués deprecated mais gardés pour rétro-compat. `brand` partagé.
+  UI : select Alimentation + input Marque sur TOOL form (create + edit).
+- [x] **Feat** — ~~deposit + rentalPriceDay/Hour/Week sur tout type~~ —
+  déjà présents avant ce sprint (`cautionAmount` + `rentalPriceDay`/
+  `Hour`/`Week`/`Km` sur `Object`).
 
 ### Flux UX d'ajout d'objet
 
@@ -83,11 +77,17 @@ Schema actuel : pas de fields par type. Ajouter dans
 
 ### Loans / contacts
 
-- [ ] **Feat** — Modal de prêt : dropdown contacts avec recherche
-  (au lieu de borrower-select-dialog actuel sur certains flows).
-- [ ] **Feat** — Modal de prêt : créer un contact directement depuis le
-  formulaire (déjà partiel : onglet "Nouveau" dans BorrowerSelectDialog
-  — vérifier la cohérence sur tous les flows).
+- [x] **Feat** — ~~Modal de prêt : dropdown contacts avec recherche~~ —
+  vérifié 2026-05-30. Les 2 flux d'entrée (`/loans` NOUVEAU PRÊT +
+  `/objects/[id]` "Prêter") passent déjà par `CreateLoanDialog` →
+  `BorrowerSelectDialog` qui a une recherche live sur contacts +
+  utilisateurs Brol (`borrower-select-dialog.tsx:183-277`). Aucun
+  flux divergent à harmoniser.
+- [x] **Feat** — ~~Créer contact depuis modal de prêt + cohérence
+  champs~~ — livré 2026-05-30. Onglet "Nouveau" du
+  `BorrowerSelectDialog` accepte maintenant aussi le champ `note`
+  (manquait par rapport au `ContactDialog` standalone). Parité
+  Nom/Email/Téléphone/Note avec `/contacts`.
 
 ### Parité mobile
 
@@ -151,6 +151,42 @@ Web a 19 pages, mobile a 12 écrans. Écrans à porter :
 
 Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
 
+- **2026-05-30** — Sprint clôture P0 + P1.
+  - **P0** :
+    - Gate `/api/test/cleanup-user` + `/api/test/get-token` sur
+      `NODE_ENV === "production"` → `404`
+      (`packages/api/src/server.ts:182, 207`).
+    - 11 → **0 E2E rouges**. A11y (`role="tab"` /loans,
+      `aria-label="Marquer comme retourné"`, bouton "Modifier"
+      `/contacts/[id]` + dialog inline), fix API
+      `contacts.get`/`loansForContact` (filtraient pas sur
+      `borrowerContactId` → historique vide pour contacts non-Brol),
+      correctifs sélecteurs/typos specs. Suite full E2E :
+      **193 pass / 0 fail / 6 skip**.
+    - Onglet "Empruntés" sur `/objects` : branche `borrowed`
+      sur `objects.all` + UI filtre + card dashboard "Empruntés"
+      → `/objects?status=borrowed`.
+    - Unicité handle (pseudo) : `users.checkHandleAvailability`
+      + `users.updateHandle` (mapping Prisma `P2002` → `TRPCError
+      CONFLICT` FR). Validation format `[a-z0-9]{3,20}` + liste
+      réservés. UI settings : bouton "Modifier" + input inline
+      avec feedback debouncé (400ms). Signup pas câblé (handle
+      auto-généré server-side via BetterAuth hook `auth.ts:125`).
+  - **P1** :
+    - Tests pour `community-request` (17), `notification` (11),
+      `messages` (8) — pattern caller `{ prisma, userId,
+      session: { user: { id } }, headers: {} }`.
+    - 2 fails collections résolus : tests attendaient un throw mais
+      les procs `get`/`getPublic` renvoient `null` **intentionnellement**
+      pour le fallback privé → public dans
+      `apps/web/src/app/collections/[id]/page.tsx`. Tests alignés
+      sur `toBeNull`.
+    - CI coverage-gate : `.github/workflows/ci.yml` (job `test`)
+      utilise `brol_test` + `TEST_DATABASE_URL`. `vitest.config.ts`
+      exclut infra (`auth.ts`, `s3.ts`, `trpc/index.ts`, `index.ts`).
+      Tests `lib/handle.test.ts` (slugifyName + generateHandle).
+      Couverture finale **87 / 64 / 73 / 87** (stmts/branches/funcs/
+      lines, seuils 60/50/60/60). **193 unit tests pass.**
 - **2026-05-29** — Audit + P0 + P1 + P3 : 8 commits (3382fae, 2dad4c9,
   cf34b91, 1a22d72, e6de769, 10d6508, c74d921, ce ci). 18 → 11 E2E rouges.
   +35 unit tests. Logger structuré déployé. Migrations Prisma

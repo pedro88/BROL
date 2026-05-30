@@ -132,4 +132,79 @@ describe("usersRouter", () => {
       expect(res?.email).toBe("alice@example.com");
     });
   });
+
+  // -------------------------------------------------------------------------
+  // checkHandleAvailability
+  // -------------------------------------------------------------------------
+
+  describe("checkHandleAvailability", () => {
+    it("returns available=true for an unused handle", async () => {
+      const res = await callerFor(alice.id).users.checkHandleAvailability({ handle: "freshone" });
+      expect(res).toEqual({ available: true });
+    });
+
+    it("returns reason=taken when another user owns the handle", async () => {
+      const res = await callerFor(alice.id).users.checkHandleAvailability({ handle: "bob5678" });
+      expect(res).toEqual({ available: false, reason: "taken" });
+    });
+
+    it("treats the current user's own handle as available (no-op)", async () => {
+      const res = await callerFor(alice.id).users.checkHandleAvailability({ handle: "alice1234" });
+      expect(res).toEqual({ available: true });
+    });
+
+    it("strips '#' prefix and lowercases before checking", async () => {
+      const res = await callerFor(alice.id).users.checkHandleAvailability({ handle: "#Bob5678" });
+      expect(res).toEqual({ available: false, reason: "taken" });
+    });
+
+    it("returns reason=reserved for reserved handles", async () => {
+      const res = await callerFor(alice.id).users.checkHandleAvailability({ handle: "admin" });
+      expect(res).toEqual({ available: false, reason: "reserved" });
+    });
+
+    it("returns reason=invalid for malformed input", async () => {
+      const tooShort = await callerFor(alice.id).users.checkHandleAvailability({ handle: "ab" });
+      expect(tooShort).toEqual({ available: false, reason: "invalid" });
+
+      const badChar = await callerFor(alice.id).users.checkHandleAvailability({ handle: "with space" });
+      expect(badChar).toEqual({ available: false, reason: "invalid" });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // updateHandle
+  // -------------------------------------------------------------------------
+
+  describe("updateHandle", () => {
+    it("updates the current user's handle", async () => {
+      const res = await callerFor(alice.id).users.updateHandle({ handle: "alicenew" });
+      expect(res.handle).toBe("alicenew");
+      const reloaded = await prisma.user.findUnique({ where: { id: alice.id }, select: { handle: true } });
+      expect(reloaded?.handle).toBe("alicenew");
+    });
+
+    it("throws CONFLICT when the handle is already taken by someone else", async () => {
+      await expect(
+        callerFor(alice.id).users.updateHandle({ handle: "bob5678" }),
+      ).rejects.toThrow(/déjà utilisé/);
+    });
+
+    it("throws BAD_REQUEST on invalid format", async () => {
+      await expect(
+        callerFor(alice.id).users.updateHandle({ handle: "ab" }),
+      ).rejects.toThrow(/3 à 20 caractères/);
+    });
+
+    it("throws BAD_REQUEST on reserved handle", async () => {
+      await expect(
+        callerFor(alice.id).users.updateHandle({ handle: "admin" }),
+      ).rejects.toThrow(/réservé/);
+    });
+
+    it("normalizes '#' prefix and case before saving", async () => {
+      const res = await callerFor(alice.id).users.updateHandle({ handle: "#AliceNew" });
+      expect(res.handle).toBe("alicenew");
+    });
+  });
 });

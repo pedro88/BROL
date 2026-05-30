@@ -61,10 +61,12 @@ describe("collectionsRouter", () => {
       expect(result.userId).toBe(owner.id);
     });
 
-    it("throws UNAUTHORIZED for other user's collection", async () => {
-      await expect(
-        callerFor(otherUser.id).collections.get({ id: collection.id })
-      ).rejects.toThrow();
+    it("returns null for other user's collection (graceful, not throw)", async () => {
+      // Intentional: the frontend (apps/web/src/app/collections/[id]/page.tsx)
+      // fires `get` + `getPublic` in parallel and falls back on null to render
+      // the public view. Throwing here would break that flow.
+      const result = await callerFor(otherUser.id).collections.get({ id: collection.id });
+      expect(result).toBeNull();
     });
   });
 
@@ -155,11 +157,17 @@ describe("collectionsRouter", () => {
       expect(result.objects[0].name).toBe("An Object");
     });
 
-    it("throws for private collection", async () => {
-      // collection from beforeEach is private
-      await expect(
-        callerFor(otherUser.id).collections.getPublic({ id: collection.id })
-      ).rejects.toThrow();
+    it("returns null for a private collection (graceful)", async () => {
+      // Same rationale as `get`: callers handle null to drive empty/redirect UX.
+      const result = await callerFor(otherUser.id).collections.getPublic({ id: collection.id });
+      expect(result).toBeNull();
+    });
+
+    it("returns null when the collection does not exist", async () => {
+      const result = await callerFor(otherUser.id).collections.getPublic({
+        id: "clxxxxxxxxxxxxxxxxxxxxxxx",
+      });
+      expect(result).toBeNull();
     });
   });
 });

@@ -20,7 +20,7 @@ test.describe("profile page", () => {
   test("non-existent profile shows PROFIL INTROUVABLE", async ({ page }) => {
     await page.goto(`${WEB_BASE}/profile/non-existent-profile-id`);
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/introvable|not found/i).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/introuvable|not found/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("valid profile shows user name", async ({ page }) => {

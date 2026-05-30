@@ -122,6 +122,101 @@ describe("objectsRouter", () => {
     });
   });
 
+  describe("create (per-type fields)", () => {
+    it("persists CLOTHING fields + brand", async () => {
+      const clothingCollection = await createTestCollection(owner.id, {
+        name: "Vêtements",
+      });
+      const created = await callerFor(owner.id).objects.create({
+        name: "Veste cuir",
+        condition: "GOOD",
+        collectionId: clothingCollection.id,
+        objectType: "CLOTHING",
+        clothingSize: "L",
+        clothingGender: "Homme",
+        clothingColor: "Noir",
+        clothingMaterial: "Cuir",
+        brand: "Schott",
+      });
+      expect(created.clothingSize).toBe("L");
+      expect(created.clothingGender).toBe("Homme");
+      expect(created.clothingMaterial).toBe("Cuir");
+      expect(created.brand).toBe("Schott");
+    });
+
+    it("persists TOOL fields with toolPowerSource enum", async () => {
+      const toolCollection = await createTestCollection(owner.id, { name: "Outils" });
+      const created = await callerFor(owner.id).objects.create({
+        name: "Perceuse",
+        condition: "GOOD",
+        collectionId: toolCollection.id,
+        objectType: "TOOL",
+        toolSector: "Bricolage",
+        toolPowerSource: "BATTERY",
+        brand: "Bosch",
+      });
+      expect(created.toolSector).toBe("Bricolage");
+      expect(created.toolPowerSource).toBe("BATTERY");
+      expect(created.brand).toBe("Bosch");
+    });
+
+    it("rejects an invalid toolPowerSource value", async () => {
+      await expect(
+        callerFor(owner.id).objects.create({
+          name: "Bad tool",
+          condition: "GOOD",
+          collectionId: collection.id,
+          objectType: "TOOL",
+          // @ts-expect-error — intentional invalid value
+          toolPowerSource: "NUCLEAR",
+        }),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe("all (status=borrowed)", () => {
+    it("returns objects borrowed by the user with owner info", async () => {
+      await prisma.loan.create({
+        data: {
+          objectId: object.id,
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          status: "ACTIVE",
+          lentAt: new Date(),
+        },
+      });
+
+      const result = await callerFor(borrower.id).objects.all({ status: "borrowed" });
+      expect(result.items).toHaveLength(1);
+      const item = result.items[0]!;
+      expect(item.id).toBe(object.id);
+      expect(item.owner?.id).toBe(owner.id);
+      expect(item.owner?.name).toBe("Owner");
+      expect(item.currentLoan?.status).toBe("ACTIVE");
+    });
+
+    it("does not return owned objects under borrowed status", async () => {
+      const result = await callerFor(owner.id).objects.all({ status: "borrowed" });
+      expect(result.items).toHaveLength(0);
+    });
+
+    it("excludes returned loans", async () => {
+      await prisma.loan.create({
+        data: {
+          objectId: object.id,
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          status: "RETURNED",
+          lentAt: new Date(),
+          returnedAt: new Date(),
+        },
+      });
+
+      const result = await callerFor(borrower.id).objects.all({ status: "borrowed" });
+      expect(result.items).toHaveLength(0);
+    });
+  });
+
   describe("lookupIsbn", () => {
     it("returns metadata for a valid ISBN", async () => {
       // ISBN 978-2-07-040850-4 = "Le Petit Prince" (should be in Open Library)

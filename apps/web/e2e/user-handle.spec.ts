@@ -294,8 +294,8 @@ test.describe("loan A → B propagates to borrower's Empruntés tab", () => {
     await page.goto(`${WEB_BASE}/loans`);
     await page.waitForLoadState("networkidle");
 
-    // Switch to the "Empruntés" tab (rendered as a plain <button>, not role=tab).
-    await page.getByRole("button", { name: /empruntés/i }).first().click();
+    // Switch to the "Empruntés" tab.
+    await page.getByRole("tab", { name: /empruntés/i }).click();
     await page.waitForLoadState("networkidle");
 
     // The object name and the owner's name must appear in B's borrowed list.

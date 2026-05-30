@@ -180,6 +180,11 @@ function handler(req: IncomingMessage, res: { statusCode: number; setHeader: (k:
 
   // Test helpers (e2e cleanup) — only in development
   if (pathname === "/api/test/cleanup-user" && req.method === "POST") {
+    if (process.env.NODE_ENV === "production") {
+      res.statusCode = 404;
+      res.end();
+      return;
+    }
     res.setHeader("Content-Type", "application/json");
     res.setHeader("Access-Control-Allow-Origin", "*");
     let body = "";
@@ -201,6 +206,11 @@ function handler(req: IncomingMessage, res: { statusCode: number; setHeader: (k:
   }
 
   if (pathname.startsWith("/api/test/get-token") && req.method === "GET") {
+    if (process.env.NODE_ENV === "production") {
+      res.statusCode = 404;
+      res.end();
+      return;
+    }
     res.setHeader("Content-Type", "application/json");
     res.setHeader("Access-Control-Allow-Origin", "*");
     const url = new URL(req.url ?? "", `http://localhost:${PORT}`);

@@ -12,6 +12,7 @@ import { z } from "zod";
 export const OBJECT_CONDITIONS = ["NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR"] as const;
 export const LOAN_STATUSES = ["ACTIVE", "RETURNED", "OVERDUE", "CANCELLED"] as const;
 export const LOCALES = ["fr", "nl", "en"] as const;
+export const TOOL_POWER_SOURCES = ["MANUAL", "MAINS", "BATTERY"] as const;
 export const OBJECT_TYPES = ["BOOK", "BOARD_GAME", "TOOL", "FILM", "MUSIC", "ELECTRONIC", "ELECTRIC", "CLOTHING", "CUSTOM"] as const;
 
 // ============================================
@@ -98,6 +99,9 @@ export const createObjectSchema = z.object({
   toolManual: z.boolean().optional(),
   toolSector: z.string().max(50).optional(),
   toolBattery: z.boolean().optional(),
+  toolPowerSource: z.enum(TOOL_POWER_SOURCES).optional(),
+  // Marque (CLOTHING + TOOL principalement)
+  brand: z.string().max(80).optional(),
   // Caution et tarification
   cautionAmount: z.number().min(0).optional(),
   rentalPriceDay: z.number().min(0).optional(),
@@ -140,6 +144,9 @@ const updateObjectBase = {
   toolManual: z.boolean().optional().nullable(),
   toolSector: z.string().max(50).optional().nullable(),
   toolBattery: z.boolean().optional().nullable(),
+  toolPowerSource: z.enum(TOOL_POWER_SOURCES).optional().nullable(),
+  // Marque
+  brand: z.string().max(80).optional().nullable(),
   // Caution et tarification
   cautionAmount: z.number().min(0).optional().nullable(),
   rentalPriceDay: z.number().min(0).optional().nullable(),

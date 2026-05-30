@@ -45,6 +45,7 @@ export function BorrowerSelectDialog({
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPhone, setNewPhone] = useState("");
+  const [newNote, setNewNote] = useState("");
 
   const utils = trpc.useUtils();
 
@@ -83,6 +84,7 @@ export function BorrowerSelectDialog({
     setNewName("");
     setNewEmail("");
     setNewPhone("");
+    setNewNote("");
     onOpenChange(false);
   }
 
@@ -103,6 +105,7 @@ export function BorrowerSelectDialog({
       name: newName.trim(),
       email: newEmail.trim() || undefined,
       phone: newPhone.trim() || undefined,
+      note: newNote.trim() || undefined,
     });
   }
 
@@ -391,6 +394,17 @@ export function BorrowerSelectDialog({
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
                   placeholder="+32 xxx xx xx xx"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newContactNote">Note (optionnel)</Label>
+                <Input
+                  id="newContactNote"
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Ami, collègue..."
+                  maxLength={500}
                 />
               </div>
 
