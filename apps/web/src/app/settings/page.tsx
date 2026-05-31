@@ -318,6 +318,9 @@ export default function SettingsPage() {
           )}
         </div>
 
+        {/* Informations personnelles */}
+        <PersonalInfoSection userId={user?.id ?? null} />
+
         {/* Tier section */}
         <div className="card-vhs p-6 space-y-4">
           <div className="flex items-center gap-2">
@@ -440,4 +443,226 @@ function HandleCheckHint({
   };
   const { label, color } = map[status];
   return <p className={`font-mono text-xs ${color}`}>{label}</p>;
+}
+
+/**
+ * Section "Informations personnelles" : champs perso optionnels (birthYear,
+ * gender, phone) + toggles de visibilité publique par champ. Tout est privé
+ * par défaut sauf la ville (déjà utilisée pour matching).
+ */
+function PersonalInfoSection({ userId }: { userId: string | null }) {
+  const { data, isLoading } = trpc.profile.get.useQuery(
+    { userId: userId ?? "" },
+    { enabled: !!userId },
+  );
+  const utils = trpc.useUtils();
+  const updateProfile = trpc.profile.update.useMutation({
+    onSuccess: () => {
+      if (userId) utils.profile.get.invalidate({ userId });
+      toast.success("Profil mis à jour");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Erreur lors de la mise à jour");
+    },
+  });
+
+  const [birthYear, setBirthYear] = useState("");
+  const [gender, setGender] = useState("");
+  const [phone, setPhone] = useState("");
+  const [visibility, setVisibility] = useState({
+    publicEmail: false,
+    publicPhone: false,
+    publicBirthYear: false,
+    publicGender: false,
+    publicCity: true,
+  });
+  const [hydrated, setHydrated] = useState(false);
+
+  // Hydrate state une fois que la query revient.
+  useEffect(() => {
+    if (!data || hydrated) return;
+    setBirthYear(data.birthYear?.toString() ?? "");
+    setGender(data.gender ?? "");
+    setPhone(data.phone ?? "");
+    if (data.visibility) {
+      setVisibility(data.visibility);
+    }
+    setHydrated(true);
+  }, [data, hydrated]);
+
+  if (isLoading || !userId) {
+    return (
+      <div className="card-vhs p-6 flex items-center justify-center">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const currentYear = new Date().getFullYear();
+
+  function handleSave() {
+    const parsedYear = birthYear.trim() ? Number(birthYear) : null;
+    if (parsedYear !== null) {
+      if (
+        !Number.isInteger(parsedYear) ||
+        parsedYear < 1900 ||
+        parsedYear > currentYear
+      ) {
+        toast.error(`Année invalide (1900 - ${currentYear}).`);
+        return;
+      }
+    }
+    updateProfile.mutate({
+      birthYear: parsedYear,
+      gender: gender.trim() || null,
+      phone: phone.trim() || null,
+      ...visibility,
+    });
+  }
+
+  function toggle(key: keyof typeof visibility) {
+    setVisibility((v) => ({ ...v, [key]: !v[key] }));
+  }
+
+  return (
+    <div className="card-vhs p-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <User className="w-5 h-5 text-primary" />
+        <h2 className="font-display text-xl vhs-text-glow text-primary">
+          INFORMATIONS PERSONNELLES
+        </h2>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Tout est optionnel et privé par défaut. Cochez "Public" pour rendre un
+        champ visible sur votre profil.
+      </p>
+
+      <div className="space-y-4">
+        <FieldRow label="Email" hint={data?.email ?? ""}>
+          <Toggle
+            checked={visibility.publicEmail}
+            onChange={() => toggle("publicEmail")}
+          />
+        </FieldRow>
+
+        <FieldRow label="Ville" hint={data?.city ?? "Non renseignée"}>
+          <Toggle
+            checked={visibility.publicCity}
+            onChange={() => toggle("publicCity")}
+          />
+        </FieldRow>
+
+        <FieldRow label="Année de naissance">
+          <Input
+            type="number"
+            inputMode="numeric"
+            value={birthYear}
+            onChange={(e) => setBirthYear(e.target.value)}
+            placeholder="ex: 1985"
+            min={1900}
+            max={currentYear}
+            className="w-32"
+          />
+          <Toggle
+            checked={visibility.publicBirthYear}
+            onChange={() => toggle("publicBirthYear")}
+          />
+        </FieldRow>
+
+        <FieldRow label="Genre">
+          <Input
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+            placeholder="ex: F, H, X, ou autre"
+            maxLength={32}
+            className="w-40"
+          />
+          <Toggle
+            checked={visibility.publicGender}
+            onChange={() => toggle("publicGender")}
+          />
+        </FieldRow>
+
+        <FieldRow label="Téléphone">
+          <Input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+32 ..."
+            maxLength={40}
+            className="w-48"
+          />
+          <Toggle
+            checked={visibility.publicPhone}
+            onChange={() => toggle("publicPhone")}
+          />
+        </FieldRow>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={updateProfile.isPending}>
+          {updateProfile.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            "Enregistrer"
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function FieldRow({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="min-w-[140px]">
+        <p className="text-sm font-medium">{label}</p>
+        {hint && (
+          <p className="text-xs text-muted-foreground font-mono truncate">
+            {hint}
+          </p>
+        )}
+      </div>
+      <div className="flex items-center gap-3">{children}</div>
+    </div>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+      <span className="text-[10px] font-mono uppercase text-muted-foreground">
+        Public
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={onChange}
+        className={`relative w-9 h-5 rounded-full transition-colors ${
+          checked ? "bg-primary" : "bg-muted"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background transition-transform ${
+            checked ? "translate-x-4" : ""
+          }`}
+        />
+      </button>
+    </label>
+  );
 }

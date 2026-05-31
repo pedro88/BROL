@@ -127,4 +127,79 @@ describe("profileRouter", () => {
       ).rejects.toThrow(/connecté|unauthorized/i);
     });
   });
+
+  describe("personal info + visibility", () => {
+    it("persists birthYear/gender/phone + toggles", async () => {
+      const res = await callerFor(alice.id).profile.update({
+        birthYear: 1985,
+        gender: "F",
+        phone: "+32 477 12 34 56",
+        publicPhone: true,
+        publicBirthYear: false,
+      });
+      expect(res.birthYear).toBe(1985);
+      expect(res.gender).toBe("F");
+      expect(res.phone).toBe("+32 477 12 34 56");
+      expect(res.publicPhone).toBe(true);
+      expect(res.publicBirthYear).toBe(false);
+    });
+
+    it("rejects birthYear outside [1900, current]", async () => {
+      await expect(
+        callerFor(alice.id).profile.update({ birthYear: 1850 }),
+      ).rejects.toThrow();
+    });
+
+    it("get hides email/phone/birthYear/gender by default for anonymous", async () => {
+      await callerFor(alice.id).profile.update({
+        phone: "+32 1",
+        birthYear: 1990,
+        gender: "X",
+      });
+      const res = await publicCaller().profile.get({ userId: alice.id });
+      expect(res.email).toBeNull();
+      expect(res.phone).toBeNull();
+      expect(res.birthYear).toBeNull();
+      expect(res.gender).toBeNull();
+      expect(res.visibility).toBeNull();
+    });
+
+    it("get exposes fields with public flag set", async () => {
+      await callerFor(alice.id).profile.update({
+        phone: "+32 2",
+        birthYear: 1990,
+        publicPhone: true,
+        publicBirthYear: true,
+      });
+      const res = await publicCaller().profile.get({ userId: alice.id });
+      expect(res.phone).toBe("+32 2");
+      expect(res.birthYear).toBe(1990);
+    });
+
+    it("get returns all private fields + visibility flags to self", async () => {
+      await callerFor(alice.id).profile.update({
+        phone: "+32 3",
+        birthYear: 1990,
+        publicPhone: false,
+      });
+      const res = await callerFor(alice.id).profile.get({ userId: alice.id });
+      expect(res.phone).toBe("+32 3");
+      expect(res.birthYear).toBe(1990);
+      expect(res.email).toBe("alice@example.com");
+      expect(res.visibility).toEqual({
+        publicEmail: false,
+        publicPhone: false,
+        publicBirthYear: false,
+        publicGender: false,
+        publicCity: true,
+      });
+    });
+
+    it("publicCity defaults to true", async () => {
+      await prisma.user.update({ where: { id: alice.id }, data: { city: "Bruxelles" } });
+      await callerFor(alice.id).profile.update({ bio: "hi" }); // creates Profile row with defaults
+      const res = await publicCaller().profile.get({ userId: alice.id });
+      expect(res.city).toBe("Bruxelles");
+    });
+  });
 });

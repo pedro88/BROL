@@ -318,7 +318,21 @@ model Profile {
   avatarUrl     String?
   tier          UserTier  @default(FREE)
   tierExpiresAt DateTime? // null = jamais (ou déjà payé pour TIER_2/3)
-  updatedAt     DateTime  @updatedAt
+
+  // Informations personnelles (toutes optionnelles)
+  birthYear Int? // ex: 1985 (préféré à age, stable)
+  gender    String? // "M" / "F" / "X" / autre libre (max 32 chars)
+  phone     String? // numéro contact (E.164 ou libre)
+
+  // Visibilité sur le profil public (`/profile/[handle]`). Par défaut tout
+  // est privé : l'email reste caché tant que le user n'opt-in pas.
+  publicEmail     Boolean @default(false)
+  publicPhone     Boolean @default(false)
+  publicBirthYear Boolean @default(false)
+  publicGender    Boolean @default(false)
+  publicCity      Boolean @default(true) // ville affichée par défaut (déjà utilisée pour matching)
+
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

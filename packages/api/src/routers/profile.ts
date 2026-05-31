@@ -28,10 +28,19 @@ export const profileRouter = router({
           email: true,
           image: true,
           createdAt: true,
+          city: true,
           profile: {
             select: {
               bio: true,
               avatarUrl: true,
+              birthYear: true,
+              gender: true,
+              phone: true,
+              publicEmail: true,
+              publicPhone: true,
+              publicBirthYear: true,
+              publicGender: true,
+              publicCity: true,
             },
           },
         },
@@ -40,6 +49,19 @@ export const profileRouter = router({
       if (!user) {
         throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
       }
+
+      // Caller — pour exposer les champs privés à soi-même.
+      const callerId = ctx.session?.user?.id ?? null;
+      const isSelf = callerId === user.id;
+
+      const p = user.profile;
+      const visibility = {
+        publicEmail: p?.publicEmail ?? false,
+        publicPhone: p?.publicPhone ?? false,
+        publicBirthYear: p?.publicBirthYear ?? false,
+        publicGender: p?.publicGender ?? false,
+        publicCity: p?.publicCity ?? true,
+      };
 
       // Calculer la note moyenne
       const reviews = await ctx.prisma.review.aggregate({
@@ -68,11 +90,18 @@ export const profileRouter = router({
         id: user.id,
         handle: user.handle,
         name: user.name,
-        email: user.email,
+        // Champs sensibles : retournés uniquement si flag public OR self.
+        email: isSelf || visibility.publicEmail ? user.email : null,
+        phone: isSelf || visibility.publicPhone ? (p?.phone ?? null) : null,
+        birthYear: isSelf || visibility.publicBirthYear ? (p?.birthYear ?? null) : null,
+        gender: isSelf || visibility.publicGender ? (p?.gender ?? null) : null,
+        city: isSelf || visibility.publicCity ? user.city : null,
         image: user.image,
         createdAt: user.createdAt,
-        bio: user.profile?.bio ?? null,
-        avatarUrl: user.profile?.avatarUrl ?? null,
+        bio: p?.bio ?? null,
+        avatarUrl: p?.avatarUrl ?? null,
+        // Self récupère aussi ses flags de visibilité pour piloter le UI settings.
+        visibility: isSelf ? visibility : null,
         averageRating: reviews._avg.rating ?? 0,
         reviewCount: reviews._count.id,
         badges: badges.map((ub) => ({
@@ -87,12 +116,28 @@ export const profileRouter = router({
 
   /**
    * Met à jour le profil du current user.
+   * Accepte les champs personnels (bio/avatar/birthYear/gender/phone) et
+   * les toggles de visibilité publique.
    */
   update: protectedProcedure
     .input(
       z.object({
         bio: z.string().max(500).optional(),
         avatarUrl: z.string().url().optional(),
+        birthYear: z
+          .number()
+          .int()
+          .min(1900)
+          .max(new Date().getFullYear())
+          .nullable()
+          .optional(),
+        gender: z.string().trim().max(32).nullable().optional(),
+        phone: z.string().trim().max(40).nullable().optional(),
+        publicEmail: z.boolean().optional(),
+        publicPhone: z.boolean().optional(),
+        publicBirthYear: z.boolean().optional(),
+        publicGender: z.boolean().optional(),
+        publicCity: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -100,14 +145,10 @@ export const profileRouter = router({
 
       const profile = await ctx.prisma.profile.upsert({
         where: { userId },
-        update: {
-          bio: input.bio,
-          avatarUrl: input.avatarUrl,
-        },
+        update: input,
         create: {
           userId,
-          bio: input.bio,
-          avatarUrl: input.avatarUrl,
+          ...input,
         },
       });
 

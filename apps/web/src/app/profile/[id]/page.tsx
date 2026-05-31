@@ -10,7 +10,7 @@ import { StarRating } from "@/components/profile/star-rating";
 import { ReviewCard } from "@/components/profile/review-card";
 import { LeaveReviewDialog } from "@/components/profile/leave-review-dialog";
 import { useState } from "react";
-import { ArrowLeft, Calendar, MessageSquare } from "lucide-react";
+import { ArrowLeft, Calendar, MessageSquare, MapPin, Phone, Mail, Cake, User as UserIcon } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -114,6 +114,15 @@ export default function ProfilePage({ params }: PageProps) {
           </div>
         </div>
 
+        {/* Informations publiques (selon flags publicXxx du profil) */}
+        <PublicInfoBlock
+          email={profile.email}
+          phone={profile.phone}
+          city={profile.city}
+          birthYear={profile.birthYear}
+          gender={profile.gender}
+        />
+
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="card-vhs p-4 text-center">
@@ -210,5 +219,76 @@ export default function ProfilePage({ params }: PageProps) {
         }}
       />
     </div>
+  );
+}
+
+/**
+ * Bloc "infos publiques" du profil. Affiche uniquement les champs qui sont
+ * non-null — le serveur (profile.get) a déjà appliqué les flags publicXxx.
+ * Masque le bloc entier si aucun champ n'est exposé.
+ */
+function PublicInfoBlock({
+  email,
+  phone,
+  city,
+  birthYear,
+  gender,
+}: {
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  birthYear: number | null;
+  gender: string | null;
+}) {
+  const hasAny = email || phone || city || birthYear || gender;
+  if (!hasAny) return null;
+
+  return (
+    <div className="card-vhs p-4 mb-6 space-y-2">
+      {city && (
+        <InfoLine icon={<MapPin className="w-3.5 h-3.5" />} value={city} />
+      )}
+      {email && (
+        <InfoLine
+          icon={<Mail className="w-3.5 h-3.5" />}
+          value={
+            <a href={`mailto:${email}`} className="hover:text-primary underline">
+              {email}
+            </a>
+          }
+        />
+      )}
+      {phone && (
+        <InfoLine
+          icon={<Phone className="w-3.5 h-3.5" />}
+          value={
+            <a href={`tel:${phone}`} className="hover:text-primary underline">
+              {phone}
+            </a>
+          }
+        />
+      )}
+      {birthYear && (
+        <InfoLine icon={<Cake className="w-3.5 h-3.5" />} value={String(birthYear)} />
+      )}
+      {gender && (
+        <InfoLine icon={<UserIcon className="w-3.5 h-3.5" />} value={gender} />
+      )}
+    </div>
+  );
+}
+
+function InfoLine({
+  icon,
+  value,
+}: {
+  icon: React.ReactNode;
+  value: React.ReactNode;
+}) {
+  return (
+    <p className="flex items-center gap-2 text-sm text-muted-foreground">
+      <span className="text-muted-foreground/70">{icon}</span>
+      {value}
+    </p>
   );
 }
