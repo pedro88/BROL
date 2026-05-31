@@ -81,43 +81,52 @@ Le script `scripts/e2e-run.sh` démarre l'API (`tsx src/server.ts`) sur
 :3001 et le web (`next dev`) sur :3000, attend leur disponibilité,
 puis lance Playwright. Cleanup à la fin (kill ports 3000/3001).
 
-## Baseline actuelle — 29 mai 2026 (post-P1)
+## Baseline actuelle — 31 mai 2026 (post-sprint community-request)
 
-### Tests unitaires : 132/134 (98 %)
+### Tests unitaires : 245/245 (100 %)
 
-| Fichier                  | Tests | Statut |
-| ------------------------ | ----: | :----: |
-| `badge.test.ts`          |     5 |   ✅   |
-| `collections.test.ts`    |    14 |   ⚠️ 2 rouges (auth UNAUTHORIZED) |
-| `contacts.test.ts`       |    12 |   ✅   |
-| `loans.test.ts`          |    11 |   ✅   |
-| `objects.test.ts`        |    11 |   ✅   |
-| `photos.test.ts`         |    13 |   ✅   |
-| **`profile.test.ts`**    |    10 |   ✅ *nouveau (P1)* |
-| `qr.test.ts`             |    12 |   ✅   |
-| **`review.test.ts`**     |    12 |   ✅ *nouveau (P1)* |
-| `tier.test.ts`           |    21 |   ✅   |
-| **`users.test.ts`**      |    13 |   ✅ *nouveau (P1)* |
+| Fichier                       | Tests | Statut |
+| ----------------------------- | ----: | :----: |
+| `badge.test.ts`               |     5 |   ✅   |
+| `collections.test.ts`         |    14 |   ✅   |
+| `community-request.test.ts`   |    23 |   ✅ *étendu 2026-05-31* (matching radius, 5 nouveaux cas) |
+| `contacts.test.ts`            |    12 |   ✅   |
+| `geo.test.ts`                 |    12 |   ✅ *nouveau 2026-05-31* |
+| `handle.test.ts`              |     8 |   ✅   |
+| `loans.test.ts`               |    11 |   ✅   |
+| `messages.test.ts`            |     8 |   ✅   |
+| `notification.test.ts`        |    11 |   ✅   |
+| `objects.test.ts`             |    11 |   ✅   |
+| `photos.test.ts`              |    13 |   ✅   |
+| `profile.test.ts`             |    16 |   ✅ *+6 cas perso+visibility 2026-05-31* |
+| `qr.test.ts`                  |    12 |   ✅   |
+| `request-messages.test.ts`    |     9 |   ✅ *nouveau 2026-05-31* |
+| `review.test.ts`              |    12 |   ✅   |
+| `tier.test.ts`                |    21 |   ✅   |
+| `users.test.ts`               |    25 |   ✅ *5 location + 1 handle-lock 2026-05-31* |
 
-11/14 routers ont un fichier de tests. Manquants : `community-request`,
-`messages`, `notification`.
+17 fichiers couvrent les 15 routers + 2 modules `lib/`. Plus aucun
+router sans tests.
 
-### Tests E2E : 182/193 (94 %)
+### Tests E2E : 193 (suite full pass post-sprint 2026-05-30)
 
-11 rouges chroniques restants (contacts ×5, loans ×4, profile ×1,
-requests ×1). Voir BACKLOG.md §P0 pour le triage individuel.
+11 rouges du sprint M004 tous résolus depuis 2026-05-30. À ajouter
+prochainement : E2E community-request bout-en-bout (signup → onboarding
+→ demande → match → notif → thread).
 
 Spec récente : `user-handle.spec.ts` — 8 tests couvrant le flux
 handle public + QR add-friend + propagation A→B sur `/loans`.
 
 ### Historique
 
-| Date            | Unit             | E2E              | Notes |
-| --------------- | ---------------- | ---------------- | ----- |
-| Avant M004      | 60/60            | 28/76 (37 %)     | Fetch failed massifs, API non démarrée |
-| 5 mai 2026 (S01)| 60/60            | 56/76 (74 %)     | +28 fixés : config BetterAuth, DB, double serveur |
-| 6 mai 2026      | 60/60            | 56/76 (74 %)     | Stable |
-| **29 mai 2026** | **132/134 (98%)** | **182/193 (94%)** | P0+P1 : +35 unit tests, middleware fixé, RSC split QR, coverage v8 |
+| Date              | Unit             | E2E              | Notes |
+| ----------------- | ---------------- | ---------------- | ----- |
+| Avant M004        | 60/60            | 28/76 (37 %)     | Fetch failed massifs, API non démarrée |
+| 5 mai 2026 (S01)  | 60/60            | 56/76 (74 %)     | +28 fixés : config BetterAuth, DB, double serveur |
+| 6 mai 2026        | 60/60            | 56/76 (74 %)     | Stable |
+| 29 mai 2026       | 132/134 (98%)    | 182/193 (94%)    | P0+P1 : +35 unit tests, middleware fixé, RSC split QR, coverage v8 |
+| 30 mai 2026       | 193/193          | 193/193          | Tous routers couverts + E2E full pass |
+| **31 mai 2026**   | **245/245**      | **193/193**      | Sprint community-request : +37 unit (geo, request-messages, matching, location, profile visibility) |
 
 ## Écrire un test unitaire
 

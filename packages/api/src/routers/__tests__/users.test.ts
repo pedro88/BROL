@@ -176,35 +176,17 @@ describe("usersRouter", () => {
   // updateHandle
   // -------------------------------------------------------------------------
 
-  describe("updateHandle", () => {
-    it("updates the current user's handle", async () => {
-      const res = await callerFor(alice.id).users.updateHandle({ handle: "alicenew" });
-      expect(res.handle).toBe("alicenew");
-      const reloaded = await prisma.user.findUnique({ where: { id: alice.id }, select: { handle: true } });
-      expect(reloaded?.handle).toBe("alicenew");
-    });
-
-    it("throws CONFLICT when the handle is already taken by someone else", async () => {
+  describe("updateHandle (désactivé)", () => {
+    it("throws FORBIDDEN — handle immuable", async () => {
       await expect(
-        callerFor(alice.id).users.updateHandle({ handle: "bob5678" }),
-      ).rejects.toThrow(/déjà utilisé/);
-    });
-
-    it("throws BAD_REQUEST on invalid format", async () => {
-      await expect(
-        callerFor(alice.id).users.updateHandle({ handle: "ab" }),
-      ).rejects.toThrow(/3 à 20 caractères/);
-    });
-
-    it("throws BAD_REQUEST on reserved handle", async () => {
-      await expect(
-        callerFor(alice.id).users.updateHandle({ handle: "admin" }),
-      ).rejects.toThrow(/réservé/);
-    });
-
-    it("normalizes '#' prefix and case before saving", async () => {
-      const res = await callerFor(alice.id).users.updateHandle({ handle: "#AliceNew" });
-      expect(res.handle).toBe("alicenew");
+        callerFor(alice.id).users.updateHandle({ handle: "alicenew" }),
+      ).rejects.toThrow(/définitif/);
+      // Vérifie qu'aucune modification n'a touché la DB.
+      const reloaded = await prisma.user.findUnique({
+        where: { id: alice.id },
+        select: { handle: true },
+      });
+      expect(reloaded?.handle).toBe("alice1234");
     });
   });
 

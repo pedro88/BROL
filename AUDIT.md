@@ -1,35 +1,37 @@
-# AUDIT BROL — 2026-05-29 (révisé après sprint P0/P1/P3)
+# AUDIT BROL — 2026-05-31 (après mega-sprint community-request)
 
 > Audit synthétique du monorepo Brol.
 > Périmètre : `apps/web`, `apps/mobile`, `packages/{api,db,shared}`, infra de test/déploiement.
 >
-> **Révision 2 (fin de journée 2026-05-29)** — après 9 commits (P0 + P1 + P3 + ops).
-> Les notes en italique mentionnent les deltas vs la version initiale du matin.
+> **Révision 3 (fin de journée 2026-05-31)** — après 8 nouveaux commits
+> (community-request + notifs + profil + lock handle). Le scoring reflète
+> l'état post-sprint.
 
 ---
 
 ## TL;DR
 
-| Dimension                 | Initial | **Révisé** | Δ    |
-| ------------------------- | :-----: | :--------: | :--: |
-| Architecture              | 8/10    | **8/10**   |  →   |
-| Qualité de code           | 6/10    | **7/10**   |  ↑   |
-| Tests — unitaires         | 6/10    | **7/10**   |  ↑   |
-| Tests — E2E               | 7/10    | **8/10**   |  ↑   |
-| Sécurité                  | 6/10    | **6/10**   |  →   |
-| DX / outillage            | 7/10    | **8/10**   |  ↑   |
-| Documentation             | 8/10    | **9/10**   |  ↑   |
-| CI/CD & déploiement       | 6/10    | **7/10**   |  ↑   |
-| Complétude fonctionnelle  | 5/10    | **5/10**   |  →   |
-| Parité mobile             | 4/10    | **4/10**   |  →   |
-| **Global**                | 6.3/10  | **6.9/10** |  ↑   |
+| Dimension                 | 2026-05-29 | **2026-05-31** | Δ    |
+| ------------------------- | :--------: | :------------: | :--: |
+| Architecture              | 8/10       | **8/10**       |  →   |
+| Qualité de code           | 7/10       | **8/10**       |  ↑   |
+| Tests — unitaires         | 7/10       | **8/10**       |  ↑   |
+| Tests — E2E               | 8/10       | **8/10**       |  →   |
+| Sécurité                  | 6/10       | **7/10**       |  ↑   |
+| DX / outillage            | 8/10       | **8/10**       |  →   |
+| Documentation             | 9/10       | **9/10**       |  →   |
+| CI/CD & déploiement       | 7/10       | **7/10**       |  →   |
+| Complétude fonctionnelle  | 5/10       | **7/10**       |  ↑↑  |
+| Parité mobile             | 4/10       | **3/10**       |  ↓   |
+| **Global**                | 6.9/10     | **7.3/10**     |  ↑   |
 
-**Verdict actuel** : produit consolidé sur l'hygiène (CI verte avec
-coverage, logger structuré, migrations Prisma versionnées, doc set
-complet). Reste un **incident de test isolation** corrigé (perte
-données dev locale via `vitest` mal isolé). **App mobile toujours
-40 % derrière le web** et **6 features produit** en attente (cf.
-BACKLOG.md P2).
+**Verdict actuel** : feature community-request livrée bout-en-bout
+(géocodage, matching, notifs, thread in-app, email out-of-band).
+**245 tests unit verts** (+37 vs précédent). Lock handle (sécurité URLs
+publiques) + extension profil (visibility toggles par champ) en bonus.
+**App mobile décroche encore** (web a maintenant 22+ pages, mobile en
+gardé 12). Reste à industrialiser : E2E du flow community-request,
+parité mobile M2, rate limiting auth.
 
 ---
 
@@ -38,10 +40,13 @@ BACKLOG.md P2).
 ### Inventaire
 
 - **Monorepo Turborepo** : 2 apps (`web`, `mobile`) + 3 packages (`api`, `db`, `shared`).
-- **API tRPC** : 14 routers, ~6 000 lignes TS.
-- **Web Next.js 15 App Router** : 19 pages, ~11 300 lignes TS/TSX.
-- **Mobile Expo SDK 54** : 12 écrans, ~2 200 lignes TS/TSX.
-- **DB Prisma** : 17 modèles, PostgreSQL, sans dossier `migrations/` (workflow `db push`).
+- **API tRPC** : 15 routers (+`requestMessages`), ~7 000 lignes TS.
+- **Web Next.js 15 App Router** : 22+ pages (+`/onboarding/location`,
+  `/requests/[id]`), ~12 500 lignes TS/TSX.
+- **Mobile Expo SDK 54** : 12 écrans, ~2 200 lignes TS/TSX (inchangé —
+  M2 mobile pas commencé).
+- **DB Prisma** : 18 modèles (ajout `RequestMessage`), PostgreSQL,
+  **dossier `migrations/` versionné** (10 migrations).
 - **Auth** : BetterAuth, cross-subdomain cookies (`app.brol.dev` ↔ `api.brol.dev`).
 
 ### Points forts
@@ -53,7 +58,9 @@ BACKLOG.md P2).
 
 ### Points faibles
 
-- **Pas d'historique de migrations** Prisma — `db push` direct. Risque sur la prod (drift entre environnements, pas de rollback typé).
+- ~~Pas d'historique de migrations~~ — résolu : dossier
+  `migrations/` est versionné depuis 2026-05-11 (10 migrations
+  cumulées). Workflow `prisma migrate deploy` utilisé en dev + prod.
 - **Cycle de dépendance latent** : `packages/api` importe `@brol/db` qui importe le client Prisma généré dans `node_modules/@prisma/client` — la régénération n'est pas dans le pipeline `pnpm install` post-script.
 - **Pas de couche service distincte** : la logique métier (transactions, règles tier, badges) vit directement dans les routers (cf. `loans.ts` 600+ lignes).
 - **Stale artefacts** : `*.js`/`*.d.ts` traînaient dans `packages/shared/src/` (nettoyé dans `1a22d72`), ce qui shadowait les schémas Zod live. À surveiller, surveiller le `outDir` du tsconfig.
@@ -419,4 +426,42 @@ Voir [BACKLOG.md §P2](BACKLOG.md#-p2--produit--mobile). Non commencé.
 
 *Audit initial : 2026-05-29 matin (rev 1).*
 *Révision : 2026-05-29 soir (rev 2) après 9 commits P0+P1+P3+ops.*
-*Code base : ~20 500 lignes TS/TSX hors `node_modules`.*
+*Révision : 2026-05-31 (rev 3) après mega-sprint community-request +
+notifs + profile.*
+*Code base : ~21 700 lignes TS/TSX hors `node_modules`.*
+
+---
+
+## 15. Sprint 2026-05-31 — community-request bout-en-bout
+
+### Livré
+
+| Domaine | Détail |
+| ------- | ------ |
+| Localisation user | `User.country/postalCode/city/lat/lng` + index `(country, postalCode)`. Geocoding via Zippopotam.us (no cache DB, lat/lng persistés sur User). |
+| Soft gate | Middleware Next + cookie `brol_loc_complete` + page `/onboarding/location` avec autocomplete debounced 400ms. |
+| Matching | Raw SQL Haversine 6371 km + ILIKE sur `Object.name`/`author`. Filtre owners avec `lat/lng != null` + exclusion caller. |
+| Thread in-app | Modèle `RequestMessage` (requestId, fromUserId, toUserId, content, isRead). Router `requestMessages.send`/`list` avec règles owner↔author. Email out-of-band Resend (preview 120 chars + CTA). |
+| Notifications | Bell badge unread (header desktop + mobile menu), polling 30s. Notif cliquable → `/requests/[id]` selon `relatedType`. |
+| Dashboard | Quick action "Demander à la communauté" + section "MES DEMANDES" (5 plus récentes, badge unread). |
+| Profile | `Profile.birthYear/gender/phone` + 5 toggles `publicXxx` (`publicCity` default true, autres false). Settings UI + `/profile/[id]` conditionnel. |
+| Sécurité | `users.updateHandle` retourne `FORBIDDEN` — handle immuable car utilisé dans URLs publiques + QR. Bouton UI retiré. |
+
+### Métriques
+
+- **8 commits** : `dd34c0c`, `33df85c`, `ae2ba9f`, `d349455`, +
+  dashboard/profile/email/handle-lock.
+- **4 migrations** : add user location, drop scratched PostalCode,
+  add request_messages, profile personal info.
+- **+37 tests unit** (245/245 total). 12 geo + 5 location + 5 matching
+  + 9 requestMessages + 6 profile.
+- **Bugs corrigés à chaud** : cookie cross-session, React Query cache
+  stale entre users (`removeQueries` vs `invalidateQueries`),
+  toast undefined.
+
+### Hors scope ce sprint
+
+- Mobile parité (ajoute encore au gap web/mobile).
+- E2E flow community-request bout-en-bout.
+- Email Resend : code en place, manque clé API en prod.
+- Rate limiting auth (toujours backlog).

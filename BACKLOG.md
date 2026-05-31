@@ -245,136 +245,78 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 - [x] **Tech** — ~~Schema : `User.country/postalCode/city/lat/lng`~~ —
   livré 2026-05-31. Migration `20260530120000_add_user_location_and_
   postal_codes` + index `(country, postalCode)`.
-- [ ] **Tech** — Helper `lib/geo.ts` :
-  - `geocodePostalCode(country, postalCode) → { lat, lng, city } | null` :
-    `fetch("https://api.zippopotam.us/{country}/{postalCode}")`.
-    Parse JSON `places[0]` → `{ latitude, longitude, "place name" }`.
-    Retry 1× sur 5xx. Timeout 3s.
-  - `haversineSql(lat, lng, radiusKm) → Prisma.Sql` pour `WHERE` clause
-    matching users dans rayon.
-- [ ] **Feat** — Procédure `users.updateLocation` (zod
-  `{ country: 2 chars, postalCode: 3-10 chars }`). Appelle
-  `geocodePostalCode` → set `User.country/postalCode/city/lat/lng`.
-  Throw `BAD_REQUEST` si API retourne 404 (CP inconnu).
-- [ ] **Feat** — Procédure `users.previewLocation` (publicProcedure
-  pour debounce autocomplete) : input idem `updateLocation`, retour
-  `{ city, lat, lng } | null` sans persister. Sert au feedback live UI.
-- [ ] **Feat** — Soft gate "complete-profile" :
-  - Middleware tRPC ou Next middleware qui redirect vers
-    `/onboarding/location` si `user.postalCode == null`.
-  - Page `/onboarding/location` : form pays (select) + CP. Debounce
-    400ms sur CP → `users.previewLocation` → affiche ville en
-    read-only (bloc vert si trouvé, rouge si inconnu). Submit →
-    `users.updateLocation` → redirect dashboard.
-  - Skippable uniquement pour `/settings` (pour fix après coup).
-- [ ] **Feat** — Étendre `communityRequest.create` :
-  - Input zod : `title`, `description?`, `radiusKm`
-    (enum `5|10|25|50|100`, défaut 25). Plus de `zone` texte libre
-    (dérivé de `User.postalCode/country` du caller).
-  - Matching :
-    1. Query owners avec `User.lat/lng != null` dans rayon
-       (Haversine raw SQL).
-    2. Pour chaque owner, scan `Object.name ILIKE %title%` OR
-       `Object.author ILIKE %title%` (fuzzy basique, full-text plus
-       tard).
-    3. Pour chaque match (owner, object) : créer `Notification`
-       type `COMMUNITY_REQUEST_MATCH`, payload
-       `{ requestId, objectId, requesterHandle, distanceKm }`.
-  - Retour : `{ requestId, matchCount }` pour toast UX.
-- [ ] **Tech** — Ajouter `NotificationType.COMMUNITY_REQUEST_MATCH` à
-  enum schema + handler frontend.
-- [ ] **Feat** — Dashboard : bouton "Demander à la communauté" dans
-  actions rapides → `CommunityRequestDialog`.
-  - Champs : `title` (input), `description?` (textarea), `radiusKm`
-    (slider 5/10/25/50/100). Affiche "Recherche dans X km autour de
-    {city}".
-  - Submit → toast "Demande envoyée — {N} voisins notifiés".
-- [ ] **Bug** — Retirer bouton "Demander à la communauté" de
-  `/objects/[id]` (apps/web/src/app/objects/[id]/page.tsx).
-- [ ] **Feat** — Page `/requests` : liste des demandes du user
-  (créées + reçues via notif) avec statut. Existe déjà côté router
-  (`communityRequest.list`).
+- [x] **Tech** — ~~Helper `lib/geo.ts`~~ — livré.
+  `geocodePostalCode` + `haversineSql` + `haversineKm`. 12 tests.
+- [x] **Feat** — ~~`users.updateLocation` + `previewLocation`~~ —
+  livré. Procédures protégées (preview pour debounce, update pour
+  persist). 5 tests.
+- [x] **Feat** — ~~Soft gate "complete-profile"~~ — livré. Cookie
+  `brol_loc_complete` géré par middleware + page client
+  `/onboarding/location` (clear cookie sur sign-in pour purger
+  cross-session).
+- [x] **Feat** — ~~Étendre `communityRequest.create`~~ — livré.
+  Matching Haversine + ILIKE + fan-out notifications. Réutilise
+  l'enum existant `NotificationType.COMMUNITY_REQUEST` (pas besoin
+  d'un nouveau).
+- [x] **Feat** — ~~Dashboard modal "Demander à la communauté"~~ —
+  livré. Slider radius + toast matchCount.
+- [x] **Bug** — ~~Retirer bouton sur `/objects/[id]`~~ — livré.
+- [x] **Feat** — ~~Page `/requests`~~ — la page existait déjà
+  (router `communityRequest.list`). Plus la page `/requests/[id]`
+  ajoutée 2026-05-31 avec thread `requestMessages` complet.
 - [ ] **Feat mobile** — Modal équivalent sur dashboard mobile → M2/M3.
-- [ ] **Bug/Security** — Verrouiller la modification du pseudo
-  (`handle`). Constaté 2026-05-31.
-  - Aujourd'hui `/settings` expose un bouton "Modifier le pseudo"
-    (`settings/page.tsx:284`) qui appelle `users.updateHandle`.
-  - Le pseudo est utilisé dans les URL publiques (`/profile/[handle]`,
-    QR profil) et probablement dans des liens externes partagés —
-    permettre sa modification casse les liens et permet l'impersonation
-    (un user peut prendre un handle libéré par quelqu'un d'autre).
-  - Action : retirer le bouton UI ET désactiver la procédure
-    `users.updateHandle` (mutation `BAD_REQUEST` "handle immuable")
-    OU autoriser exactement 1 changement par compte (audit log + flag
-    `handleChangedAt` non-null bloque les suivants).
-  - Décider lequel des 2 modes garder avant de coder.
-- [ ] **Feat** — Extension profil utilisateur : ajouter section
-  "Localisation" sur `/settings` (et profil public si user opt-in)
-  affichant pays + CP + ville + bouton "Modifier" qui réutilise le
-  composant `LocationForm` de `/onboarding/location`. Plus champs
-  optionnels sur `Profile` (ou `User`) :
-  - `birthYear` (Int? — préféré à `age` car stable).
-  - `gender` (String? — "M" / "F" / "X" / autre, libre).
-  - `phone` (String? — déjà dans `Contact`, à propager sur `User`).
-  - `publicEmail` (Boolean — afficher email sur profil public).
-  - `publicPhone` / `publicBirthYear` / `publicGender` (toggles
-    visibilité par champ).
-  - Schema + migration Prisma (probablement sur `Profile`).
-  - Section "Informations personnelles" sur `/settings` : form
-    contrôle granulaire de la visibilité.
-  - Page profil public `/profile/[handle]` : afficher uniquement
-    les champs avec flag `public*` à `true`.
-- [ ] **Tech** — Tests unit :
-  - Haversine : 3 cas (0 km, 100 km, antipode).
-  - `users.updateLocation` : CP valide (mock fetch), CP inconnu (404
-    mock), API down (timeout mock).
-  - `users.previewLocation` : idem.
-  - `communityRequest.create` matching : owner in radius + name match,
-    owner in radius + no match, owner out of radius.
-  - Soft gate redirect.
+- [x] **Bug/Security** — ~~Verrouiller la modification du pseudo
+  (`handle`)~~ — livré 2026-05-31. Bouton "Modifier" retiré du UI
+  settings + `users.updateHandle` retourne `FORBIDDEN`
+  ("Le pseudo est définitif…"). 4 tests obsolètes supprimés,
+  remplacés par 1 test verrouillage. Si on rouvre plus tard pour
+  autoriser 1 changement, voir comment réactiver dans le router.
+- [x] **Feat** — ~~Extension profil utilisateur~~ — livré 2026-05-31.
+  - Schema `Profile` enrichi avec `birthYear/gender/phone` +
+    toggles `publicEmail/Phone/BirthYear/Gender/City`
+    (`publicCity` default true, les autres false).
+  - Migration `20260531110000_profile_personal_info`.
+  - `profile.update` accepte tous ces champs avec validation zod.
+  - `profile.get` masque les champs sensibles sauf si flag public OU
+    caller = self. Self récupère `visibility` pour piloter UI.
+  - Settings : section "INFORMATIONS PERSONNELLES" avec inputs +
+    toggle switch "Public" par champ.
+  - `/profile/[id]` : composant `PublicInfoBlock` rend city/email/
+    phone/birthYear/gender uniquement si visible. Bloc masqué si rien
+    de public.
+  - 6 nouveaux tests profile (16 total pour le router).
+  - Section "Localisation" sur settings : pas faite séparément —
+    déjà gérée via `/onboarding/location` + toggle `publicCity`.
+- [x] **Tech** — ~~Tests unit~~ — livré 2026-05-31. 12 geo + 5 location
+  + 5 matching + 9 requestMessages + 6 profile = 37 nouveaux tests.
+  245/245 pass au total.
 - [ ] **Tech** — E2E : signup → forced onboarding → CP → dashboard →
-  créer demande → owner reçoit notif.
+  créer demande → owner reçoit notif → click notif → envoyer message.
 
-**UX gaps constatés à l'usage (2026-05-31)** :
+**UX gaps constatés à l'usage (2026-05-31) — tous livrés** :
 
-- [ ] **Feat** — Visibilité de la demande post-submit. Constaté
-  2026-05-31 : après le toast "X voisins notifiés", l'utilisateur n'a
-  aucun feedback que la demande est bien stockée — il ne peut pas la
-  revoir, l'éditer ou l'annuler facilement.
-  - Vérification DB : confirmé que la demande est bien créée
-    (`community_requests` ligne `cmptetfrz000611bzqosfadng`).
-  - Ajouter section "Mes demandes en cours" sur le dashboard
-    (component `RequestsList` filtré par `authorId == me`), ou bouton
-    "Voir mes demandes" dans le toast.
-  - Routes existent déjà (`communityRequest.myRequests` + page
-    `/requests`). Manque le câblage UI dashboard.
-- [ ] **Feat** — Badge "nouvelles notifications" sur l'icône Bell de
-  la navigation. Actuellement aucune indication visuelle qu'une
-  notification non-lue est arrivée.
-  - Compteur unread via `notifications.unreadCount` (proc à ajouter
-    si manquant ; sinon dériver de `notifications.list` filtré
-    `isRead=false`).
-  - Badge rouge avec compteur sur Bell (header + bottom nav mobile).
-  - Pas de polling agressif : invalidation sur mount + sur réception
-    d'une mutation côté caller (optimistic).
-  - Investiguer Server-Sent Events ou WebSocket pour push temps réel
-    (V2 — pour V1 polling toutes les 60s suffit).
-- [ ] **Feat** — Click sur notification `COMMUNITY_REQUEST` →
-  contact direct du demandeur. Aujourd'hui le clic ne fait rien (ou
-  ouvre une page liste). Le owner doit pouvoir proposer son objet
-  d'un seul clic.
-  - Notification cliquable → route `/requests/{requestId}` (page
-    détail demande, à compléter).
-  - Sur cette page, bouton primaire "Proposer cet objet" → dialog
-    précomplété (l'objet matché vient de `relatedType=request` +
-    payload — actuellement on stocke `relatedId` mais pas l'objet
-    matché ; faudra étendre `Notification.payload Json?` ou ajouter
-    colonne `relatedObjectId`).
-  - Submit → crée un `Message` (router `messages` existe) entre owner
-    et requester, marque `CommunityRequest.fulfillByRequestId` si
-    accepté.
-  - Notification au requester "X vous propose un objet" → page de
-    réponse → accepter → flow normal de prêt (`/loans` create).
+- [x] **Feat** — ~~Visibilité de la demande post-submit~~ — livré
+  2026-05-31. Dashboard expose section "MES DEMANDES" (5 plus
+  récentes, masquée si vide) avec lien direct vers `/requests/[id]`.
+  Backend : `communityRequest.myRequests` enrichi avec `messageCount`
+  + `unreadCount` (groupBy SQL). Badge rouge sur la card si
+  `unreadCount > 0`.
+- [x] **Feat** — ~~Badge "nouvelles notifications" sur l'icône Bell~~
+  — livré 2026-05-31. Header desktop + mobile menu affichent un badge
+  rouge avec le compteur (max "9+"), polling 30s via
+  `trpc.notification.unreadCount`. Pas de SSE/WebSocket pour V1.
+- [x] **Feat** — ~~Click sur notification COMMUNITY_REQUEST → contact
+  direct~~ — livré 2026-05-31 mais via flow alternatif :
+  - Notif désormais cliquable (`/notifications` + click → markRead +
+    router.push selon `relatedType`).
+  - Plutôt qu'un bouton "Proposer cet objet" tiré du match, page
+    `/requests/[id]` expose un thread in-app (modèle `RequestMessage`
+    + router `requestMessages.send`/`list`). Pas besoin de stocker
+    `relatedObjectId` sur Notification — owner choisit librement son
+    propos dans une textarea.
+  - Privacy : handle + nom seuls, email/phone selon flags Profile.
+  - Email out-of-band via Resend (preview 120 chars + CTA vers
+    `/requests/[id]`). Skipped si `RESEND_API_KEY` absent.
 
 **V2 (hors scope initial)** :
 - Full-text search Postgres `tsvector` au lieu de `ILIKE`.
@@ -435,6 +377,45 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
 
+- **2026-05-31** — Mega-sprint *community-request + notifs + profile*.
+  - 8 commits cohérents (`dd34c0c`, `33df85c`, `ae2ba9f`, `d349455`,
+    + dashboard/profile/email/handle-lock).
+  - **Backend** :
+    - 4 nouvelles migrations Prisma (add user location, drop scratched
+      PostalCode, add request_messages, profile personal info).
+    - 5 nouveaux modèles/relations : User loc fields,
+      `RequestMessage`, Profile perso fields + visibility toggles.
+    - 2 nouveaux routers : `requestMessages` (send + list),
+      `lib/geo.ts` (geocode Zippopotam + Haversine).
+    - Procédures ajoutées : `users.updateLocation` /
+      `previewLocation`, `communityRequest.create` étendue
+      (matching radius), `communityRequest.myRequests` enrichi
+      (messageCount + unreadCount), `profile.update` étendu (perso +
+      visibility), `profile.get` filtre par flags publicXxx.
+    - Email out-of-band via Resend sur nouveau `RequestMessage`
+      (skipped si pas de clé API).
+    - 37 nouveaux tests unit (245/245 total).
+    - **`users.updateHandle` désactivé** : retourne `FORBIDDEN`
+      ("Le pseudo est définitif…"). Préserve URLs publiques + QR.
+  - **Frontend** :
+    - Soft gate localisation : middleware Next + page
+      `/onboarding/location` avec autocomplete debounced.
+    - Dashboard : action "Demander à la communauté" + section
+      "MES DEMANDES" avec badge unread.
+    - Bell badge unread dans Header (polling 30s).
+    - Notifications cliquables avec routing par `relatedType`.
+    - Page `/requests/[id]` : header demande + thread + form envoi.
+    - Settings : section "Informations personnelles" + toggles
+      visibilité.
+    - `/profile/[id]` : bloc public conditionnel.
+    - Bouton "Modifier pseudo" retiré.
+  - **Bugs corrigés** :
+    - Cookie `brol_loc_complete` cross-session : purge sur visite
+      `/sign-in`.
+    - React Query cache stale entre users : `removeQueries` au lieu
+      de `invalidateQueries` sur token change.
+    - Toast "undefined voisin" : fallback défensif si matchCount
+      manque (tsx watch parfois stale).
 - **2026-05-30** — Sprint clôture P0 + P1.
   - **P0** :
     - Gate `/api/test/cleanup-user` + `/api/test/get-token` sur

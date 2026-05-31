@@ -229,46 +229,26 @@ export const usersRouter = router({
 
   /**
    * Met à jour le handle de l'utilisateur courant.
-   * Format strict : 3-20 chars alphanumériques minuscules. Liste de réservés bloquée.
-   * Erreur CONFLICT si quelqu'un d'autre prend le handle entre check et update (race).
+   *
+   * **Désactivé depuis 2026-05-31** — le handle est utilisé dans des URLs
+   * publiques (`/profile/[handle]`) et dans les QR codes partagés. Permettre
+   * sa modification cassait les liens partagés et ouvrait la porte à
+   * l'impersonation d'un handle libéré.
+   *
+   * Le handle est attribué une fois pour toutes au signup (cf. `auth.ts`
+   * databaseHooks via `generateHandle`). Pour le débloquer plus tard (ex:
+   * un changement unique avec audit), retirer le throw et rajouter une
+   * colonne `handleChangedAt`. Le UI settings n'expose plus de bouton
+   * "Modifier".
    */
   updateHandle: protectedProcedure
     .input(z.object({ handle: z.string().min(1).max(64) }))
-    .mutation(async ({ ctx, input }) => {
-      const handle = normalizeHandle(input.handle);
-      const formatError = validateHandleFormat(handle);
-      if (formatError === "invalid") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Le pseudo doit faire 3 à 20 caractères, lettres minuscules et chiffres uniquement.",
-        });
-      }
-      if (formatError === "reserved") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Ce pseudo est réservé.",
-        });
-      }
-
-      try {
-        const updated = await ctx.prisma.user.update({
-          where: { id: ctx.userId },
-          data: { handle },
-          select: { id: true, handle: true },
-        });
-        return updated;
-      } catch (err) {
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === "P2002"
-        ) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Ce pseudo est déjà utilisé.",
-          });
-        }
-        throw err;
-      }
+    .mutation(async () => {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message:
+          "Le pseudo est définitif : il est utilisé dans les URLs publiques et les QR codes partagés.",
+      });
     }),
 
   /**

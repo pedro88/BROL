@@ -223,3 +223,94 @@ locales/
 **Choix** :
 **Rationalité** :
 -->
+
+### Geocoding postal codes via Zippopotam.us, pas de cache DB (2026-05-31)
+
+**Contexte** : la feature *community-request* matche les voisins par
+rayon km. Besoin de mapper `(country, postalCode)` → `(lat, lng)`.
+Initialement prévu : seeder une table `PostalCode` depuis geonames.org
+(~500k rows pour BE/FR/NL/LU/DE).
+
+**Choix** : pivot vers l'API publique **Zippopotam.us**
+(`api.zippopotam.us/{country}/{postalCode}`). Pas de table de cache —
+les coords sont persistées **sur `User`** au save (1 appel API par
+update de localisation, jamais à la lecture). Couverture ~60 pays.
+
+**Rationalité** : zéro maintenance des données (vs seed CSV ~80 Mo à
+rafraîchir). Latence acceptable côté UX car appelé uniquement à
+l'onboarding + edit settings (~1 appel/user/mois). Resend pattern
+similaire pour email — éviter d'engager une dépendance DB volumineuse
+pour un cold path. Risque : disponibilité Zippopotam — fallback retry
+1× + 404 = null (UX bloque submit avec message).
+
+### Handle immuable post-signup (2026-05-31)
+
+**Contexte** : `users.updateHandle` permettait de modifier son pseudo
+depuis `/settings`. Le handle apparaît dans des URLs publiques
+(`/profile/[handle]`) et dans des QR codes partagés ("Scannez pour
+m'ajouter").
+
+**Choix** : verrouiller le handle après attribution au signup.
+`users.updateHandle` retourne `FORBIDDEN`. Bouton "Modifier pseudo"
+retiré du UI settings. Message explicatif : "Votre pseudo est
+définitif — il est utilisé dans les liens partagés."
+
+**Rationalité** : les modifications cassent les liens externes
+(impossible de tracker quand). Pire : un handle libéré peut être
+repris par un autre user → impersonation triviale d'une identité
+connue. La rigidité est acceptable car le handle est auto-généré au
+signup (`slug + 4 random digits`) — on ne demande pas au user de le
+choisir manuellement. Si on rouvre plus tard, autoriser 1 changement
+unique avec flag `handleChangedAt` non-null bloquant les suivants +
+audit log.
+
+### Cookie `brol_loc_complete` non-signé pour soft gate (2026-05-31)
+
+**Contexte** : middleware Next doit savoir si l'utilisateur a complété
+sa localisation pour décider de rediriger vers `/onboarding/location`.
+Pas d'accès DB depuis Edge runtime.
+
+**Choix** : cookie applicatif `brol_loc_complete=1` posé client-side
+après submit du form onboarding (et au load si `users.me.postalCode`
+déjà set). Purgé sur visite `/sign-in` pour gérer les sessions
+multi-user dans le même browser.
+
+**Rationalité** : c'est une **gate UX, pas une frontière de
+sécurité** — bypass = juste skip onboarding une fois. Les procédures
+API qui exigent `User.lat/lng` (ex: `communityRequest.create`)
+appliquent leur propre validation. Cookie httpOnly inutile ici, et
+poser un cookie httpOnly depuis tRPC nécessite de passer par
+`responseMeta` + une couche de plomberie. ROI faible.
+
+### Cache React Query : `removeQueries` sur token change (2026-05-31)
+
+**Contexte** : bug constaté pendant le sprint — au logout/login
+(notamment lors du test du soft gate), la page `/onboarding/location`
+voyait brièvement l'ancien utilisateur (`users.me` cached) et faisait
+un redirect parasite home avant l'arrivée des données fraîches.
+
+**Choix** : `queryClient.removeQueries()` au lieu de
+`queryClient.invalidateQueries()` dans `trpc-provider.tsx` quand
+`sessionTokenStore` change.
+
+**Rationalité** : `invalidate` marque stale mais sert toujours la data
+cachée pendant le refetch en background. Pour un cache scopé à un user,
+ce comportement est dangereux entre utilisateurs : on doit ne **rien**
+afficher avant la nouvelle data. `removeQueries` purge la cache → les
+queries subscribed repassent en `isLoading`.
+
+### Privacy granulaire sur profil (toggles publicXxx) (2026-05-31)
+
+**Contexte** : extension Profile avec birthYear/gender/phone. Question :
+exposer ces champs par défaut sur le profil public ?
+
+**Choix** : tout est **privé par défaut** sauf `publicCity` (true) —
+la ville est déjà utilisée pour le matching de demandes. Toggles
+par champ (`publicEmail`, `publicPhone`, `publicBirthYear`,
+`publicGender`, `publicCity`) gérés dans settings.
+
+**Rationalité** : RGPD + cohérence avec l'éthique de l'app
+(emprunt local entre voisins, pas réseau social). Le serveur masque
+les champs à null dans `profile.get` pour les viewers anonymes —
+impossible de fuiter en oubliant un `if (visibility.foo)` côté
+frontend.

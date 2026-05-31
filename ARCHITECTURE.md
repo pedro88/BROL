@@ -215,9 +215,17 @@ erDiagram
     }
 ```
 
-17 modèles au total (cf. `packages/db/prisma/schema.prisma`). Les modèles
+18 modèles au total (cf. `packages/db/prisma/schema.prisma`). Les modèles
 auth BetterAuth (`Account`, `Session`, `VerificationToken`) sont omis pour
 lisibilité.
+
+**Ajouts 2026-05-31** :
+- `User.country/postalCode/city/lat/lng` (localisation pour matching).
+- `Profile.birthYear/gender/phone` + 5 toggles `publicXxx` (visibility
+  granulaire par champ sur le profil public).
+- `RequestMessage` (thread in-app `owner ↔ author` scopé à une
+  `CommunityRequest`). Champs : `requestId`, `fromUserId`, `toUserId`,
+  `content`, `isRead`, `createdAt`. Pas d'inbox globale en v1.
 
 ---
 
@@ -281,3 +289,58 @@ Postgres 16 est démarré comme service container pour les jobs `Unit tests`
 et `E2E`. Les deux installent les deps avec `pnpm install --frozen-lockfile`,
 ce qui déclenche `postinstall` (`scripts/postinstall.sh`) → `prisma generate`
 + symlink `.prisma`.
+
+---
+
+## 9. Flux community-request (ajouté 2026-05-31)
+
+```mermaid
+sequenceDiagram
+    actor A as Author (demandeur)
+    actor B as Owner (voisin)
+    participant API as tRPC API
+    participant DB as Postgres
+    participant Z as Zippopotam.us
+    participant R as Resend
+
+    Note over A,B: 1. Onboarding localisation (soft gate)
+    A->>API: users.previewLocation { country, postalCode }
+    API->>Z: GET /:country/:postalCode
+    Z-->>API: { lat, lng, places[0].place name }
+    API-->>A: { lat, lng, city }
+    A->>API: users.updateLocation
+    API->>DB: UPDATE users SET country, postalCode, city, lat, lng
+
+    Note over A,B: 2. Demande + matching
+    A->>API: communityRequest.create { title, radiusKm }
+    API->>DB: INSERT community_requests
+    API->>DB: raw SQL Haversine + ILIKE → owners matched
+    API->>DB: notification.createMany (1 par owner matché)
+    API-->>A: { request, matchCount }
+
+    Note over A,B: 3. Owner reçoit notif + répond
+    B->>API: notification.list (Bell badge unread)
+    B->>API: requestMessages.send { requestId, content }
+    API->>DB: INSERT request_messages
+    API->>DB: INSERT notifications (for author)
+    API->>R: send email (preview + CTA)
+    R-->>A: email reçu
+
+    Note over A,B: 4. Thread bidirectionnel
+    A->>API: requestMessages.list (auto-mark read)
+    A->>API: requestMessages.send (réponse au last owner)
+```
+
+**Composants clés** :
+- `packages/api/src/lib/geo.ts` : `geocodePostalCode` (fetch + retry +
+  timeout) et `haversineSql(lat, lng, radiusKm)` (`Prisma.Sql`
+  fragment paramétrée pour `WHERE`).
+- `packages/api/src/routers/community-request.ts` : matching raw SQL
+  joinant `objects → collections → users` avec filtre Haversine +
+  exclusion caller.
+- `packages/api/src/routers/request-messages.ts` : règles de routage
+  owner→author (premier message) et author→owner (réponse au dernier
+  sender). Email out-of-band fire-and-forget.
+- `apps/web/src/middleware.ts` : cookie `brol_loc_complete` gate.
+- `apps/web/src/lib/trpc-provider.tsx` : `queryClient.removeQueries()`
+  sur changement de token (sinon cache stale du précédent user).
