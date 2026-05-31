@@ -10,9 +10,25 @@
 
 import { signInEmailPassword, signUpEmailPassword, getSession } from "@/lib/auth-client";
 import { setSessionToken } from "@/lib/auth-store";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
+
+/**
+ * Le cookie `brol_loc_complete` est posé par /onboarding/location pour
+ * gate les pages protégées. Il n'est pas lié à un user — il persiste donc
+ * cross-session. À chaque visite de la page de login, on le purge pour
+ * que le user qui s'apprête à se (re)connecter ait son propre cycle :
+ *   nouveau user / DB sans postalCode → middleware redirect onboarding.
+ *   user existant avec postalCode → /onboarding/location détecte via
+ *     users.me et reposte le cookie + redirect dashboard.
+ */
+const LOC_COOKIE_NAME = "brol_loc_complete";
+function clearLocationCookie() {
+  if (typeof document !== "undefined") {
+    document.cookie = `${LOC_COOKIE_NAME}=; Path=/; Max-Age=0; SameSite=Lax`;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Password strength
@@ -61,6 +77,12 @@ export default function SignInPage() {
 
   const strength: StrengthLevel = getPasswordStrength(password);
   const strengthCfg = STRENGTH_CONFIG[strength];
+
+  // Purge le cookie de gate localisation à chaque visite de cette page,
+  // pour que le futur user soit forcé de passer par /onboarding/location.
+  useEffect(() => {
+    clearLocationCookie();
+  }, []);
 
   const confirmMismatch = mode === "signup" && passwordConfirm && password !== passwordConfirm;
   const isPasswordConfirmInvalid =
