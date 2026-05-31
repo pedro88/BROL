@@ -179,15 +179,120 @@
   jsPDF — utilise le dialog d'impression du navigateur pour générer
   le PDF.
 
-Web a 19 pages, mobile a 12 écrans. Écrans à porter :
+Web a 19 pages, mobile a 12 écrans.
 
-- [ ] **Feat mobile** — `/contacts` (liste contacts).
-- [ ] **Feat mobile** — `/contacts/[id]` (détail contact).
-- [ ] **Feat mobile** — `/notifications` (liste notifs).
-- [ ] **Feat mobile** — `/settings` (handle + QR + tier).
-- [ ] **Feat mobile** — `/profile/[handle]` (profil public d'un user).
-- [ ] **Feat mobile** — `/qr/[code]` (scan QR public).
-- [ ] **Feat mobile** — `/requests` (demandes communauté).
+**Milestone 1 mobile livré 2026-05-30** :
+- UI kit minimal mobile (`apps/mobile/src/components/ui/` :
+  button / card / input / header / empty-state / spinner / badge).
+- QR display via `api.qrserver.com` (sans dépendance native).
+- PhotoPicker + helper `photo-upload.ts` (foundation pour M2 ; non
+  branché aux 3 écrans M1).
+- 3 écrans portés :
+
+- [x] **Feat mobile** — ~~`/contacts` (liste)~~ — recherche +
+  FlatList + badge "Brol" pour les contacts liés. Création + détail
+  stubbed → Milestone 2.
+- [ ] **Feat mobile** — `/contacts/[id]` (détail contact) → M2.
+- [x] **Feat mobile** — ~~`/notifications`~~ — list + markRead +
+  markAllRead + badge "Nouveau" sur cards unread.
+- [x] **Feat mobile** — ~~`/settings` (handle + QR + tier)~~ —
+  read-only ce milestone. Édition handle → M2.
+- [ ] **Feat mobile** — `/profile/[handle]` (profil public d'un user) → M2.
+- [ ] **Feat mobile** — `/qr/[code]` (scan QR public) → M2.
+- [ ] **Feat mobile** — `/requests` (demandes communauté) → M2.
+
+### Community requests
+
+Spec figée 2026-05-30. Repositionner "Demander à la communauté" sur
+dashboard + matching géolocalisé par rayon km. Le router
+`community-request` existe déjà (`packages/api/src/routers/
+community-request.ts`) mais l'UX et le matching sont à construire.
+
+**Décisions** :
+- Couverture **internationale** → ajout `country` + `postalCode` sur User.
+- **Rayon configurable** : slider 5/10/25/50/100 km, défaut 25.
+- **Soft gate post-signup** : signup inchangé (email/password). Au 1er
+  login (et pour existing users sans CP), écran obligatoire "Complétez
+  votre profil" avant accès dashboard.
+- **Géocodage** : API externe **Zippopotam.us** (`api.zippopotam.us/
+  {country}/{postalCode}`). Gratuit, no-auth, ~60 pays couverts. **Pas
+  de cache DB** — chaque save de CP appelle l'API et hydrate
+  `User.lat/lng/city`. Lookups suivants évités car lat/lng sont
+  persistés sur User. Match par formule Haversine en SQL.
+- **Validation** : autocomplete ville en live (debounce 400ms) sur
+  formulaire onboarding/settings. Bloque submit si CP non résolu.
+
+**Tâches** :
+
+- [x] **Tech** — ~~Schema : `User.country/postalCode/city/lat/lng`~~ —
+  livré 2026-05-31. Migration `20260530120000_add_user_location_and_
+  postal_codes` + index `(country, postalCode)`.
+- [ ] **Tech** — Helper `lib/geo.ts` :
+  - `geocodePostalCode(country, postalCode) → { lat, lng, city } | null` :
+    `fetch("https://api.zippopotam.us/{country}/{postalCode}")`.
+    Parse JSON `places[0]` → `{ latitude, longitude, "place name" }`.
+    Retry 1× sur 5xx. Timeout 3s.
+  - `haversineSql(lat, lng, radiusKm) → Prisma.Sql` pour `WHERE` clause
+    matching users dans rayon.
+- [ ] **Feat** — Procédure `users.updateLocation` (zod
+  `{ country: 2 chars, postalCode: 3-10 chars }`). Appelle
+  `geocodePostalCode` → set `User.country/postalCode/city/lat/lng`.
+  Throw `BAD_REQUEST` si API retourne 404 (CP inconnu).
+- [ ] **Feat** — Procédure `users.previewLocation` (publicProcedure
+  pour debounce autocomplete) : input idem `updateLocation`, retour
+  `{ city, lat, lng } | null` sans persister. Sert au feedback live UI.
+- [ ] **Feat** — Soft gate "complete-profile" :
+  - Middleware tRPC ou Next middleware qui redirect vers
+    `/onboarding/location` si `user.postalCode == null`.
+  - Page `/onboarding/location` : form pays (select) + CP. Debounce
+    400ms sur CP → `users.previewLocation` → affiche ville en
+    read-only (bloc vert si trouvé, rouge si inconnu). Submit →
+    `users.updateLocation` → redirect dashboard.
+  - Skippable uniquement pour `/settings` (pour fix après coup).
+- [ ] **Feat** — Étendre `communityRequest.create` :
+  - Input zod : `title`, `description?`, `radiusKm`
+    (enum `5|10|25|50|100`, défaut 25). Plus de `zone` texte libre
+    (dérivé de `User.postalCode/country` du caller).
+  - Matching :
+    1. Query owners avec `User.lat/lng != null` dans rayon
+       (Haversine raw SQL).
+    2. Pour chaque owner, scan `Object.name ILIKE %title%` OR
+       `Object.author ILIKE %title%` (fuzzy basique, full-text plus
+       tard).
+    3. Pour chaque match (owner, object) : créer `Notification`
+       type `COMMUNITY_REQUEST_MATCH`, payload
+       `{ requestId, objectId, requesterHandle, distanceKm }`.
+  - Retour : `{ requestId, matchCount }` pour toast UX.
+- [ ] **Tech** — Ajouter `NotificationType.COMMUNITY_REQUEST_MATCH` à
+  enum schema + handler frontend.
+- [ ] **Feat** — Dashboard : bouton "Demander à la communauté" dans
+  actions rapides → `CommunityRequestDialog`.
+  - Champs : `title` (input), `description?` (textarea), `radiusKm`
+    (slider 5/10/25/50/100). Affiche "Recherche dans X km autour de
+    {city}".
+  - Submit → toast "Demande envoyée — {N} voisins notifiés".
+- [ ] **Bug** — Retirer bouton "Demander à la communauté" de
+  `/objects/[id]` (apps/web/src/app/objects/[id]/page.tsx).
+- [ ] **Feat** — Page `/requests` : liste des demandes du user
+  (créées + reçues via notif) avec statut. Existe déjà côté router
+  (`communityRequest.list`).
+- [ ] **Feat mobile** — Modal équivalent sur dashboard mobile → M2/M3.
+- [ ] **Tech** — Tests unit :
+  - Haversine : 3 cas (0 km, 100 km, antipode).
+  - `users.updateLocation` : CP valide (mock fetch), CP inconnu (404
+    mock), API down (timeout mock).
+  - `users.previewLocation` : idem.
+  - `communityRequest.create` matching : owner in radius + name match,
+    owner in radius + no match, owner out of radius.
+  - Soft gate redirect.
+- [ ] **Tech** — E2E : signup → forced onboarding → CP → dashboard →
+  créer demande → owner reçoit notif.
+
+**V2 (hors scope initial)** :
+- Full-text search Postgres `tsvector` au lieu de `ILIKE`.
+- Réponses owner → message direct (router `messages` existe).
+- Demande publique listée sur `/requests` (browsable par autres
+  users).
 
 ### Sécurité applicative
 
@@ -226,6 +331,9 @@ Web a 19 pages, mobile a 12 écrans. Écrans à porter :
 - [ ] **Feat** — Possibilité de faire une demande à la communauté pour
   emprunter un objet absent du catalogue. (Le router
   `community-request` existe déjà — il manque probablement l'UX.)
+- [ ] **Bug/Feat** — Repositionner "Demander à la communauté" sur
+  dashboard + matching géolocalisé. Spec figée 2026-05-30, sortie de
+  "Idées" → P2 ci-dessous (`### Community requests`).
 - [ ] **Feat** — Système de notifications complet [rappel retour,
   rappel retard, demande communauté, commentaire et note laissés].
 - [ ] **Feat** — Tier d'utilisation pricing :

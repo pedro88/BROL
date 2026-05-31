@@ -4,7 +4,7 @@
  * @package @brol/api
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { appRouter } from "../../router";
 import { prisma, createTestUser } from "../../test/setup";
 
@@ -205,6 +205,97 @@ describe("usersRouter", () => {
     it("normalizes '#' prefix and case before saving", async () => {
       const res = await callerFor(alice.id).users.updateHandle({ handle: "#AliceNew" });
       expect(res.handle).toBe("alicenew");
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // previewLocation + updateLocation
+  // -------------------------------------------------------------------------
+
+  describe("location procedures", () => {
+    let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+    function mockZippoResponse(body: unknown, status = 200) {
+      return {
+        ok: status >= 200 && status < 300,
+        status,
+        json: async () => body,
+      } as unknown as Response;
+    }
+
+    const brusselsPayload = {
+      "post code": "1000",
+      country: "Belgium",
+      "country abbreviation": "BE",
+      places: [
+        { "place name": "Brussels", latitude: "50.8333", longitude: "4.35" },
+      ],
+    };
+
+    beforeEach(() => {
+      fetchSpy = vi.spyOn(globalThis, "fetch");
+    });
+
+    afterEach(() => {
+      fetchSpy.mockRestore();
+    });
+
+    it("previewLocation returns coords + city without persisting", async () => {
+      fetchSpy.mockResolvedValueOnce(mockZippoResponse(brusselsPayload));
+      const res = await callerFor(alice.id).users.previewLocation({
+        country: "BE",
+        postalCode: "1000",
+      });
+      expect(res).toEqual({ lat: 50.8333, lng: 4.35, city: "Brussels" });
+      const reloaded = await prisma.user.findUnique({
+        where: { id: alice.id },
+        select: { postalCode: true, lat: true },
+      });
+      expect(reloaded?.postalCode).toBeNull();
+      expect(reloaded?.lat).toBeNull();
+    });
+
+    it("previewLocation returns null on unknown postal code (404)", async () => {
+      fetchSpy.mockResolvedValueOnce(mockZippoResponse({}, 404));
+      const res = await callerFor(alice.id).users.previewLocation({
+        country: "BE",
+        postalCode: "9999",
+      });
+      expect(res).toBeNull();
+    });
+
+    it("updateLocation persists country/postalCode/city/lat/lng", async () => {
+      fetchSpy.mockResolvedValueOnce(mockZippoResponse(brusselsPayload));
+      const res = await callerFor(alice.id).users.updateLocation({
+        country: "BE",
+        postalCode: "1000",
+      });
+      expect(res.country).toBe("BE");
+      expect(res.postalCode).toBe("1000");
+      expect(res.city).toBe("Brussels");
+      expect(res.lat).toBeCloseTo(50.8333);
+      expect(res.lng).toBeCloseTo(4.35);
+
+      const reloaded = await prisma.user.findUnique({
+        where: { id: alice.id },
+        select: { country: true, postalCode: true, city: true, lat: true, lng: true },
+      });
+      expect(reloaded?.city).toBe("Brussels");
+      expect(reloaded?.lat).toBeCloseTo(50.8333);
+    });
+
+    it("updateLocation throws BAD_REQUEST on unknown postal code", async () => {
+      fetchSpy.mockResolvedValueOnce(mockZippoResponse({}, 404));
+      await expect(
+        callerFor(alice.id).users.updateLocation({ country: "BE", postalCode: "9999" }),
+      ).rejects.toThrow(/inconnu/);
+    });
+
+    it("updateLocation rejects invalid country format via zod", async () => {
+      await expect(
+        callerFor(alice.id).users.updateLocation({ country: "BEL", postalCode: "1000" }),
+      ).rejects.toThrow();
+      expect(fetchSpy).not.toHaveBeenCalled();
     });
   });
 });

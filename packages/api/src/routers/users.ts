@@ -7,6 +7,22 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { router, protectedProcedure } from "../trpc";
+import { geocodePostalCode } from "../lib/geo";
+
+const COUNTRY_REGEX = /^[A-Z]{2}$/;
+const POSTAL_CODE_REGEX = /^[A-Za-z0-9 -]{3,10}$/;
+
+const locationInput = z.object({
+  country: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(COUNTRY_REGEX, "Code pays invalide (ISO-3166 alpha-2 attendu)"),
+  postalCode: z
+    .string()
+    .trim()
+    .regex(POSTAL_CODE_REGEX, "Code postal invalide"),
+});
 
 const HANDLE_REGEX = /^[a-z0-9]{3,20}$/;
 const RESERVED_HANDLES = new Set([
@@ -244,6 +260,53 @@ export const usersRouter = router({
         }
         throw err;
       }
+    }),
+
+  /**
+   * Preview une localisation (CP → ville/coords) sans persister.
+   * Sert au feedback live UI (debounce 400ms côté frontend).
+   * Retourne null si CP inconnu.
+   */
+  previewLocation: protectedProcedure
+    .input(locationInput)
+    .query(async ({ input }) => {
+      return geocodePostalCode(input.country, input.postalCode);
+    }),
+
+  /**
+   * Met à jour la localisation de l'utilisateur courant.
+   * Appelle l'API Zippopotam pour résoudre CP → ville/lat/lng et persiste
+   * le résultat sur User. Throw BAD_REQUEST si CP inconnu.
+   */
+  updateLocation: protectedProcedure
+    .input(locationInput)
+    .mutation(async ({ ctx, input }) => {
+      const result = await geocodePostalCode(input.country, input.postalCode);
+      if (!result) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Code postal inconnu pour ce pays.",
+        });
+      }
+      const updated = await ctx.prisma.user.update({
+        where: { id: ctx.userId },
+        data: {
+          country: input.country,
+          postalCode: input.postalCode,
+          city: result.city,
+          lat: result.lat,
+          lng: result.lng,
+        },
+        select: {
+          id: true,
+          country: true,
+          postalCode: true,
+          city: true,
+          lat: true,
+          lng: true,
+        },
+      });
+      return updated;
     }),
 });
 

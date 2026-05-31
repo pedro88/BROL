@@ -17,52 +17,61 @@ generator client {
 // ============================================
 
 model User {
-  id        String   @id @default(cuid())
-  handle    String?  @unique // Public handle e.g. "piet1234" (slug + 4 random digits)
-  email     String   @unique
-  name      String?
-  image     String?  // BetterAuth: avatarUrl → image
-  locale    String   @default("fr") // fr, nl, en
+  id     String  @id @default(cuid())
+  handle String? @unique // Public handle e.g. "piet1234" (slug + 4 random digits)
+  email  String  @unique
+  name   String?
+  image  String? // BetterAuth: avatarUrl → image
+  locale String  @default("fr") // fr, nl, en
+
+  // Localisation (soft gate au 1er login si null) — utilisée pour matching CommunityRequest
+  country    String? // ISO-3166 alpha-2 (BE, FR, NL, LU, DE...)
+  postalCode String? // tel que saisi par user; lookup via PostalCode(country, postalCode)
+  city       String? // hydraté depuis PostalCode lors du save
+  lat        Float? // cache geocoding (Haversine matching)
+  lng        Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Auth (BetterAuth uses Account.password for credentials)
   emailVerified Boolean   @default(false)
-  accounts     Account[]
-  sessions     Session[]
+  accounts      Account[]
+  sessions      Session[]
 
   // Relations
-  collections Collection[]
-  contacts    Contact[]      @relation("UserContacts")
-  borrowerOf Loan[]          @relation("Borrower")
-  ownerOf    Loan[]          @relation("Owner")
-  borrowerOfContact Contact[] @relation("ContactBorrower")
-  qrStocks   QrStock[]
-  profile    Profile?
-  authorReviews   Review[] @relation("ReviewAuthor")
-  targetReviews   Review[] @relation("ReviewTarget")
-  userBadges      UserBadge[]
+  collections       Collection[]
+  contacts          Contact[]          @relation("UserContacts")
+  borrowerOf        Loan[]             @relation("Borrower")
+  ownerOf           Loan[]             @relation("Owner")
+  borrowerOfContact Contact[]          @relation("ContactBorrower")
+  qrStocks          QrStock[]
+  profile           Profile?
+  authorReviews     Review[]           @relation("ReviewAuthor")
+  targetReviews     Review[]           @relation("ReviewTarget")
+  userBadges        UserBadge[]
   communityRequests CommunityRequest[]
-  notifications   Notification[]
-  messages        Message[]
+  notifications     Notification[]
+  messages          Message[]
 
+  @@index([country, postalCode])
   @@map("users")
 }
 
 model Account {
-  id                   String    @id @default(cuid())
-  userId               String
-  providerId           String    // BetterAuth: "credential" for email/password
-  accountId            String    // BetterAuth: unique per provider
-  password             String?   // BetterAuth: bcrypt/scrypt hash (set only for credential provider)
-  accessToken          String?
-  refreshToken         String?
-  idToken              String?
-  accessTokenExpiresAt DateTime? // BetterAuth (was: expiresAt Int?)
+  id                    String    @id @default(cuid())
+  userId                String
+  providerId            String // BetterAuth: "credential" for email/password
+  accountId             String // BetterAuth: unique per provider
+  password              String? // BetterAuth: bcrypt/scrypt hash (set only for credential provider)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? // BetterAuth (was: expiresAt Int?)
   refreshTokenExpiresAt DateTime? // BetterAuth v1.6.0
-  scope                String?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  scope                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -71,14 +80,14 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  token        String   @unique  // BetterAuth default field name
-  userId       String
-  expiresAt    DateTime
-  ipAddress    String?
-  userAgent    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default(cuid())
+  token     String   @unique // BetterAuth default field name
+  userId    String
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -87,7 +96,7 @@ model Session {
 
 model VerificationToken {
   identifier String
-  value      String   @unique  // BetterAuth default field name
+  value      String   @unique // BetterAuth default field name
   expiresAt  DateTime
 
   @@unique([identifier, value])
@@ -100,40 +109,40 @@ model VerificationToken {
 
 // ObjectType: type d'objet determines which fields are relevant
 enum ObjectType {
-  BOOK        // Livres
-  BOARD_GAME  // Jeux de société
-  TOOL        // Outils manuels
-  FILM        // DVD / Blu-ray
-  MUSIC       // CD / Vinyl / Cassette
-  ELECTRONIC  // Électronique (appareils)
-  ELECTRIC    // Outillage électrique
-  CLOTHING    // Vêtements / Accessoires
-  CUSTOM      // Personnalisé — champs libres
+  BOOK // Livres
+  BOARD_GAME // Jeux de société
+  TOOL // Outils manuels
+  FILM // DVD / Blu-ray
+  MUSIC // CD / Vinyl / Cassette
+  ELECTRONIC // Électronique (appareils)
+  ELECTRIC // Outillage électrique
+  CLOTHING // Vêtements / Accessoires
+  CUSTOM // Personnalisé — champs libres
 }
 
 // Source d'alimentation pour les TOOLs (remplace les booléens toolManual + toolBattery).
 enum ToolPowerSource {
-  MANUAL    // Non alimenté
-  MAINS     // Secteur (filaire)
-  BATTERY   // Sur batterie
+  MANUAL // Non alimenté
+  MAINS // Secteur (filaire)
+  BATTERY // Sur batterie
 }
 
 model Collection {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  description String?
-  coverImage  String?
-  isPublic    Boolean  @default(false)
+  id                String      @id @default(cuid())
+  userId            String
+  name              String
+  description       String?
+  coverImage        String?
+  isPublic          Boolean     @default(false)
   // Type determines which Object fields are relevant
   type              ObjectType? @default(BOOK)
   // Labels for custom fields (only used when type = CUSTOM)
   customField1Label String?     @default("Champ libre 1")
   customField2Label String?     @default("Champ libre 2")
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   objects Object[]
 
   @@index([userId])
@@ -142,50 +151,50 @@ model Collection {
 }
 
 model Object {
-  id            String          @id @default(cuid())
-  collectionId  String
-  name          String
-  author        String?
-  edition       String?
-  isbn          String?
-  barcode       String?
-  condition     ObjectCondition @default(GOOD)
-  notes         String?
-  coverImage    String?
+  id                 String           @id @default(cuid())
+  collectionId       String
+  name               String
+  author             String?
+  edition            String?
+  isbn               String?
+  barcode            String?
+  condition          ObjectCondition  @default(GOOD)
+  notes              String?
+  coverImage         String?
   // Object type (mirrors collection.type — allows per-object override in future)
-  objectType    ObjectType? @default(BOOK)
+  objectType         ObjectType?      @default(BOOK)
   // BOARD_GAME fields
   playersMin         Int?
   playersMax         Int?
   playingTimeMinutes Int?
   ageMin             Int?
   // ELECTRIC fields
-  powerWatts Int?
+  powerWatts         Int?
   // CLOTHING fields
-  clothingSize     String?  // Taille (XS, S, M, L, XL, XXL, 38, 40, 42...)
-  clothingGender   String?  // Genre (Homme, Femme, Unisexe, Enfant)
-  clothingColor    String?  // Couleur principale
-  clothingMaterial String?  // Matière (coton, cuir, polyester...)
+  clothingSize       String? // Taille (XS, S, M, L, XL, XXL, 38, 40, 42...)
+  clothingGender     String? // Genre (Homme, Femme, Unisexe, Enfant)
+  clothingColor      String? // Couleur principale
+  clothingMaterial   String? // Matière (coton, cuir, polyester...)
   // TOOL fields
   // toolManual + toolBattery sont conservés pour rétro-compatibilité — nouveaux
   // objets doivent utiliser `toolPowerSource` à la place.
-  toolManual       Boolean? @default(false) // (deprecated) → utiliser toolPowerSource
-  toolSector       String?  // Secteur (construction, jardinage, automobile...)
-  toolBattery      Boolean? @default(false) // (deprecated) → utiliser toolPowerSource
-  toolPowerSource  ToolPowerSource? // Source d'alimentation (MANUAL/MAINS/BATTERY)
+  toolManual         Boolean?         @default(false) // (deprecated) → utiliser toolPowerSource
+  toolSector         String? // Secteur (construction, jardinage, automobile...)
+  toolBattery        Boolean?         @default(false) // (deprecated) → utiliser toolPowerSource
+  toolPowerSource    ToolPowerSource? // Source d'alimentation (MANUAL/MAINS/BATTERY)
   // Marque (CLOTHING + TOOL ; usable par n'importe quel type)
-  brand            String?
+  brand              String?
   // CUSTOM fields (only used when type = CUSTOM)
-  customField1     String?
-  customField2     String?
+  customField1       String?
+  customField2       String?
   // Caution et tarification
-  cautionAmount    Decimal? @db.Decimal(10,2)  // Montant de la caution
-  rentalPriceDay   Decimal? @db.Decimal(10,2)  // Prix location / jour
-  rentalPriceHour  Decimal? @db.Decimal(10,2)  // Prix location / heure
-  rentalPriceWeek  Decimal? @db.Decimal(10,2)  // Prix location / semaine
-  rentalPriceKm    Decimal? @db.Decimal(10,2)  // Prix location / km
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  cautionAmount      Decimal?         @db.Decimal(10, 2) // Montant de la caution
+  rentalPriceDay     Decimal?         @db.Decimal(10, 2) // Prix location / jour
+  rentalPriceHour    Decimal?         @db.Decimal(10, 2) // Prix location / heure
+  rentalPriceWeek    Decimal?         @db.Decimal(10, 2) // Prix location / semaine
+  rentalPriceKm      Decimal?         @db.Decimal(10, 2) // Prix location / km
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   loans      Loan[]
@@ -232,11 +241,11 @@ model Contact {
   email      String?
   phone      String?
   note       String?
-  borrowerId String?  // Lien optionnel vers un User enregistré sur Brol
+  borrowerId String? // Lien optionnel vers un User enregistré sur Brol
   createdAt  DateTime @default(now())
 
-  user      User  @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
-  borrower  User? @relation("ContactBorrower", fields: [borrowerId], references: [id])
+  user                   User   @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
+  borrower               User?  @relation("ContactBorrower", fields: [borrowerId], references: [id])
   loansAsBorrowerContact Loan[] @relation("LoanBorrowerContact")
 
   @@index([userId])
@@ -250,23 +259,23 @@ model Contact {
 // ============================================
 
 model Loan {
-  id              String      @id @default(cuid())
-  objectId        String
-  ownerId         String
-  borrowerId      String?     // User.id si le contact a un compte Brol
-  borrowerContactId String?   // Contact.id si le contact n'a pas de compte
-  status          LoanStatus  @default(ACTIVE)
-  lentAt          DateTime    @default(now())
-  returnDueDate   DateTime?
-  returnedAt      DateTime?
-  reminderSentAt  DateTime?
-  notes           String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id                String     @id @default(cuid())
+  objectId          String
+  ownerId           String
+  borrowerId        String? // User.id si le contact a un compte Brol
+  borrowerContactId String? // Contact.id si le contact n'a pas de compte
+  status            LoanStatus @default(ACTIVE)
+  lentAt            DateTime   @default(now())
+  returnDueDate     DateTime?
+  returnedAt        DateTime?
+  reminderSentAt    DateTime?
+  notes             String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  object         Object  @relation(fields: [objectId], references: [id], onDelete: Cascade)
-  owner          User    @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
-  borrower       User?   @relation("Borrower", fields: [borrowerId], references: [id], onDelete: Cascade)
+  object          Object   @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  owner           User     @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  borrower        User?    @relation("Borrower", fields: [borrowerId], references: [id], onDelete: Cascade)
   borrowerContact Contact? @relation("LoanBorrowerContact", fields: [borrowerContactId], references: [id], onDelete: Cascade)
   reviews         Review[] @relation("ReviewLoan")
 
@@ -291,9 +300,9 @@ enum LoanStatus {
 // ============================================
 
 enum UserTier {
-  FREE     // 5 collections, 50 objets, 10 prêts
-  TIER_2   // 10 collections, 500 objets, 50 prêts — 3€/mois
-  TIER_3   // Illimité — 20€/mois
+  FREE // 5 collections, 50 objets, 10 prêts
+  TIER_2 // 10 collections, 500 objets, 50 prêts — 3€/mois
+  TIER_3 // Illimité — 20€/mois
 }
 
 // ============================================
@@ -301,13 +310,13 @@ enum UserTier {
 // ============================================
 
 model Profile {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  bio       String?
-  avatarUrl String?
-  tier      UserTier @default(FREE)
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  bio           String?
+  avatarUrl     String?
+  tier          UserTier  @default(FREE)
   tierExpiresAt DateTime? // null = jamais (ou déjà payé pour TIER_2/3)
-  updatedAt DateTime @updatedAt
+  updatedAt     DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -322,8 +331,8 @@ model Review {
   id        String   @id @default(cuid())
   authorId  String
   targetId  String
-  loanId    String   // Échange obligatoire — doit exister
-  rating    Int      // 1-5 étoiles
+  loanId    String // Échange obligatoire — doit exister
+  rating    Int // 1-5 étoiles
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -346,8 +355,8 @@ model BadgeDefinition {
   slug        String   @unique
   name        String
   description String
-  icon        String   // Emoji ou URL vers l'icône
-  criteria    Json     // Règles d'attribution automatique (ex: { "type": "loan_count", "threshold": 10 })
+  icon        String // Emoji ou URL vers l'icône
+  criteria    Json // Règles d'attribution automatique (ex: { "type": "loan_count", "threshold": 10 })
   createdAt   DateTime @default(now())
 
   userBadges UserBadge[]
@@ -361,7 +370,7 @@ model UserBadge {
   badgeId   String
   awardedAt DateTime @default(now())
 
-  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   badge BadgeDefinition @relation(fields: [badgeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, badgeId])
@@ -374,20 +383,20 @@ model UserBadge {
 // ============================================
 
 model CommunityRequest {
-  id            String            @id @default(cuid())
-  authorId      String
-  title         String            // Titre court de ce qu'on cherche
-  description   String?           // Message détaillé (optionnel)
-  zone          String?           // Zone géographique (code postal, ville)
-  status        RequestStatus     @default(OPEN)
-  fulfillByRequestId String?       // CommunityRequest.id si une demande a été fulfill cette requête
-  expiresAt     DateTime?         // Date d'expiration de la demande
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id                 String        @id @default(cuid())
+  authorId           String
+  title              String // Titre court de ce qu'on cherche
+  description        String? // Message détaillé (optionnel)
+  zone               String? // Zone géographique (code postal, ville)
+  status             RequestStatus @default(OPEN)
+  fulfillByRequestId String? // CommunityRequest.id si une demande a été fulfill cette requête
+  expiresAt          DateTime? // Date d'expiration de la demande
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
-  author   User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  fulfillBy CommunityRequest? @relation("RequestFulfillment", fields: [fulfillByRequestId], references: [id], onDelete: SetNull)
-  fulfilledRequests     CommunityRequest[] @relation("RequestFulfillment")
+  author            User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  fulfillBy         CommunityRequest?  @relation("RequestFulfillment", fields: [fulfillByRequestId], references: [id], onDelete: SetNull)
+  fulfilledRequests CommunityRequest[] @relation("RequestFulfillment")
 
   @@index([authorId])
   @@index([status])
@@ -395,10 +404,10 @@ model CommunityRequest {
 }
 
 enum RequestStatus {
-  OPEN      // En attente
+  OPEN // En attente
   FULFILLED // Une demande a été fulfill par un owner
   CANCELLED // Annulée par l'auteur
-  EXPIRED   // Expirée
+  EXPIRED // Expirée
 }
 
 // ============================================
@@ -406,16 +415,16 @@ enum RequestStatus {
 // ============================================
 
 model Notification {
-  id           String           @id @default(cuid())
-  userId       String
-  type         NotificationType
-  title        String
-  message      String?
-  isRead       Boolean          @default(false)
-  relatedId    String?          // ID de la ressource liée (loan, request, review...)
-  relatedType  String?          // Type de ressource (loan, request, review...)
-  emailSentAt  DateTime?
-  createdAt    DateTime         @default(now())
+  id          String           @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  message     String?
+  isRead      Boolean          @default(false)
+  relatedId   String? // ID de la ressource liée (loan, request, review...)
+  relatedType String? // Type de ressource (loan, request, review...)
+  emailSentAt DateTime?
+  createdAt   DateTime         @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -425,10 +434,10 @@ model Notification {
 }
 
 enum NotificationType {
-  RETURN_REMINDER   // Rappel de retour
-  OVERDUE           // Retour en retard
+  RETURN_REMINDER // Rappel de retour
+  OVERDUE // Retour en retard
   COMMUNITY_REQUEST // Nouvelle demande à la communauté
-  REVIEW_RECEIVED   // Nouveau commentaire/note reçu
+  REVIEW_RECEIVED // Nouveau commentaire/note reçu
   REQUEST_FULFILLED // Votre demande a été traitée
 }
 
@@ -437,12 +446,12 @@ enum NotificationType {
 // ============================================
 
 model QrStock {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  code      String   @unique // UUID v7 for ordering
-  used      Boolean  @default(false)
+  code      String    @unique // UUID v7 for ordering
+  used      Boolean   @default(false)
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   objects Object[]
@@ -474,3 +483,4 @@ model Message {
   @@index([createdAt])
   @@map("messages")
 }
+
