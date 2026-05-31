@@ -69,10 +69,32 @@ export function Navigation() {
  * - Mobile: menu hamburger avec DropdownMenu
  * - Desktop: actions inline (notifications, login/logout, settings)
  */
+function useUnreadCount(enabled: boolean): number {
+  const { data } = trpc.notification.unreadCount.useQuery(undefined, {
+    enabled,
+    refetchInterval: 30_000,
+    staleTime: 10_000,
+  });
+  return data?.count ?? 0;
+}
+
+function NotifBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-mono flex items-center justify-center"
+      aria-label={`${count} notification${count > 1 ? "s" : ""} non lue${count > 1 ? "s" : ""}`}
+    >
+      {count > 9 ? "9+" : count}
+    </span>
+  );
+}
+
 export function Header() {
   const token = useSessionToken();
   const router = useRouter();
   const isAuthenticated = !!token;
+  const unreadCount = useUnreadCount(isAuthenticated);
 
   async function handleLogout() {
     await signOut();
@@ -111,7 +133,10 @@ export function Header() {
                 <>
                   <DropdownMenuItem asChild>
                     <Link href="/notifications" className="flex items-center gap-2">
-                      <Bell className="w-4 h-4" />
+                      <span className="relative">
+                        <Bell className="w-4 h-4" />
+                        <NotifBadge count={unreadCount} />
+                      </span>
                       Notifications
                     </Link>
                   </DropdownMenuItem>
@@ -155,9 +180,10 @@ export function Header() {
             <Link
               href="/notifications"
               className="relative p-2 text-muted-foreground hover:text-primary transition-colors"
-              aria-label="Notifications"
+              aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} non lue${unreadCount > 1 ? "s" : ""})` : ""}`}
             >
               <Bell className="w-5 h-5" strokeWidth={1.5} />
+              <NotifBadge count={unreadCount} />
             </Link>
           )}
 

@@ -166,7 +166,7 @@ export const communityRequestRouter = router({
       const requests = await ctx.prisma.communityRequest.findMany({
         where,
         include: {
-          author: { select: { id: true, name: true, image: true } },
+          author: { select: { id: true, name: true, handle: true, image: true } },
         },
         orderBy: { createdAt: "desc" },
         take: input.limit + 1,
@@ -192,7 +192,7 @@ export const communityRequestRouter = router({
       const request = await ctx.prisma.communityRequest.findUnique({
         where: { id: input.id },
         include: {
-          author: { select: { id: true, name: true, image: true } },
+          author: { select: { id: true, name: true, handle: true, image: true } },
           fulfillBy: { select: { id: true, title: true } },
         },
       });

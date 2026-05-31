@@ -1,27 +1,49 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Header, Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Bell, CheckCheck } from "lucide-react";
 
+type NotifData = {
+  id: string;
+  title: string;
+  message?: string | null;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+  relatedType?: string | null;
+  relatedId?: string | null;
+};
+
+/**
+ * Construit l'URL cible quand on clique sur une notification.
+ * Retourne null si le type/relatedId n'a pas de page détail dédiée.
+ */
+function notificationHref(n: NotifData): string | null {
+  if (!n.relatedId) return null;
+  switch (n.relatedType) {
+    case "request":
+      return `/requests/${n.relatedId}`;
+    case "loan":
+      return `/loans`;
+    case "review":
+      return `/profile/${n.relatedId}`;
+    default:
+      return null;
+  }
+}
+
 function NotificationItem({
   notification,
   onMarkRead,
+  onOpen,
 }: {
-  notification: {
-    id: string;
-    title: string;
-    message?: string | null;
-    type: string;
-    isRead: boolean;
-    createdAt: string;
-    relatedType?: string | null;
-    relatedId?: string | null;
-  };
+  notification: NotifData;
   onMarkRead: (id: string) => void;
+  onOpen: (n: NotifData) => void;
 }) {
   const icons: Record<string, string> = {
     RETURN_REMINDER: "📅",
@@ -39,11 +61,33 @@ function NotificationItem({
     REQUEST_FULFILLED: "Demande traitée",
   };
 
+  const href = notificationHref(notification);
+  const clickable = href !== null;
+
+  function handleOpen(e: React.MouseEvent | React.KeyboardEvent) {
+    if (!clickable) return;
+    e.stopPropagation();
+    onOpen(notification);
+  }
+
   return (
     <div
       className={`p-4 border-b border-border transition-colors ${
         !notification.isRead ? "bg-primary/5" : ""
-      }`}
+      } ${clickable ? "cursor-pointer hover:bg-muted/40" : ""}`}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={clickable ? handleOpen : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleOpen(e);
+              }
+            }
+          : undefined
+      }
     >
       <div className="flex items-start gap-3">
         <span className="text-xl mt-0.5">
@@ -54,8 +98,12 @@ function NotificationItem({
             <h3 className="text-sm font-medium">{notification.title}</h3>
             {!notification.isRead && (
               <button
-                onClick={() => onMarkRead(notification.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkRead(notification.id);
+                }}
                 className="text-xs text-muted-foreground hover:text-primary flex-shrink-0"
+                aria-label="Marquer comme lu"
               >
                 <CheckCheck className="w-4 h-4" />
               </button>
@@ -81,6 +129,7 @@ function NotificationItem({
 }
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.notification.list.useQuery(
     { unreadOnly: false, limit: 50 },
@@ -92,6 +141,15 @@ export default function NotificationsPage() {
       utils.notification.unreadCount.invalidate();
     },
   });
+
+  function handleOpen(n: NotifData) {
+    const href = notificationHref(n);
+    if (!href) return;
+    if (!n.isRead) {
+      markRead.mutate({ id: n.id });
+    }
+    router.push(href);
+  }
   const markAllRead = trpc.notification.markAllRead.useMutation({
     onSuccess: () => {
       utils.notification.list.invalidate();
@@ -152,6 +210,7 @@ export default function NotificationsPage() {
                 key={notification.id}
                 notification={notification}
                 onMarkRead={(id) => markRead.mutate({ id })}
+                onOpen={handleOpen}
               />
             ))}
           </div>

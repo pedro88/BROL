@@ -17,6 +17,7 @@ import { communityRequestRouter } from "./routers/community-request";
 import { notificationRouter } from "./routers/notification";
 import { tierRouter } from "./routers/tier";
 import { messagesRouter } from "./routers/messages";
+import { requestMessagesRouter } from "./routers/request-messages";
 import { usersRouter } from "./routers/users";
 import { getSession } from "./auth";
 
@@ -60,6 +61,7 @@ export const appRouter = router({
   notification: notificationRouter,
   tier: tierRouter,
   messages: messagesRouter,
+  requestMessages: requestMessagesRouter,
   users: usersRouter,
 
   /**

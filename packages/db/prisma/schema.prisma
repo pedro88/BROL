@@ -40,19 +40,21 @@ model User {
   sessions      Session[]
 
   // Relations
-  collections       Collection[]
-  contacts          Contact[]          @relation("UserContacts")
-  borrowerOf        Loan[]             @relation("Borrower")
-  ownerOf           Loan[]             @relation("Owner")
-  borrowerOfContact Contact[]          @relation("ContactBorrower")
-  qrStocks          QrStock[]
-  profile           Profile?
-  authorReviews     Review[]           @relation("ReviewAuthor")
-  targetReviews     Review[]           @relation("ReviewTarget")
-  userBadges        UserBadge[]
-  communityRequests CommunityRequest[]
-  notifications     Notification[]
-  messages          Message[]
+  collections             Collection[]
+  contacts                Contact[]          @relation("UserContacts")
+  borrowerOf              Loan[]             @relation("Borrower")
+  ownerOf                 Loan[]             @relation("Owner")
+  borrowerOfContact       Contact[]          @relation("ContactBorrower")
+  qrStocks                QrStock[]
+  profile                 Profile?
+  authorReviews           Review[]           @relation("ReviewAuthor")
+  targetReviews           Review[]           @relation("ReviewTarget")
+  userBadges              UserBadge[]
+  communityRequests       CommunityRequest[]
+  notifications           Notification[]
+  messages                Message[]
+  requestMessagesSent     RequestMessage[]   @relation("RequestMessageSent")
+  requestMessagesReceived RequestMessage[]   @relation("RequestMessageReceived")
 
   @@index([country, postalCode])
   @@map("users")
@@ -397,10 +399,33 @@ model CommunityRequest {
   author            User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
   fulfillBy         CommunityRequest?  @relation("RequestFulfillment", fields: [fulfillByRequestId], references: [id], onDelete: SetNull)
   fulfilledRequests CommunityRequest[] @relation("RequestFulfillment")
+  messages          RequestMessage[]
 
   @@index([authorId])
   @@index([status])
   @@map("community_requests")
+}
+
+/**
+ * Message in-app échangé sur une CommunityRequest (owner ↔ requester).
+ * Pas d'inbox globale en v1 — les threads sont scopés à une demande.
+ */
+model RequestMessage {
+  id         String   @id @default(cuid())
+  requestId  String
+  fromUserId String
+  toUserId   String
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  request  CommunityRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  fromUser User             @relation("RequestMessageSent", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User             @relation("RequestMessageReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([toUserId, isRead])
+  @@map("request_messages")
 }
 
 enum RequestStatus {
@@ -483,4 +508,3 @@ model Message {
   @@index([createdAt])
   @@map("messages")
 }
-
