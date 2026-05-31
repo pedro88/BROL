@@ -16,7 +16,35 @@
 
 ## 🔥 P0 — Bloquants
 
-**0 item ouvert.** Sprint 2026-05-30 a tout clos (cf. Historique).
+- [ ] **Bug** — `/loans` côté prêteur : pas de bouton "Marquer comme
+  rendu" visible sur les prêts en cours. Diagnostiqué 2026-05-31.
+  - Reprod : un user A prête un objet à B → `/loans` onglet "Prêtés"
+    (côté A) → la card du prêt ne montre pas l'action "Marquer
+    comme rendu" (devrait être un bouton primaire selon
+    `LoanCard.viewAs === "owner"`).
+  - Probablement régression depuis le sprint historique
+    owner/borrower (cf. 2026-05-30 changelog "loans.history viewAs").
+  - Vérifier `loans.lentOut` retourne bien `viewAs: "owner"` et que
+    `LoanCard` lit ce flag — pas seulement `loans.history`.
+- [ ] **Bug** — Dashboard "Demander à la communauté" : toast affiche
+  "Demande envoyée — undefined voisin notifié" après submit.
+  Constaté 2026-05-31.
+  - Hypothèse principale : tsx watch (API dev server) n'a pas
+    hot-reload le changement de retour de `communityRequest.create`
+    (`request` → `{ request, matchCount }`). Restart manuel résout.
+  - Fix défensif : protéger le toast côté dashboard
+    (`page.tsx:41`) contre `matchCount === undefined`. Fallback
+    générique "Demande envoyée." si la valeur manque.
+- [ ] **Bug** — Pas de notification créée même quand un voisin
+  possède un objet matching. Constaté 2026-05-31 — à reproduire avec
+  2 users dans le même rayon car le matching exclut le caller.
+  - À vérifier après restart API + setup 2 comptes :
+    1. User A : CP 1000 (Bruxelles) + objet "Scie à onglet".
+    2. User B : CP 1000 + crée demande "scie à onglet".
+    3. Attendu : User A reçoit notification `COMMUNITY_REQUEST`.
+  - Si bug confirmé après restart, vérifier requête raw SQL
+    `community-request.ts:99-118`, ILIKE pattern, et `Object.author`
+    nullable (clause OR doit gérer null).
 
 ---
 

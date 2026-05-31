@@ -38,12 +38,16 @@ export default function HomePage() {
     onSuccess: (res) => {
       utils.communityRequest.list.invalidate();
       utils.communityRequest.myRequests.invalidate();
-      const n = res.matchCount;
-      toast.success(
-        n === 0
-          ? "Demande envoyée — aucun voisin avec cet objet pour l'instant."
-          : `Demande envoyée — ${n} voisin${n > 1 ? "s" : ""} notifié${n > 1 ? "s" : ""}.`,
-      );
+      const n = res?.matchCount;
+      if (typeof n !== "number") {
+        toast.success("Demande envoyée.");
+      } else if (n === 0) {
+        toast.success("Demande envoyée — aucun voisin avec cet objet pour l'instant.");
+      } else {
+        toast.success(
+          `Demande envoyée — ${n} voisin${n > 1 ? "s" : ""} notifié${n > 1 ? "s" : ""}.`,
+        );
+      }
     },
   });
 
