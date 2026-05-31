@@ -295,6 +295,19 @@ community-request.ts`) mais l'UX et le matching sont à construire.
   (créées + reçues via notif) avec statut. Existe déjà côté router
   (`communityRequest.list`).
 - [ ] **Feat mobile** — Modal équivalent sur dashboard mobile → M2/M3.
+- [ ] **Bug/Security** — Verrouiller la modification du pseudo
+  (`handle`). Constaté 2026-05-31.
+  - Aujourd'hui `/settings` expose un bouton "Modifier le pseudo"
+    (`settings/page.tsx:284`) qui appelle `users.updateHandle`.
+  - Le pseudo est utilisé dans les URL publiques (`/profile/[handle]`,
+    QR profil) et probablement dans des liens externes partagés —
+    permettre sa modification casse les liens et permet l'impersonation
+    (un user peut prendre un handle libéré par quelqu'un d'autre).
+  - Action : retirer le bouton UI ET désactiver la procédure
+    `users.updateHandle` (mutation `BAD_REQUEST` "handle immuable")
+    OU autoriser exactement 1 changement par compte (audit log + flag
+    `handleChangedAt` non-null bloque les suivants).
+  - Décider lequel des 2 modes garder avant de coder.
 - [ ] **Feat** — Extension profil utilisateur : ajouter section
   "Localisation" sur `/settings` (et profil public si user opt-in)
   affichant pays + CP + ville + bouton "Modifier" qui réutilise le
