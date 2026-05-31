@@ -6,37 +6,124 @@
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { Prisma } from "@prisma/client";
+import { haversineSql, haversineKm } from "../lib/geo";
+
+const RADIUS_VALUES = [5, 10, 25, 50, 100] as const;
+
+/**
+ * Échappe les caractères LIKE/ILIKE (%/_) dans la requête utilisateur
+ * pour éviter qu'ils soient interprétés comme wildcards.
+ */
+function escapeLikePattern(input: string): string {
+  return input.replace(/[\\%_]/g, "\\$&");
+}
+
+type MatchRow = {
+  objectId: string;
+  objectName: string;
+  ownerId: string;
+  ownerLat: number;
+  ownerLng: number;
+};
 
 export const communityRequestRouter = router({
   /**
    * Crée une demande à la communauté.
+   *
+   * Le `zone` (anciennement texte libre) est dérivé de la localisation du
+   * caller — `User.city + postalCode`. Le matching :
+   *   1. Owners dans rayon (Haversine SQL).
+   *   2. Filtre `Object.name`/`Object.author` ILIKE %title%.
+   *   3. Notification `COMMUNITY_REQUEST` par owner matché.
+   *
+   * Throw BAD_REQUEST si l'auteur n'a pas encore complété sa localisation.
    */
   create: protectedProcedure
     .input(
       z.object({
         title: z.string().min(3).max(100),
         description: z.string().max(500).optional(),
-        zone: z.string().max(100).optional(),
+        radiusKm: z.union([
+          z.literal(5),
+          z.literal(10),
+          z.literal(25),
+          z.literal(50),
+          z.literal(100),
+        ]).default(25),
         expiresAt: z.string().datetime().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const authorId = ctx.session.user.id;
 
+      const author = await ctx.prisma.user.findUnique({
+        where: { id: authorId },
+        select: { country: true, postalCode: true, city: true, lat: true, lng: true },
+      });
+
+      if (!author?.lat || !author.lng || !author.postalCode) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Veuillez compléter votre localisation avant de poster une demande.",
+        });
+      }
+
+      const zone = author.city
+        ? `${author.city} (${author.postalCode})`
+        : author.postalCode;
+
       const request = await ctx.prisma.communityRequest.create({
         data: {
           authorId,
           title: input.title,
           description: input.description,
-          zone: input.zone,
+          zone,
           expiresAt: input.expiresAt ? new Date(input.expiresAt) : undefined,
         },
         include: {
-          author: { select: { id: true, name: true, image: true } },
+          author: { select: { id: true, name: true, image: true, handle: true } },
         },
       });
 
-      return request;
+      // Matching : objets dans rayon dont name/author ILIKE title
+      const likePattern = `%${escapeLikePattern(input.title)}%`;
+      const radiusFilter = haversineSql(author.lat, author.lng, input.radiusKm);
+
+      const matches = await ctx.prisma.$queryRaw<MatchRow[]>(Prisma.sql`
+        SELECT
+          o."id"   AS "objectId",
+          o."name" AS "objectName",
+          u."id"   AS "ownerId",
+          u."lat"  AS "ownerLat",
+          u."lng"  AS "ownerLng"
+        FROM "objects" o
+        JOIN "collections" c ON o."collectionId" = c."id"
+        JOIN "users" u       ON c."userId" = u."id"
+        WHERE u."id" <> ${authorId}
+          AND u."lat" IS NOT NULL
+          AND u."lng" IS NOT NULL
+          AND (o."name" ILIKE ${likePattern} OR o."author" ILIKE ${likePattern})
+          AND ${radiusFilter}
+        LIMIT 200
+      `);
+
+      if (matches.length > 0) {
+        await ctx.prisma.notification.createMany({
+          data: matches.map((m) => ({
+            userId: m.ownerId,
+            type: "COMMUNITY_REQUEST" as const,
+            title: "Un voisin recherche un objet",
+            message: `${request.author.name ?? "Quelqu'un"} cherche "${input.title}" près de chez vous (≈ ${Math.round(
+              haversineKm(author.lat!, author.lng!, m.ownerLat, m.ownerLng),
+            )} km). Vous avez "${m.objectName}".`,
+            relatedId: request.id,
+            relatedType: "request",
+          })),
+        });
+      }
+
+      return { request, matchCount: matches.length };
     }),
 
   /**

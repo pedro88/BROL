@@ -27,6 +27,11 @@ function publicCaller() {
   });
 }
 
+// Brussels area — for matching radius tests.
+const BRUSSELS = { country: "BE", postalCode: "1000", city: "Bruxelles", lat: 50.8503, lng: 4.3517 };
+// Paris ≈ 260 km from Brussels — outside any radius up to 100km.
+const PARIS = { country: "FR", postalCode: "75001", city: "Paris", lat: 48.8566, lng: 2.3522 };
+
 describe("communityRequestRouter", () => {
   let alice: Awaited<ReturnType<typeof createTestUser>>;
   let bob: Awaited<ReturnType<typeof createTestUser>>;
@@ -34,23 +39,30 @@ describe("communityRequestRouter", () => {
   beforeEach(async () => {
     await prisma.notification.deleteMany();
     await prisma.communityRequest.deleteMany();
+    await prisma.object.deleteMany();
+    await prisma.collection.deleteMany();
     await prisma.user.deleteMany();
 
     alice = await createTestUser({ email: "alice@example.com", name: "Alice" });
     bob = await createTestUser({ email: "bob@example.com", name: "Bob" });
+
+    // Localisation par défaut : Bruxelles pour tous, sauf override par test.
+    await prisma.user.update({ where: { id: alice.id }, data: BRUSSELS });
+    await prisma.user.update({ where: { id: bob.id }, data: BRUSSELS });
   });
 
   describe("create", () => {
-    it("creates a request owned by the caller", async () => {
+    it("creates a request owned by the caller with derived zone", async () => {
       const res = await callerFor(alice.id).communityRequest.create({
         title: "Cherche perceuse",
         description: "Pour week-end",
-        zone: "Liège",
       });
-      expect(res.authorId).toBe(alice.id);
-      expect(res.title).toBe("Cherche perceuse");
-      expect(res.status).toBe("OPEN");
-      expect(res.author.id).toBe(alice.id);
+      expect(res.request.authorId).toBe(alice.id);
+      expect(res.request.title).toBe("Cherche perceuse");
+      expect(res.request.status).toBe("OPEN");
+      expect(res.request.zone).toBe("Bruxelles (1000)");
+      expect(res.request.author.id).toBe(alice.id);
+      expect(res.matchCount).toBe(0);
     });
 
     it("rejects too-short titles", async () => {
@@ -59,30 +71,99 @@ describe("communityRequestRouter", () => {
       ).rejects.toThrow();
     });
 
+    it("throws BAD_REQUEST when caller has no location", async () => {
+      const nomad = await createTestUser({ email: "nomad@example.com", name: "Nomad" });
+      await expect(
+        callerFor(nomad.id).communityRequest.create({ title: "Sans loc" }),
+      ).rejects.toThrow(/localisation/);
+    });
+
     it("accepts an optional expiresAt", async () => {
       const future = new Date(Date.now() + 7 * 24 * 3600_000).toISOString();
       const res = await callerFor(alice.id).communityRequest.create({
         title: "Tente 2 places",
         expiresAt: future,
       });
-      expect(res.expiresAt).not.toBeNull();
+      expect(res.request.expiresAt).not.toBeNull();
+    });
+  });
+
+  describe("create — matching", () => {
+    async function seedObject(ownerId: string, name: string, author?: string) {
+      const collection = await prisma.collection.create({
+        data: { userId: ownerId, name: "Test col", type: "TOOL" },
+      });
+      return prisma.object.create({
+        data: { collectionId: collection.id, name, author, objectType: "TOOL" },
+      });
+    }
+
+    it("notifies an owner in radius whose object name matches", async () => {
+      await seedObject(bob.id, "Scie à onglet Bosch");
+      const res = await callerFor(alice.id).communityRequest.create({
+        title: "scie à onglet",
+        radiusKm: 25,
+      });
+      expect(res.matchCount).toBe(1);
+      const notifs = await prisma.notification.findMany({ where: { userId: bob.id } });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].type).toBe("COMMUNITY_REQUEST");
+      expect(notifs[0].relatedId).toBe(res.request.id);
+    });
+
+    it("does NOT notify owners outside the radius", async () => {
+      await prisma.user.update({ where: { id: bob.id }, data: PARIS });
+      await seedObject(bob.id, "Scie à onglet");
+      const res = await callerFor(alice.id).communityRequest.create({
+        title: "scie à onglet",
+        radiusKm: 100,
+      });
+      expect(res.matchCount).toBe(0);
+      const notifs = await prisma.notification.findMany({ where: { userId: bob.id } });
+      expect(notifs).toHaveLength(0);
+    });
+
+    it("does NOT notify owners in radius without matching object name", async () => {
+      await seedObject(bob.id, "Tournevis cruciforme");
+      const res = await callerFor(alice.id).communityRequest.create({
+        title: "scie à onglet",
+        radiusKm: 25,
+      });
+      expect(res.matchCount).toBe(0);
+    });
+
+    it("matches on Object.author too (books)", async () => {
+      await seedObject(bob.id, "Du côté de chez Swann", "Marcel Proust");
+      const res = await callerFor(alice.id).communityRequest.create({
+        title: "Proust",
+        radiusKm: 25,
+      });
+      expect(res.matchCount).toBe(1);
+    });
+
+    it("does NOT notify the author about their own objects", async () => {
+      await seedObject(alice.id, "Scie à onglet personnelle");
+      const res = await callerFor(alice.id).communityRequest.create({
+        title: "scie à onglet",
+        radiusKm: 25,
+      });
+      expect(res.matchCount).toBe(0);
     });
   });
 
   describe("list", () => {
     beforeEach(async () => {
-      await callerFor(alice.id).communityRequest.create({
-        title: "Ouverte Alice",
-        zone: "Bruxelles",
+      // Bob déménage à Liège pour tester le filtre zone.
+      await prisma.user.update({
+        where: { id: bob.id },
+        data: { country: "BE", postalCode: "4000", city: "Liège", lat: 50.6326, lng: 5.5797 },
       });
-      await callerFor(bob.id).communityRequest.create({
-        title: "Ouverte Bob",
-        zone: "Liège",
-      });
+      await callerFor(alice.id).communityRequest.create({ title: "Ouverte Alice" });
+      await callerFor(bob.id).communityRequest.create({ title: "Ouverte Bob" });
       const cancelled = await callerFor(alice.id).communityRequest.create({
         title: "À annuler",
       });
-      await callerFor(alice.id).communityRequest.cancel({ id: cancelled.id });
+      await callerFor(alice.id).communityRequest.cancel({ id: cancelled.request.id });
     });
 
     it("defaults to OPEN requests only", async () => {
@@ -106,7 +187,7 @@ describe("communityRequestRouter", () => {
         limit: 20,
       });
       expect(res.items).toHaveLength(1);
-      expect(res.items[0].zone).toBe("Liège");
+      expect(res.items[0].zone).toBe("Liège (4000)");
     });
 
     it("filters by search on title", async () => {
@@ -129,8 +210,8 @@ describe("communityRequestRouter", () => {
       const created = await callerFor(alice.id).communityRequest.create({
         title: "Vélo enfant",
       });
-      const res = await publicCaller().communityRequest.get({ id: created.id });
-      expect(res.id).toBe(created.id);
+      const res = await publicCaller().communityRequest.get({ id: created.request.id });
+      expect(res.id).toBe(created.request.id);
       expect(res.author.id).toBe(alice.id);
     });
 
@@ -146,7 +227,7 @@ describe("communityRequestRouter", () => {
       const created = await callerFor(alice.id).communityRequest.create({
         title: "Annulable",
       });
-      const res = await callerFor(alice.id).communityRequest.cancel({ id: created.id });
+      const res = await callerFor(alice.id).communityRequest.cancel({ id: created.request.id });
       expect(res.status).toBe("CANCELLED");
     });
 
@@ -155,7 +236,7 @@ describe("communityRequestRouter", () => {
         title: "Pas la tienne",
       });
       await expect(
-        callerFor(bob.id).communityRequest.cancel({ id: created.id }),
+        callerFor(bob.id).communityRequest.cancel({ id: created.request.id }),
       ).rejects.toThrow(/propres demandes/);
     });
 
@@ -163,9 +244,9 @@ describe("communityRequestRouter", () => {
       const created = await callerFor(alice.id).communityRequest.create({
         title: "Double cancel",
       });
-      await callerFor(alice.id).communityRequest.cancel({ id: created.id });
+      await callerFor(alice.id).communityRequest.cancel({ id: created.request.id });
       await expect(
-        callerFor(alice.id).communityRequest.cancel({ id: created.id }),
+        callerFor(alice.id).communityRequest.cancel({ id: created.request.id }),
       ).rejects.toThrow(/ouvertes/);
     });
   });
@@ -175,7 +256,7 @@ describe("communityRequestRouter", () => {
       const created = await callerFor(alice.id).communityRequest.create({
         title: "À fulfill",
       });
-      const res = await callerFor(bob.id).communityRequest.fulfill({ id: created.id });
+      const res = await callerFor(bob.id).communityRequest.fulfill({ id: created.request.id });
       expect(res.status).toBe("FULFILLED");
     });
 
@@ -183,19 +264,22 @@ describe("communityRequestRouter", () => {
       const created = await callerFor(alice.id).communityRequest.create({
         title: "Notif please",
       });
-      await callerFor(bob.id).communityRequest.fulfill({ id: created.id });
-      const notifs = await prisma.notification.findMany({ where: { userId: alice.id } });
+      await callerFor(bob.id).communityRequest.fulfill({ id: created.request.id });
+      const notifs = await prisma.notification.findMany({
+        where: { userId: alice.id, type: "REQUEST_FULFILLED" },
+      });
       expect(notifs).toHaveLength(1);
-      expect(notifs[0].type).toBe("REQUEST_FULFILLED");
-      expect(notifs[0].relatedId).toBe(created.id);
+      expect(notifs[0].relatedId).toBe(created.request.id);
     });
 
     it("does NOT notify when the author fulfills their own request", async () => {
       const created = await callerFor(alice.id).communityRequest.create({
         title: "Self-fulfill",
       });
-      await callerFor(alice.id).communityRequest.fulfill({ id: created.id });
-      const notifs = await prisma.notification.findMany({ where: { userId: alice.id } });
+      await callerFor(alice.id).communityRequest.fulfill({ id: created.request.id });
+      const notifs = await prisma.notification.findMany({
+        where: { userId: alice.id, type: "REQUEST_FULFILLED" },
+      });
       expect(notifs).toHaveLength(0);
     });
   });

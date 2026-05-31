@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Header, Navigation } from "../components/navigation";
 import { trpc } from "../lib/trpc";
-import { Package, User, Repeat, Download } from "lucide-react";
+import { Package, User, Repeat, Download, MessagesSquare } from "lucide-react";
 import { useUserAgent } from "../lib/use-user-agent";
+import { CreateRequestDialog } from "../components/requests/create-request-dialog";
+import { toast } from "sonner";
 
 /**
  * Page d'accueil principale — dashboard utilisateur.
@@ -26,6 +29,23 @@ export default function HomePage() {
   });
 
   const { isMobile } = useUserAgent();
+
+  // Dialog "Demander à la communauté"
+  const meQuery = trpc.users.me.useQuery();
+  const [requestOpen, setRequestOpen] = useState(false);
+  const utils = trpc.useUtils();
+  const createRequest = trpc.communityRequest.create.useMutation({
+    onSuccess: (res) => {
+      utils.communityRequest.list.invalidate();
+      utils.communityRequest.myRequests.invalidate();
+      const n = res.matchCount;
+      toast.success(
+        n === 0
+          ? "Demande envoyée — aucun voisin avec cet objet pour l'instant."
+          : `Demande envoyée — ${n} voisin${n > 1 ? "s" : ""} notifié${n > 1 ? "s" : ""}.`,
+      );
+    },
+  });
 
   // Dériver les totaux
   const totalObjects =
@@ -121,6 +141,20 @@ export default function HomePage() {
             variant="secondary"
           />
 
+          <button
+            type="button"
+            onClick={() => setRequestOpen(true)}
+            className="card-vhs p-4 w-full text-left hover:border-primary/50 transition-colors flex items-center gap-3"
+          >
+            <MessagesSquare className="w-5 h-5 text-primary" />
+            <div>
+              <p className="font-display text-base">DEMANDER À LA COMMUNAUTÉ</p>
+              <p className="font-mono text-xs text-muted-foreground">
+                Trouver un objet auprès des voisins
+              </p>
+            </div>
+          </button>
+
           {/* Scanner uniquement sur mobile */}
           {isMobile && (
             <QuickAction
@@ -131,6 +165,15 @@ export default function HomePage() {
             />
           )}
         </section>
+
+        <CreateRequestDialog
+          open={requestOpen}
+          onOpenChange={setRequestOpen}
+          city={meQuery.data?.city ?? null}
+          onSubmit={async (data) => {
+            await createRequest.mutateAsync(data);
+          }}
+        />
 
         {/* Prêts récents */}
         <section className="mt-8">

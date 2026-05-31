@@ -395,8 +395,8 @@ export default function ObjectDetailPage() {
           </div>
         ))}
 
-        {/* Actions — owner only ; non-owner peut juste demander à la communauté */}
-        {isOwner ? (
+        {/* Actions — owner only. La demande communauté se fait depuis le dashboard. */}
+        {isOwner && (
           <div className="mt-6 space-y-3">
             <Button
               variant="outline"
@@ -405,25 +405,6 @@ export default function ObjectDetailPage() {
             >
               <User className="w-4 h-4 mr-2" />
               {hasActiveLoan ? "Prêt en cours" : "Prêter cet objet"}
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => router.push("/requests")}
-            >
-              <User className="w-4 h-4 mr-2" />
-              Demander à la communauté
-            </Button>
-          </div>
-        ) : (
-          <div className="mt-6">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => router.push("/requests")}
-            >
-              <User className="w-4 h-4 mr-2" />
-              Demander à la communauté
             </Button>
           </div>
         )}
