@@ -179,6 +179,8 @@ export default function HomePage() {
           }}
         />
 
+        <MyRequestsSection />
+
         {/* Prêts récents */}
         <section className="mt-8">
           <h2 className="font-mono text-sm text-muted-foreground mb-3">
@@ -329,5 +331,69 @@ function QuickAction({
       <h3 className="font-display text-xl mb-1">{title}</h3>
       <p className="font-mono text-xs text-muted-foreground">{description}</p>
     </Link>
+  );
+}
+
+/**
+ * Section "Mes demandes" — liste les demandes communauté de l'utilisateur,
+ * avec badge sur celles qui ont des messages non-lus.
+ */
+function MyRequestsSection() {
+  const { data, isLoading } = trpc.communityRequest.myRequests.useQuery(
+    undefined,
+    { staleTime: 30_000 },
+  );
+
+  if (isLoading || !data || data.length === 0) {
+    return null;
+  }
+
+  const formatDate = (iso: string | Date) =>
+    new Intl.DateTimeFormat("fr-BE", {
+      day: "numeric",
+      month: "short",
+    }).format(new Date(iso as string));
+
+  return (
+    <section className="mt-8">
+      <h2 className="font-mono text-sm text-muted-foreground mb-3">
+        // MES DEMANDES
+      </h2>
+      <div className="space-y-3">
+        {data.slice(0, 5).map((req) => (
+          <Link
+            key={req.id}
+            href={`/requests/${req.id}`}
+            className="card-vhs p-4 block hover:border-primary/50 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <h3 className="font-display text-base truncate">{req.title}</h3>
+              {req.unreadCount > 0 && (
+                <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-mono flex items-center justify-center flex-shrink-0">
+                  {req.unreadCount > 9 ? "9+" : req.unreadCount}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
+              <span>
+                {req.status === "OPEN"
+                  ? "Ouverte"
+                  : req.status === "FULFILLED"
+                    ? "Pourvue"
+                    : req.status === "CANCELLED"
+                      ? "Annulée"
+                      : "Expirée"}
+                {req.messageCount > 0 && (
+                  <span className="ml-2">
+                    · {req.messageCount} message{req.messageCount > 1 ? "s" : ""}
+                  </span>
+                )}
+              </span>
+              <span>{formatDate(req.createdAt)}</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }

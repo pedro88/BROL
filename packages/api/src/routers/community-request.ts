@@ -294,7 +294,8 @@ export const communityRequestRouter = router({
     }),
 
   /**
-   * Liste les demandes de l'utilisateur courant.
+   * Liste les demandes de l'utilisateur courant + compteurs de messages
+   * non-lus par demande (utile pour le dashboard "Mes demandes").
    */
   myRequests: protectedProcedure.query(async ({ ctx }) => {
     const authorId = ctx.session.user.id;
@@ -302,8 +303,24 @@ export const communityRequestRouter = router({
     const requests = await ctx.prisma.communityRequest.findMany({
       where: { authorId },
       orderBy: { createdAt: "desc" },
+      include: {
+        _count: { select: { messages: true } },
+      },
     });
 
-    return requests;
+    const unreadByRequest = await ctx.prisma.requestMessage.groupBy({
+      by: ["requestId"],
+      where: { toUserId: authorId, isRead: false },
+      _count: { _all: true },
+    });
+    const unreadMap = new Map<string, number>(
+      unreadByRequest.map((row) => [row.requestId, row._count._all]),
+    );
+
+    return requests.map((r) => ({
+      ...r,
+      messageCount: r._count.messages,
+      unreadCount: unreadMap.get(r.id) ?? 0,
+    }));
   }),
 });
