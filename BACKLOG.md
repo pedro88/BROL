@@ -16,16 +16,6 @@
 
 ## 🔥 P0 — Bloquants
 
-- [ ] **Bug** — `/loans` côté prêteur : pas de bouton "Marquer comme
-  rendu" visible sur les prêts en cours. Diagnostiqué 2026-05-31.
-  - Reprod : un user A prête un objet à B → `/loans` onglet "Prêtés"
-    (côté A) → la card du prêt ne montre pas l'action "Marquer
-    comme rendu" (devrait être un bouton primaire selon
-    `LoanCard.viewAs === "owner"`).
-  - Probablement régression depuis le sprint historique
-    owner/borrower (cf. 2026-05-30 changelog "loans.history viewAs").
-  - Vérifier `loans.lentOut` retourne bien `viewAs: "owner"` et que
-    `LoanCard` lit ce flag — pas seulement `loans.history`.
 - [ ] **Bug** — Dashboard "Demander à la communauté" : toast affiche
   "Demande envoyée — undefined voisin notifié" après submit.
   Constaté 2026-05-31.
@@ -331,6 +321,47 @@ community-request.ts`) mais l'UX et le matching sont à construire.
   - Soft gate redirect.
 - [ ] **Tech** — E2E : signup → forced onboarding → CP → dashboard →
   créer demande → owner reçoit notif.
+
+**UX gaps constatés à l'usage (2026-05-31)** :
+
+- [ ] **Feat** — Visibilité de la demande post-submit. Constaté
+  2026-05-31 : après le toast "X voisins notifiés", l'utilisateur n'a
+  aucun feedback que la demande est bien stockée — il ne peut pas la
+  revoir, l'éditer ou l'annuler facilement.
+  - Vérification DB : confirmé que la demande est bien créée
+    (`community_requests` ligne `cmptetfrz000611bzqosfadng`).
+  - Ajouter section "Mes demandes en cours" sur le dashboard
+    (component `RequestsList` filtré par `authorId == me`), ou bouton
+    "Voir mes demandes" dans le toast.
+  - Routes existent déjà (`communityRequest.myRequests` + page
+    `/requests`). Manque le câblage UI dashboard.
+- [ ] **Feat** — Badge "nouvelles notifications" sur l'icône Bell de
+  la navigation. Actuellement aucune indication visuelle qu'une
+  notification non-lue est arrivée.
+  - Compteur unread via `notifications.unreadCount` (proc à ajouter
+    si manquant ; sinon dériver de `notifications.list` filtré
+    `isRead=false`).
+  - Badge rouge avec compteur sur Bell (header + bottom nav mobile).
+  - Pas de polling agressif : invalidation sur mount + sur réception
+    d'une mutation côté caller (optimistic).
+  - Investiguer Server-Sent Events ou WebSocket pour push temps réel
+    (V2 — pour V1 polling toutes les 60s suffit).
+- [ ] **Feat** — Click sur notification `COMMUNITY_REQUEST` →
+  contact direct du demandeur. Aujourd'hui le clic ne fait rien (ou
+  ouvre une page liste). Le owner doit pouvoir proposer son objet
+  d'un seul clic.
+  - Notification cliquable → route `/requests/{requestId}` (page
+    détail demande, à compléter).
+  - Sur cette page, bouton primaire "Proposer cet objet" → dialog
+    précomplété (l'objet matché vient de `relatedType=request` +
+    payload — actuellement on stocke `relatedId` mais pas l'objet
+    matché ; faudra étendre `Notification.payload Json?` ou ajouter
+    colonne `relatedObjectId`).
+  - Submit → crée un `Message` (router `messages` existe) entre owner
+    et requester, marque `CommunityRequest.fulfillByRequestId` si
+    accepté.
+  - Notification au requester "X vous propose un objet" → page de
+    réponse → accepter → flow normal de prêt (`/loans` create).
 
 **V2 (hors scope initial)** :
 - Full-text search Postgres `tsvector` au lieu de `ILIKE`.
