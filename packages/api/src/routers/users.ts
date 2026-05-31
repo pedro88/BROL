@@ -190,7 +190,16 @@ export const usersRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.userId },
-      select: { id: true, handle: true, name: true, email: true, image: true },
+      select: {
+        id: true,
+        handle: true,
+        name: true,
+        email: true,
+        image: true,
+        country: true,
+        postalCode: true,
+        city: true,
+      },
     });
     return user;
   }),

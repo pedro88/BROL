@@ -16,6 +16,22 @@ const PUBLIC_PATHS = [
 ];
 
 /**
+ * Paths exemptés de la soft gate "localisation requise".
+ * L'utilisateur peut atteindre /onboarding/location pour compléter son profil,
+ * et /settings pour le modifier après coup. Les API et assets sont aussi
+ * exemptés (gate UI uniquement).
+ */
+const LOCATION_GATE_EXEMPT = [
+  "/onboarding",
+  "/settings",
+  "/api",
+  "/sign-in",
+];
+
+/** Nom du cookie indiquant que l'utilisateur a complété sa localisation. */
+const LOC_COOKIE_NAME = "brol_loc_complete";
+
+/**
  * Lit le cookie de session Better-auth.
  *
  * En prod (HTTPS), Better-auth utilise le préfixe `__Secure-` (et `__Host-`
@@ -30,6 +46,14 @@ function getSessionCookie(request: NextRequest) {
   );
 }
 
+function hasLocationCookie(request: NextRequest) {
+  return request.cookies.get(LOC_COOKIE_NAME)?.value === "1";
+}
+
+function isLocationGateExempt(pathname: string) {
+  return LOCATION_GATE_EXEMPT.some((p) => pathname.startsWith(p));
+}
+
 const PROTECTED_PATTERNS = [
   "/collections",
   "/objects",
@@ -38,6 +62,7 @@ const PROTECTED_PATTERNS = [
   "/scan",
   "/contacts",
   "/notifications",
+  "/onboarding",
 ];
 
 /**
@@ -69,6 +94,24 @@ function redirectToSignIn(request: NextRequest, callbackPath: string) {
   return NextResponse.redirect(loginUrl);
 }
 
+function redirectToOnboardingLocation(request: NextRequest) {
+  return NextResponse.redirect(buildAbsoluteUrl(request, "/onboarding/location"));
+}
+
+/**
+ * Soft gate localisation : si l'utilisateur a une session mais n'a pas encore
+ * complété sa localisation (cookie absent), redirige vers /onboarding/location
+ * — sauf si le path est déjà dans la liste d'exemption.
+ *
+ * Le cookie est posé par /onboarding/location au submit (ou si user.postalCode
+ * existe déjà côté DB lors du chargement de la page).
+ */
+function locationGateRedirect(request: NextRequest, pathname: string): NextResponse | null {
+  if (isLocationGateExempt(pathname)) return null;
+  if (hasLocationCookie(request)) return null;
+  return redirectToOnboardingLocation(request);
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -78,6 +121,8 @@ export function middleware(request: NextRequest) {
     if (!sessionCookie) {
       return redirectToSignIn(request, pathname);
     }
+    const gateRedirect = locationGateRedirect(request, pathname);
+    if (gateRedirect) return gateRedirect;
     return NextResponse.next();
   }
 
@@ -127,6 +172,8 @@ export function middleware(request: NextRequest) {
       if (!sessionCookie) {
         return redirectToSignIn(request, pathname);
       }
+      const gateRedirect = locationGateRedirect(request, pathname);
+      if (gateRedirect) return gateRedirect;
     }
   }
 

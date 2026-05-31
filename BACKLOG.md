@@ -277,6 +277,22 @@ community-request.ts`) mais l'UX et le matching sont à construire.
   (créées + reçues via notif) avec statut. Existe déjà côté router
   (`communityRequest.list`).
 - [ ] **Feat mobile** — Modal équivalent sur dashboard mobile → M2/M3.
+- [ ] **Feat** — Extension profil utilisateur : ajouter section
+  "Localisation" sur `/settings` (et profil public si user opt-in)
+  affichant pays + CP + ville + bouton "Modifier" qui réutilise le
+  composant `LocationForm` de `/onboarding/location`. Plus champs
+  optionnels sur `Profile` (ou `User`) :
+  - `birthYear` (Int? — préféré à `age` car stable).
+  - `gender` (String? — "M" / "F" / "X" / autre, libre).
+  - `phone` (String? — déjà dans `Contact`, à propager sur `User`).
+  - `publicEmail` (Boolean — afficher email sur profil public).
+  - `publicPhone` / `publicBirthYear` / `publicGender` (toggles
+    visibilité par champ).
+  - Schema + migration Prisma (probablement sur `Profile`).
+  - Section "Informations personnelles" sur `/settings` : form
+    contrôle granulaire de la visibilité.
+  - Page profil public `/profile/[handle]` : afficher uniquement
+    les champs avec flag `public*` à `true`.
 - [ ] **Tech** — Tests unit :
   - Haversine : 3 cas (0 km, 100 km, antipode).
   - `users.updateLocation` : CP valide (mock fetch), CP inconnu (404
