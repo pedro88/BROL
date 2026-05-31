@@ -47,17 +47,20 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
     }),
   );
 
-  // Invalide les queries quand le token de session change (sign-in ou
-  // sync différé par AuthSessionSyncer). Sans ça, les queries qui se
-  // sont firées AVANT que le token soit dispo restent en cache en mode
-  // anonyme — c'est ce qui faisait que `objects.getPublic` retournait
-  // `isOwner=false` même après authentification.
+  // Purge les queries quand le token de session change (sign-in/out
+  // ou sync différé par AuthSessionSyncer). On utilise `removeQueries`
+  // plutôt que `invalidateQueries` : invalidate marque stale mais sert
+  // toujours la data cachée pendant le refetch — du coup le user
+  // suivant voyait brièvement les données du user précédent (ex:
+  // `users.me.postalCode` de l'ancien user → redirect home par
+  // erreur sur /onboarding/location). `removeQueries` purge la cache
+  // → les queries en cours repartent en `isLoading` jusqu'au refetch.
   useEffect(() => {
     let prev = sessionTokenStore.get();
     const unsub = sessionTokenStore.subscribe((token) => {
       if (token !== prev) {
         prev = token;
-        queryClient.invalidateQueries();
+        queryClient.removeQueries();
       }
     });
     return () => {
