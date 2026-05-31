@@ -8,6 +8,78 @@
 import { router, protectedProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { Resend } from "resend";
+import { logger } from "../lib/logger";
+
+const log = logger.child("requestMessages.email");
+
+/**
+ * Notification email envoyée au receiver d'un message in-app.
+ * Pas de contact direct entre les 2 inboxes : l'email contient juste
+ * un aperçu + un lien deeplink vers /requests/[id] dans l'app.
+ * Fire-and-forget : log + swallow toute erreur.
+ */
+async function sendRequestMessageEmail(params: {
+  to: string;
+  toName: string | null;
+  fromName: string;
+  requestTitle: string;
+  preview: string;
+  requestUrl: string;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    log.warn("RESEND_API_KEY not configured, skipping email");
+    return;
+  }
+
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Nouveau message sur Brol</h2>
+      <p>Bonjour ${params.toName ?? "voisin"},</p>
+      <p>
+        <strong>${params.fromName}</strong> vous a écrit à propos de votre
+        demande <strong>"${params.requestTitle}"</strong>.
+      </p>
+      <div style="background: #f9f9f9; padding: 16px; border-radius: 8px;">
+        <p style="margin: 0; white-space: pre-wrap;">${params.preview}</p>
+      </div>
+      <p style="margin-top: 20px;">
+        <a href="${params.requestUrl}" style="background: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
+          Ouvrir la conversation
+        </a>
+      </p>
+      <p style="color: #666; font-size: 12px; margin-top: 20px;">
+        Email envoyé via Brol. Pour répondre, ouvrez la conversation
+        directement dans l'app — votre email ne sera pas partagé.
+      </p>
+    </div>
+  `;
+
+  const text = `
+Nouveau message sur Brol
+
+${params.fromName} vous a écrit à propos de votre demande "${params.requestTitle}".
+
+${params.preview}
+
+Ouvrir la conversation: ${params.requestUrl}
+  `;
+
+  try {
+    const resend = new Resend(apiKey);
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL ?? "Brol <noreply@brol.app>",
+      to: params.to,
+      subject: `[Brol] ${params.fromName} : "${params.requestTitle}"`,
+      html,
+      text,
+    });
+    log.info("Request-message email sent", { to: params.to });
+  } catch (error) {
+    log.error("Failed to send request-message email", { err: error });
+  }
+}
 
 export const requestMessagesRouter = router({
   /**
@@ -129,16 +201,37 @@ export const requestMessagesRouter = router({
         },
       });
 
+      const preview = input.content.slice(0, 120) + (input.content.length > 120 ? "…" : "");
+
       await ctx.prisma.notification.create({
         data: {
           userId: toUserId,
           type: "COMMUNITY_REQUEST",
           title: `Nouveau message pour "${request.title}"`,
-          message: `${sender?.name ?? "Un voisin"} : ${input.content.slice(0, 120)}${input.content.length > 120 ? "…" : ""}`,
+          message: `${sender?.name ?? "Un voisin"} : ${preview}`,
           relatedId: input.requestId,
           relatedType: "request",
         },
       });
+
+      // Email out-of-band : fire-and-forget. On `await` quand même pour que
+      // les tests puissent stub Resend, mais toute erreur est swallow dans
+      // sendRequestMessageEmail.
+      const recipient = await ctx.prisma.user.findUnique({
+        where: { id: toUserId },
+        select: { email: true, name: true },
+      });
+      if (recipient?.email) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://brol.app";
+        await sendRequestMessageEmail({
+          to: recipient.email,
+          toName: recipient.name,
+          fromName: sender?.name ?? "Un voisin",
+          requestTitle: request.title,
+          preview,
+          requestUrl: `${appUrl}/requests/${input.requestId}`,
+        });
+      }
 
       return message;
     }),
