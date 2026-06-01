@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { signOut } from "@/lib/auth-client";
 import { setSessionToken, sessionTokenStore, getSessionToken } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
+import { LogoMark, BROL_TAGLINE } from "./logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,16 +107,20 @@ export function Header() {
   return (
     <header className="sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border">
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="relative no-underline">
-            <span className="font-display text-3xl vhs-text-glow text-primary">
-              BROL
-            </span>
-            <span className="absolute -top-1 -right-2 text-xs font-mono text-secondary vhs-text-glow-cyan">
+        <Link href="/" className="flex items-center gap-3 no-underline group">
+          <div className="relative">
+            <LogoMark width={88} priority />
+            <span className="absolute -top-1 -right-3 text-[10px] font-mono text-secondary vhs-text-glow-cyan">
               BETA
             </span>
-          </Link>
-        </div>
+          </div>
+          <span
+            className="hidden sm:inline font-mono text-[10px] text-secondary/80 uppercase tracking-widest"
+            aria-label={BROL_TAGLINE}
+          >
+            {BROL_TAGLINE}
+          </span>
+        </Link>
 
         {/* Mobile: Hamburger menu */}
         <div className="md:hidden">

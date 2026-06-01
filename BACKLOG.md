@@ -358,6 +358,41 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 ## ⚪ Idées non-priorisées
 
+### Branding
+
+- [x] **Feat** — ~~Logo de l'app (VHS néon `brol.`)~~ — livré
+  2026-06-01. Asset fourni par le user : cassette VHS néon rose,
+  fond rendu transparent via `magick -fuzz 8% -transparent white`,
+  trimmé à 881×594. Master : `apps/web/public/brand/logo.png` +
+  `apps/mobile/assets/brand/logo.png`. Variantes 512/256/96.
+  Composant React `apps/web/src/components/logo.tsx` (`LogoMark`
+  utilise `next/image`, `Wordmark` empile logo + tagline). Header
+  web + `/sign-in` + `/sign-up` consomment le composant. Mobile :
+  `<Image source={require('../assets/brand/logo.png')}>` dans
+  sign-in + sign-up.
+- [x] **Feat** — ~~Favicons + icônes app à partir du nouveau logo~~ —
+  livré 2026-06-01. Web : `favicon.png` (512), `favicon-192.png`,
+  `favicon-32.png`, `apple-touch-icon.png` (180) régénérés. Mobile
+  Expo : `icon.png` + `adaptive-icon.png` (1024² sur fond
+  `#0a0a0a`), `splash.png` (1284×2778 avec logo centré + tagline
+  rendue en bas), `favicon.png` (48²). Anciens fichiers sauvegardés
+  avec suffixe `.legacy.png`.
+- [x] **Feat** — ~~Tagline "Beautiful Real Object Library"~~ —
+  livré 2026-06-01. Web : Header (sous logo, masquée < `sm`),
+  sign-in (`Wordmark showTagline`), `metadata.title` + OG +
+  Twitter, `manifest.json`. Mobile : sign-in + sign-up screens,
+  splash PNG, `app.json.expo.description`.
+
+### Infra
+
+- [ ] **Tech** — Finaliser la connexion S3 :
+  - Vérifier credentials prod (`AWS_*` ou compatible — Scaleway / Wasabi ?).
+  - Câbler `apps/mobile/src/lib/photo-upload.ts` (presigned URL flow
+    déjà côté web via `object-form.tsx:257-267`).
+  - Lifecycle rules + bucket policy (public-read sur covers ?
+    presigned GET sinon).
+  - Variables d'env documentées dans `MAINTENANCE.md`.
+
 - [ ] **Feat** — Possibilité de faire une demande à la communauté pour
   emprunter un objet absent du catalogue. (Le router
   `community-request` existe déjà — il manque probablement l'UX.)

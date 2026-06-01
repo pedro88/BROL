@@ -1,7 +1,7 @@
 {
-  "name": "Brol",
+  "name": "Brol — Beautiful Real Object Library",
   "short_name": "Brol",
-  "description": "Application belge de gestion de prêt et location d'objets via QR codes.",
+  "description": "Beautiful Real Object Library — gérez prêts et location d'objets via QR codes.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

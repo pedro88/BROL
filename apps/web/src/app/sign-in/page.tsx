@@ -13,6 +13,7 @@ import { setSessionToken } from "@/lib/auth-store";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Wordmark } from "@/components/logo";
 
 /**
  * Le cookie `brol_loc_complete` est posé par /onboarding/location pour
@@ -166,7 +167,10 @@ export default function SignInPage() {
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="font-display text-5xl mb-2 vhs-text-glow text-primary">
+          <div className="flex justify-center mb-4">
+            <Wordmark size="lg" showTagline />
+          </div>
+          <h1 className="font-display text-3xl mb-2 vhs-text-glow text-primary">
             {mode === "signin" ? "CONNEXION" : "CRÉER UN COMPTE"}
           </h1>
           <p className="font-mono text-sm text-muted-foreground">

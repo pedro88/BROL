@@ -2,6 +2,7 @@
   "expo": {
     "name": "Brol",
     "slug": "brol",
+    "description": "Beautiful Real Object Library — gérez prêts et location d'objets via QR codes.",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

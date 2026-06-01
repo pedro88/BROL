@@ -27,7 +27,7 @@ const inter = Inter({
  */
 export const metadata: Metadata = {
   title: {
-    default: "Brol — Gérez vos prêts",
+    default: "Brol — Beautiful Real Object Library",
     template: "%s | Brol",
   },
   description: "Application belge de gestion de prêt et location d'objets via QR codes.",
@@ -39,13 +39,13 @@ export const metadata: Metadata = {
     locale: "fr_BE",
     url: "https://brol.app",
     siteName: "Brol",
-    title: "Brol — Gérez vos prêts",
-    description: "Application belge de gestion de prêt et location d'objets via QR codes.",
+    title: "Brol — Beautiful Real Object Library",
+    description: "Beautiful Real Object Library — gérez prêts et location d'objets via QR codes.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Brol",
-    description: "Gérez vos prêts d'objets facilement",
+    title: "Brol — Beautiful Real Object Library",
+    description: "Beautiful Real Object Library — gérez vos prêts d'objets facilement.",
   },
   manifest: "/manifest.json",
   robots: {
@@ -73,8 +73,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${vt323.variable} ${inter.variable}`}>
       <head>
-        <link rel="icon" href="/favicon.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Favicons auto-générés par Next via app/icon.png + app/apple-icon.png. */}
       </head>
       <body className="min-h-screen bg-background vhs-grid">
         {/* Overlay scanlines global */}

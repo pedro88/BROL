@@ -15,6 +15,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { Link, router } from "expo-router";
 import { colors, spacing, typography } from "../src/theme";
@@ -76,7 +77,13 @@ export default function SignInScreen() {
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>BROL</Text>
+          <Image
+            source={require("../assets/brand/logo.png")}
+            style={styles.logoImg}
+            resizeMode="contain"
+            accessibilityLabel="Brol"
+          />
+          <Text style={styles.tagline}>Beautiful Real Object Library</Text>
           <Text style={styles.subtitle}>&gt; Connexion _</Text>
         </View>
 
@@ -162,13 +169,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.xxl,
   },
-  logo: {
-    fontFamily: typography.fontFamilyDisplay,
-    fontSize: 48,
-    color: colors.primary,
-    textShadowColor: colors.primary,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 15,
+  logoImg: {
+    width: 240,
+    height: 162,
+  },
+  tagline: {
+    fontFamily: typography.fontFamily,
+    fontSize: 11,
+    color: colors.secondary,
+    marginTop: spacing.sm,
+    letterSpacing: 2,
+    textTransform: "uppercase",
   },
   subtitle: {
     fontFamily: typography.fontFamily,
