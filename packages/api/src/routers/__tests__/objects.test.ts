@@ -237,7 +237,54 @@ describe("objectsRouter", () => {
       const res = await unauth.objects.getPublic({ id: object.id });
       expect(res?.isOwner).toBe(false);
       expect(res?.viaContact).toBe(false);
+      expect(res?.isBorrower).toBe(false);
+      expect(res?.myActiveLoan).toBeNull();
       expect(res?.id).toBe(object.id);
+    });
+
+    it("returns enriched view + isBorrower=true when caller has an active loan", async () => {
+      await prisma.loan.create({
+        data: {
+          objectId: object.id,
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          status: "ACTIVE",
+          lentAt: new Date("2026-05-15"),
+          returnDueDate: new Date("2026-06-15"),
+        },
+      });
+
+      const res = await callerFor(borrower.id).objects.getPublic({ id: object.id });
+      expect(res?.isOwner).toBe(false);
+      expect(res?.viaContact).toBe(false);
+      expect(res?.isBorrower).toBe(true);
+      expect(res?.myActiveLoan?.lentAt).toBeInstanceOf(Date);
+      expect(res?.myActiveLoan?.returnDueDate).toBeInstanceOf(Date);
+      // Enriched view exposes notes + pricing + type-specific fields
+      expect(res).toHaveProperty("notes");
+      expect(res).toHaveProperty("cautionAmount");
+      // But NOT loans nor qrStock (réservés au owner)
+      expect(res).not.toHaveProperty("loans");
+      expect(res).not.toHaveProperty("qrStock");
+    });
+
+    it("does NOT set isBorrower for returned loans", async () => {
+      await prisma.loan.create({
+        data: {
+          objectId: object.id,
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          status: "RETURNED",
+          lentAt: new Date("2026-04-01"),
+          returnedAt: new Date("2026-04-20"),
+        },
+      });
+
+      const res = await callerFor(borrower.id).objects.getPublic({ id: object.id });
+      expect(res?.isBorrower).toBe(false);
+      expect(res?.myActiveLoan).toBeNull();
+      // Reste en vue anonyme
+      expect(res).not.toHaveProperty("notes");
     });
   });
 

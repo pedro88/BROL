@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import {
   generateQrStockSchema,
@@ -241,7 +242,10 @@ export const qrRouter = router({
       });
 
       if (!qrStock) {
-        throw new Error("QR code non trouvé");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "QR code non trouvé",
+        });
       }
 
       return qrStock;

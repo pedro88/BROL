@@ -355,6 +355,28 @@ export const objectsRouter = router({
         viaContact = !!contact;
       }
 
+      // Détection borrower : caller a-t-il un Loan ACTIVE/OVERDUE sur
+      // cet objet ? Si oui, on traite la vue comme enrichie (équivalent
+      // viaContact) — l'emprunteur a au moins le droit aux infos
+      // détaillées de l'objet qu'il détient physiquement.
+      let myActiveLoan: {
+        id: string;
+        lentAt: Date;
+        returnDueDate: Date | null;
+      } | null = null;
+      if (!isOwner && ctx.userId) {
+        const loan = await ctx.prisma.loan.findFirst({
+          where: {
+            objectId: input.id,
+            borrowerId: ctx.userId,
+            status: { in: ["ACTIVE", "OVERDUE"] },
+          },
+          select: { id: true, lentAt: true, returnDueDate: true },
+        });
+        if (loan) myActiveLoan = loan;
+      }
+      const isBorrower = !!myActiveLoan;
+
       const owner = {
         id: object.collection.user.id,
         name: object.collection.user.name,
@@ -382,9 +404,11 @@ export const objectsRouter = router({
         owner,
         isOwner,
         viaContact,
+        isBorrower,
+        myActiveLoan,
       };
 
-      if (!isOwner && !viaContact) {
+      if (!isOwner && !viaContact && !isBorrower) {
         // Vue anonyme — pas de notes, pas de fields type-spécifiques, pas de pricing
         return basePublic;
       }

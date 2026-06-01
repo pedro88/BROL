@@ -13,6 +13,8 @@ import {
   QrCode,
   Download,
   Printer,
+  Mail,
+  CheckCircle2,
 } from "lucide-react";
 import { Header, Navigation } from "../../../components/navigation";
 import { Button } from "../../../components/ui/button";
@@ -24,6 +26,8 @@ import {
 } from "../../../components/qr/qr-code-image";
 import { CreateLoanDialog } from "../../../components/loans/create-loan-dialog";
 import { PhotoGallery } from "../../../components/photos/photo-gallery";
+import { ContactOwnerDialog } from "../../../components/objects/contact-owner-dialog";
+import { toast } from "sonner";
 
 /**
  * Page de détail d'un objet.
@@ -56,14 +60,20 @@ export default function ObjectDetailPage() {
       { enabled: !!objectId && !privateObject, retry: 2 },
     );
 
+  const utils = trpc.useUtils();
+
   const isOwner = !!privateObject;
   const object: typeof privateObject | typeof publicObject | null | undefined =
     privateObject ?? publicObject;
   const isLoading = isLoadingPrivate || (!privateObject && isLoadingPublic);
   const viaContact =
     !isOwner && (publicObject?.viaContact ?? false);
+  const isBorrower = !isOwner && (publicObject?.isBorrower ?? false);
+  const myActiveLoan =
+    !isOwner ? (publicObject?.myActiveLoan ?? null) : null;
   const ownerName = !isOwner ? (publicObject?.owner?.name ?? null) : null;
   const ownerHandle = !isOwner ? (publicObject?.owner?.handle ?? null) : null;
+  const ownerIdForContact = !isOwner ? (publicObject?.owner?.id ?? null) : null;
 
   const [assignQrOpen, setAssignQrOpen] = useState(false);
   const [loanDialogOpen, setLoanDialogOpen] = useState(false);
@@ -79,6 +89,19 @@ export default function ObjectDetailPage() {
         publicObject?.collection?.id ??
         "";
       router.push(`/collections/${collectionId}`);
+    },
+  });
+
+  // Permet à l'owner de clôturer un prêt actif directement depuis la page
+  // détail objet (utile post-scan QR du propre objet).
+  const returnLoanMutation = trpc.loans.return.useMutation({
+    onSuccess: () => {
+      utils.objects.get.invalidate({ id: objectId });
+      utils.objects.getPublic.invalidate({ id: objectId });
+      toast.success("Prêt clôturé");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Impossible de clôturer le prêt");
     },
   });
 
@@ -168,8 +191,40 @@ export default function ObjectDetailPage() {
           {isOwner ? (object.collection?.name ?? "Collection") : "Retour"}
         </Link>
 
-        {/* Owner badge — visible quand la vue n'est pas la nôtre */}
-        {!isOwner && (
+        {/* Bandeau borrower — caller a un prêt ACTIVE/OVERDUE sur cet objet */}
+        {isBorrower && myActiveLoan && (
+          <div className="card-vhs border-primary/40 p-3 mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-4 h-4 text-primary" />
+              <span className="font-mono text-xs uppercase text-primary tracking-wider">
+                Vous avez emprunté cet objet
+              </span>
+            </div>
+            <p className="font-mono text-sm text-muted-foreground">
+              Depuis le{" "}
+              {new Date(myActiveLoan.lentAt).toLocaleDateString("fr-BE")}
+              {myActiveLoan.returnDueDate && (
+                <>
+                  {" "}— retour prévu le{" "}
+                  {new Date(myActiveLoan.returnDueDate).toLocaleDateString(
+                    "fr-BE",
+                  )}
+                </>
+              )}
+            </p>
+            <p className="font-mono text-xs text-muted-foreground mt-1">
+              Propriétaire :{" "}
+              <span className="text-secondary">
+                {ownerName ?? "Inconnu"}
+                {ownerHandle ? ` #${ownerHandle}` : ""}
+              </span>
+            </p>
+          </div>
+        )}
+
+        {/* Owner badge — visible quand la vue n'est pas la nôtre et pas
+            borrower (le bandeau borrower ci-dessus inclut déjà l'owner). */}
+        {!isOwner && !isBorrower && (
           <div className="card-vhs border-secondary/30 p-3 mb-4 flex items-center gap-2">
             <User className="w-4 h-4 text-secondary" />
             <span className="font-mono text-xs text-muted-foreground">
@@ -293,7 +348,7 @@ export default function ObjectDetailPage() {
                 </span>
               </div>
               {currentLoan.returnDueDate && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-3">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span className="font-mono text-xs text-muted-foreground">
                     Retour prévu le{" "}
@@ -303,6 +358,17 @@ export default function ObjectDetailPage() {
                   </span>
                 </div>
               )}
+              <Button
+                onClick={() =>
+                  returnLoanMutation.mutate({ loanId: currentLoan.id })
+                }
+                disabled={returnLoanMutation.isPending}
+                className="w-full gap-2"
+                aria-label="Marquer comme retourné"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Marquer rendu
+              </Button>
             </div>
           </div>
         )}
@@ -406,6 +472,27 @@ export default function ObjectDetailPage() {
               <User className="w-4 h-4 mr-2" />
               {hasActiveLoan ? "Prêt en cours" : "Prêter cet objet"}
             </Button>
+          </div>
+        )}
+
+        {/* Contacter le propriétaire — visible en vue anon ou viaContact,
+            principalement utile au tiers qui scanne un QR sur un objet
+            trouvé/perdu. Pas affiché côté borrower : il a déjà un canal
+            direct via son prêt actif. */}
+        {!isOwner && !isBorrower && object && ownerIdForContact && (
+          <div className="mt-6">
+            <ContactOwnerDialog
+              objectId={objectId}
+              ownerId={ownerIdForContact}
+              ownerName={ownerName ?? "le propriétaire"}
+              objectName={object.name}
+              trigger={
+                <Button variant="outline" className="w-full gap-2">
+                  <Mail className="w-4 h-4" />
+                  Contacter le propriétaire
+                </Button>
+              }
+            />
           </div>
         )}
       </main>
