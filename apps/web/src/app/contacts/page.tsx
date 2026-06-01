@@ -16,6 +16,7 @@ import {
 } from "../../components/ui/dialog";
 import { trpc } from "../../lib/trpc";
 import { toast } from "sonner";
+import { AddContactDialog } from "../../components/contacts/add-contact-dialog";
 import {
   Users,
   Plus,
@@ -399,11 +400,10 @@ export default function ContactsPage() {
 
       <Navigation />
 
-      {/* Create dialog */}
-      <ContactDialog
+      {/* Create dialog — flow unifié (manuel / ID-handle / QR) */}
+      <AddContactDialog
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
-        onSuccess={() => setIsCreateOpen(false)}
       />
 
       {/* Edit dialog */}
