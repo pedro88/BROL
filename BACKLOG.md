@@ -16,15 +16,9 @@
 
 ## 🔥 P0 — Bloquants
 
-- [ ] **Bug** — Dashboard "Demander à la communauté" : toast affiche
-  "Demande envoyée — undefined voisin notifié" après submit.
-  Constaté 2026-05-31.
-  - Hypothèse principale : tsx watch (API dev server) n'a pas
-    hot-reload le changement de retour de `communityRequest.create`
-    (`request` → `{ request, matchCount }`). Restart manuel résout.
-  - Fix défensif : protéger le toast côté dashboard
-    (`page.tsx:41`) contre `matchCount === undefined`. Fallback
-    générique "Demande envoyée." si la valeur manque.
+- [x] **Bug** — ~~Dashboard "Demander à la communauté" : toast
+  "undefined voisin notifié"~~ — fix défensif livré 2026-05-31 (cf.
+  Historique).
 - [ ] **Bug** — Pas de notification créée même quand un voisin
   possède un objet matching. Constaté 2026-05-31 — à reproduire avec
   2 users dans le même rayon car le matching exclut le caller.
@@ -40,7 +34,12 @@
 
 ## 🟠 P1 — Hygiène en cours
 
-**0 item ouvert.** Sprint 2026-05-30 a tout clos (cf. Historique).
+- [x] **Feat** — ~~Uniformiser l'ajout de contact (`/contacts`
+  ↔ flux de prêt)~~ — livré 2026-06-01. Nouveau composant
+  `apps/web/src/components/contacts/add-contact-dialog.tsx` avec 3
+  onglets : Manuel (`contacts.create`), ID/Handle (`users.getById` +
+  `contacts.addFromScan`), QR code (scan profil Brol). Wire dans
+  `/contacts/page.tsx`. Edit reste sur l'ancien `ContactDialog`.
 
 ---
 
@@ -93,6 +92,15 @@
   garder que `brand`. Idem dans `edit-object-dialog.tsx`. Migration
   data `author → brand` pour les anciens objets : à faire séparément
   (cf. **Idées non-priorisées**).
+- [ ] **Feat** — Câbler la catégorie **BOARDGAME** avec
+  **BoardGameGeek XML API v2** (`https://boardgamegeek.com/xmlapi2/`)
+  pour preremplir : titre, designer, year, minPlayers/maxPlayers,
+  playTime, cover. Endpoint `search?type=boardgame&query=...` puis
+  `thing?id=...&stats=1`. Pas d'API key, rate limit doux. UI : input
+  "Rechercher sur BGG" → liste résultats → sélection → mapping vers
+  champs du form. Fallback manuel si pas de match. À élargir
+  ensuite : IGDB pour VIDEOGAME, TMDB pour MOVIE (OpenLibrary déjà
+  câblé pour BOOK via `objects.lookupIsbn`).
 
 ### Flux UX d'ajout d'objet
 
@@ -337,6 +345,104 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 - [x] **Tech** — ~~Backup Postgres automatique~~ — `scripts/db-backup.sh`
   livré 2026-05-29. À déployer sur VPS via crontab (cf. MAINTENANCE §3).
 
+### Internationalisation
+
+- [ ] **Feat** — i18n web + mobile. Locales cibles : `fr-BE`
+  (défaut), `en`, `nl-BE` (Belgique néerlandophone).
+  - Web : `next-intl` ou `next-i18next`. Routing `/fr/...` ou
+    middleware language detection (Accept-Language + cookie
+    `brol_locale`). Extract strings hardcodées (toasts, labels,
+    Header, dialogs, error messages tRPC FR-only à externaliser).
+  - Mobile : `react-i18next` + `expo-localization` (déjà installé
+    via `app.json.plugins`).
+  - Backend : `User.locale` déjà au schema (cf. `users.ts:189`),
+    à exposer dans tRPC context pour les emails Resend localisés.
+  - Setup : `packages/i18n` partagé (clés communes) + fichiers
+    JSON par locale.
+
+### Messaging & notifications
+
+- [ ] **Feat** — Distinguer **messages** vs **notifications**. Aujourd'hui
+  tout est mélangé sous `Notification` :
+  - **Notifications** = événements transactionnels (rappel retour,
+    retard, demande communauté matchée, contact ajouté).
+    Marquables comme lues, badge bell, pas de thread.
+  - **Messages** = conversations 1-1 (déjà partiellement via
+    `RequestMessage` sur `/requests/[id]`). Étendre à un router
+    `messages` générique avec `Conversation` + `Message`,
+    inbox dédiée `/messages`, badge séparé.
+  Cible : 2 icônes dans le header (Bell + Mail), 2 pages distinctes,
+  2 compteurs séparés. Migrer les `RequestMessage` existants
+  vers le nouveau modèle.
+
+### Self-service
+
+- [ ] **Feat** — Mode **self-service** sur objet ou collection. Le
+  propriétaire autorise certains utilisateurs (ou tous ses contacts /
+  voisins dans X km / tous les users Brol) à emprunter sans
+  validation owner.
+  - Schema : `Object.selfServiceMode` enum
+    (`OFF` / `CONTACTS` / `RADIUS` / `PUBLIC`) +
+    `Collection.selfServiceMode` (hérité par défaut sur les enfants).
+  - Flux emprunt : si self-service autorisé pour le caller →
+    `loans.create` peut être appelé par le borrower lui-même (pas
+    seulement par l'owner). Mutation `loans.selfBorrow`.
+  - Notif owner (info only, pas de validation requise).
+  - Garde-fou : limite `maxSelfBorrowPerWeek` configurable par owner.
+  - UI : toggle dans `EditObjectDialog` + bandeau "Self-service"
+    sur la card objet côté borrower.
+
+### Vues bibliothèque
+
+- [ ] **Feat** — Switch de visualisation pour `/collections/[id]` et
+  `/objects`. Représenter chaque item via une icône type-spécifique
+  inspirée du média physique :
+  - **BOOK** : tranche de livre (bookshelf style).
+  - **BOARDGAME** : boîte de jeu de côté.
+  - **TOOL** : outil accroché à un mur perforé.
+  - **VIDEOGAME** : boîtier DVD/cartouche.
+  - **CLOTHING** : cintre.
+  - **MOVIE** : VHS / DVD.
+  Assets : SVG depuis **The Noun Project** (license CC, à vérifier
+  par icône) ou Heroicons custom. Toggle UI : grid classique
+  vs "shelf view". State persistant via `localStorage`.
+
+### Infra & uploads
+
+**Pipe S3 web livrée 2026-06-01** (cf. Historique). Provider :
+**Hetzner Object Storage** (`fsn1.your-objectstorage.com`, bucket
+`brol-storage`, region `eu-central-1`).
+
+- [x] **Tech** — ~~Credentials prod + doc `MAINTENANCE.md`~~ — livré
+  2026-06-01. Section "Object Storage S3" enrichie (génération
+  credentials Hetzner, `host_bucket` s3cmd, flux upload).
+- [x] **Tech** — ~~Bucket policy + CORS codifiés (IaC)~~ — livré
+  2026-06-01. `deploy/s3/bucket-policy.json` (public-read sur
+  `photos/*`), `deploy/s3/cors.xml` (GET/PUT/HEAD depuis
+  `app.brol.dev`), `deploy/s3/setup.sh` (idempotent). Anti-drift
+  prod ↔ repo.
+- [x] **Tech/Bug** — ~~Sequencement upload `getPresignedUrl → PUT →
+  photos.add`~~ — fix 2026-06-01. Avant : étapes 2+3 lancées en
+  fire-and-forget dans `onSuccess` de la mutation → abortées par le
+  redirect → photo perdue côté DB. Maintenant séquentiel awaité dans
+  `onSubmit` (`object-form.tsx`) et `PhotoCapture` (déjà séquentiel).
+- [x] **Tech/Bug** — ~~Logger tRPC en prod~~ — fix 2026-06-01.
+  `server.ts onError` était `undefined` en prod → erreurs muettes.
+  Maintenant warn (TRPCError fonctionnels) / error (reste + stack).
+- [x] **Perf** — ~~Compression côté client avant upload~~ — livré
+  2026-06-01. `apps/web/src/lib/image-compress.ts` (Canvas natif,
+  pas de dep). Resize 2000px max + JPEG q=0.85. Câblé dans
+  `object-form.tsx` (création) + `photo-capture.tsx` (ajout).
+  Gain mesuré : 3.3 MB → 320–500 KB (~ -90 %).
+- [ ] **Tech mobile** — Câbler `apps/mobile/src/lib/photo-upload.ts`
+  + compression `expo-image-manipulator` dans un écran réel. Bloqué :
+  `apps/mobile/app/objects/add.tsx` est un placeholder vide.
+- [ ] **Infra** — CDN devant le bucket (latency BE/EU acceptable
+  aujourd'hui, à reconsidérer si trafic). Alternatives : Cloudflare
+  devant Hetzner via rewrite, ou migration vers R2 (egress gratuit).
+- [ ] **Tech** — Lifecycle rules : auto-delete des photos orphelines
+  (objets supprimés). À ajouter dans `deploy/s3/`.
+
 ---
 
 ## 🟢 P3 — Stratégique
@@ -357,6 +463,49 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 ---
 
 ## ⚪ Idées non-priorisées
+
+### Paiements (Mollie)
+
+- [ ] **Feat** — Pipeline de paiement complet via **Mollie**
+  (PSP belge, SEPA/Bancontact/cartes). 3 flux distincts :
+  1. **Abonnements** — tiers FREE/T2/T3 (cf. section pricing
+     ci-dessous). Mollie subscriptions API, webhook pour upgrade/
+     downgrade/expiration. Mapping `User.tier` + `User.tierExpiresAt`.
+  2. **Cautions** — bloquer le montant `Object.cautionAmount` au
+     moment du prêt (autorisation Mollie sans capture), libérer
+     au retour OK, capturer si non-retour / dégât. Modèle
+     `LoanDeposit` (status: HELD / RELEASED / CAPTURED).
+  3. **Locations** — paiement `rentalPriceDay/Hour/Week` à la
+     création du prêt, redistribution au propriétaire (Mollie
+     Connect / split payments). Commission Brol configurable.
+  Tech : nouvelles tables `Payment`, `PaymentEvent`, `Payout`.
+  Webhook signé Mollie. UI : page `/billing` pour abonnement,
+  flux d'autorisation caution + facture sur création de prêt.
+  Compliance : KYC vendeurs si redistribution Mollie Connect.
+
+### Badges & gamification
+
+- [ ] **Feat** — Système de badges fonctionnels (déblocage sur
+  événements : 1er objet ajouté, 10 prêts honorés, premier QR
+  scanné, etc.) + cosmétiques sur thème **rétro geek**.
+  Cible : ~100 badges. Pistes de thèmes :
+  - **Cinéma/VHS** : Back to the Future, Blade Runner, Akira,
+    Tron, Ghostbusters, Goonies, E.T., Princess Bride, Matrix.
+  - **Littérature** : Seigneur des Anneaux (trilogie + Hobbit),
+    Foundation, Dune, Hitchhiker's Guide, Discworld, Sandman.
+  - **Jeux vidéo rétro** : Zelda, Mario, Sonic, Metroid, Final
+    Fantasy, Castlevania, Street Fighter, Tetris, Mega Man.
+  - **TV/séries** : X-Files, Twin Peaks, Buffy, Star Trek,
+    Doctor Who, Cowboy Bebop, Stranger Things.
+  - **Hardware/computing** : Commodore 64, Amiga, Game Boy,
+    Walkman, floppy disk, dial-up modem, BBS, IRC.
+  - **Tabletop/RPG** : D&D, Magic the Gathering, Warhammer,
+    Catan, Risk.
+  Modèles : `Badge` (slug, name, description, icon, theme,
+  trigger), `UserBadge` (userId, badgeId, unlockedAt). Triggers
+  : event-based (hook dans procs concernées) + cron pour
+  conditions cumulatives. UI : page `/badges` (collection
+  perso + globaux), notif on unlock, intégration profil public.
 
 ### Branding
 
@@ -385,13 +534,7 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 ### Infra
 
-- [ ] **Tech** — Finaliser la connexion S3 :
-  - Vérifier credentials prod (`AWS_*` ou compatible — Scaleway / Wasabi ?).
-  - Câbler `apps/mobile/src/lib/photo-upload.ts` (presigned URL flow
-    déjà côté web via `object-form.tsx:257-267`).
-  - Lifecycle rules + bucket policy (public-read sur covers ?
-    presigned GET sinon).
-  - Variables d'env documentées dans `MAINTENANCE.md`.
+> Finalisation S3 promue à P2 → cf. `### Infra & uploads`.
 
 - [ ] **Feat** — Possibilité de faire une demande à la communauté pour
   emprunter un objet absent du catalogue. (Le router
@@ -412,6 +555,64 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
 
+- **2026-06-01** — Sprint *branding + S3 + contacts + observabilité*.
+  - 6 commits : `716df70` (branding), `d33a5f8` (onboarding redirect),
+    `72c5216` (AddContactDialog), `c25b04d` (S3 sequential + IaC +
+    logger tRPC), `344ed09` (compression client).
+  - **Branding** :
+    - Logo VHS néon `brol.` (asset fourni user) : trim + transparence
+      → master 881×594. Variantes 512/256/96.
+    - Composant `apps/web/src/components/logo.tsx` (`LogoMark` via
+      `next/image`, `Wordmark` + tagline optionnelle).
+    - Header + `/sign-in` + `/sign-up` (web + mobile) consomment.
+    - Favicons régénérés fond blanc (lisibles onglet) : `favicon.ico`
+      multi-tailles + `favicon-{32,192}.png` + `apple-touch-icon.png`.
+      Next App convention : `app/icon.png` + `app/apple-icon.png`.
+    - Mobile Expo : `icon.png` + `adaptive-icon.png` (1024² blanc),
+      `splash.png` (1284×2778 logo + tagline rose).
+    - Tagline **"Beautiful Real Object Library"** dans metadata,
+      OG/Twitter, manifest, `app.json.expo.description`, sign-in/up
+      web + mobile, header desktop.
+  - **Onboarding location** :
+    - `router.replace("/")` → `window.location.assign("/")` après
+      submit CP. Hard nav force le middleware Next à relire le cookie
+      `brol_loc_complete` fraîchement posé.
+    - `await utils.users.me.invalidate()` après update.
+    - Cookie `Secure` en HTTPS prod.
+  - **Contacts** :
+    - `AddContactDialog` unifié (3 onglets : Manuel / ID-Handle / QR).
+      Réutilise `users.getById` (cuid OU handle) + `contacts.
+      addFromScan` (idempotent). Wire dans `/contacts/page.tsx`.
+    - L'édition reste sur l'ancien `ContactDialog`.
+  - **S3 (Hetzner Object Storage)** :
+    - **Bug critique** : `S3_ACCESS_KEY` / `S3_SECRET_KEY` vides
+      dans `/opt/brol/.env` prod → `S3 non configuré`. Resolu.
+    - **Bug critique** : 4 migrations Prisma jamais déployées en
+      prod (cf. sprint 2026-05-31) → `users.country` absent → toute
+      query auth + onboarding throw P2022. `prisma migrate deploy`
+      lancé sur VPS.
+    - **Bug observabilité** : `server.ts onError` était `undefined`
+      en prod → erreurs tRPC muettes. Maintenant warn / error
+      structurés.
+    - **Bug séquencement upload** : presigned → PUT → `photos.add`
+      faits en fire-and-forget dans `onSuccess` mutation → abortés
+      par redirect → 0 row en DB. Refactor en séquentiel awaité
+      dans `onSubmit`.
+    - **IaC** : `deploy/s3/bucket-policy.json` (public-read sur
+      `photos/*`, keys = UUID v4) + `cors.xml` (GET/PUT/HEAD depuis
+      `app.brol.dev`) + `setup.sh` (idempotent). Anti-drift
+      prod ↔ repo, doc MAINTENANCE.md.
+    - **Compression** : `lib/image-compress.ts` (Canvas natif,
+      resize 2000px + JPEG q=0.85). Gain ~ -90 % (3.3 MB → ~400 KB).
+  - **Bugs corrigés** :
+    - Onboarding `/onboarding/location` : chargement infini sur
+      session stale → resolved après login frais (cause initiale
+      `users.country` missing).
+    - "Service indisponible" sur fetch CP → resolved par migrations
+      deploy.
+  - **Backlog** : 6 nouveaux items ajoutés (paiements Mollie, badges
+    rétro geek, BoardGameGeek API, i18n, messaging vs notifications,
+    self-service, vues bibliothèque, infra S3 promue de P3 à P2).
 - **2026-05-31** — Mega-sprint *community-request + notifs + profile*.
   - 8 commits cohérents (`dd34c0c`, `33df85c`, `ae2ba9f`, `d349455`,
     + dashboard/profile/email/handle-lock).
