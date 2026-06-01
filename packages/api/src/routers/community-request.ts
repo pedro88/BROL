@@ -8,6 +8,9 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { haversineSql, haversineKm } from "../lib/geo";
+import { logger } from "../lib/logger";
+
+const log = logger.child("communityRequest");
 
 const RADIUS_VALUES = [5, 10, 25, 50, 100] as const;
 
@@ -107,6 +110,16 @@ export const communityRequestRouter = router({
           AND ${radiusFilter}
         LIMIT 200
       `);
+
+      log.info("community request matching", {
+        requestId: request.id,
+        authorId,
+        title: input.title,
+        radiusKm: input.radiusKm,
+        authorLat: author.lat,
+        authorLng: author.lng,
+        matchCount: matches.length,
+      });
 
       if (matches.length > 0) {
         await ctx.prisma.notification.createMany({
