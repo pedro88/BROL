@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +12,15 @@ const LOC_COOKIE_NAME = "brol_loc_complete";
 const ONE_YEAR_SEC = 60 * 60 * 24 * 365;
 
 function setLocationCookie() {
-  if (typeof document !== "undefined") {
-    document.cookie = `${LOC_COOKIE_NAME}=1; Path=/; Max-Age=${ONE_YEAR_SEC}; SameSite=Lax`;
-  }
+  if (typeof document === "undefined") return;
+  const isHttps =
+    typeof window !== "undefined" && window.location.protocol === "https:";
+  const secure = isHttps ? "; Secure" : "";
+  document.cookie = `${LOC_COOKIE_NAME}=1; Path=/; Max-Age=${ONE_YEAR_SEC}; SameSite=Lax${secure}`;
 }
 
 export default function OnboardingLocationPage() {
-  const router = useRouter();
+  const utils = trpc.useUtils();
   const { data: me, isLoading: meLoading } = trpc.users.me.useQuery();
 
   const [country, setCountry] = useState("BE");
@@ -29,12 +30,13 @@ export default function OnboardingLocationPage() {
   const isAlreadyComplete = !!me?.postalCode;
 
   // Si user a déjà une localisation → sync cookie + redirect dashboard.
+  // Hard nav pour que le middleware Next relise le cookie posé.
   useEffect(() => {
     if (isAlreadyComplete) {
       setLocationCookie();
-      router.replace("/");
+      window.location.assign("/");
     }
-  }, [isAlreadyComplete, router]);
+  }, [isAlreadyComplete]);
 
   // Debounce CP input (400 ms) → preview query.
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -62,10 +64,16 @@ export default function OnboardingLocationPage() {
   );
 
   const updateLocation = trpc.users.updateLocation.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       setLocationCookie();
       toast.success("Localisation enregistrée");
-      router.replace("/");
+      // Purge le cache `users.me` pour que dashboard + middleware client
+      // voient le nouveau `postalCode` immédiatement.
+      await utils.users.me.invalidate();
+      // Hard nav plutôt que router.replace : force le middleware Next à
+      // relire le cookie fraîchement posé et évite tout état React-Query
+      // résiduel d'avant la mise à jour.
+      window.location.assign("/");
     },
     onError: (err) => {
       toast.error(err.message || "Impossible d'enregistrer la localisation");
