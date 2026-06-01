@@ -107,13 +107,31 @@ export const photosRouter = router({
         });
       }
 
-      return ctx.prisma.photo.create({
+      const photo = await ctx.prisma.photo.create({
         data: {
           objectId: input.objectId,
           url: input.url,
           position: input.position,
         },
       });
+
+      // Sync `Object.coverImage` pour que les cards listant juste cette
+      // colonne (collection, /objects, dashboard) affichent la photo
+      // sans avoir à joindre la relation `photos`. On écrase quand la
+      // nouvelle photo est position 0, ou quand l'objet n'a pas encore
+      // de cover.
+      const obj = await ctx.prisma.object.findUnique({
+        where: { id: input.objectId },
+        select: { coverImage: true },
+      });
+      if (input.position === 0 || !obj?.coverImage) {
+        await ctx.prisma.object.update({
+          where: { id: input.objectId },
+          data: { coverImage: input.url },
+        });
+      }
+
+      return photo;
     }),
 
   /**
@@ -154,9 +172,30 @@ export const photosRouter = router({
         }
       }
 
-      return ctx.prisma.photo.delete({
+      const deleted = await ctx.prisma.photo.delete({
         where: { id: input.photoId },
       });
+
+      // Re-sync `Object.coverImage` si on vient de supprimer la cover :
+      // prend la prochaine photo (plus petite position) ou null si
+      // l'objet n'a plus de photo.
+      const obj = await ctx.prisma.object.findUnique({
+        where: { id: input.objectId },
+        select: { coverImage: true },
+      });
+      if (obj?.coverImage === photo.url) {
+        const next = await ctx.prisma.photo.findFirst({
+          where: { objectId: input.objectId },
+          orderBy: { position: "asc" },
+          select: { url: true },
+        });
+        await ctx.prisma.object.update({
+          where: { id: input.objectId },
+          data: { coverImage: next?.url ?? null },
+        });
+      }
+
+      return deleted;
     }),
 
   /**
