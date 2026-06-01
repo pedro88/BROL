@@ -18,6 +18,7 @@ import { useCallback, useRef, useState } from "react";
 import { Camera, Upload, X, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { usePresignedUrl, usePhotoAdd } from "../../lib/trpc-hooks/photos";
+import { compressImage } from "../../lib/image-compress";
 import type { Photo } from "@brol/shared";
 
 interface PhotoCaptureProps {
@@ -108,20 +109,25 @@ export function PhotoCapture({
       setStatus("uploading");
 
       try {
+        // 0. Compresser AVANT signature (la presigned URL est liée à la
+        // taille/MIME — signer avec l'original puis envoyer le compressé
+        // ferait diverger Content-Length).
+        const compressed = await compressImage(file);
+
         // 1. Demander la presigned URL
         const { uploadUrl, publicUrl } = await presignedMutation.mutateAsync({
           objectId,
-          filename: file.name,
-          contentType: file.type,
-          fileSize: file.size,
+          filename: compressed.name,
+          contentType: compressed.type,
+          fileSize: compressed.size,
         });
 
         // 2. Upload direct vers S3 (PUT request)
         const uploadResponse = await fetch(uploadUrl, {
           method: "PUT",
-          body: file,
+          body: compressed,
           headers: {
-            "Content-Type": file.type,
+            "Content-Type": compressed.type,
           },
         });
 

@@ -12,6 +12,7 @@ import { Label } from "../ui/label";
 import { PhotoPicker } from "./photo-picker";
 import { QrScanner } from "../qr/qr-scanner";
 import { trpc } from "../../lib/trpc";
+import { compressImage } from "../../lib/image-compress";
 
 const conditionLabels: Record<string, string> = {
   NEW: "Neuf",
@@ -262,16 +263,20 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       if (selectedPhoto) {
         setUploadingPhoto(true);
         try {
+          // Compression côté client AVANT presigned URL : on signe pour la
+          // taille/MIME du fichier compressé, sinon validation backend (S3
+          // policy) peut rejeter une taille décalée.
+          const compressed = await compressImage(selectedPhoto);
           const presigned = await getPresignedUrlMutation.mutateAsync({
             objectId: newObject.id,
-            filename: selectedPhoto.name,
-            contentType: selectedPhoto.type,
-            fileSize: selectedPhoto.size,
+            filename: compressed.name,
+            contentType: compressed.type,
+            fileSize: compressed.size,
           });
           const putRes = await fetch(presigned.uploadUrl, {
             method: "PUT",
-            body: selectedPhoto,
-            headers: { "Content-Type": selectedPhoto.type },
+            body: compressed,
+            headers: { "Content-Type": compressed.type },
           });
           if (!putRes.ok) {
             throw new Error(`Upload S3 échoué (${putRes.status})`);
