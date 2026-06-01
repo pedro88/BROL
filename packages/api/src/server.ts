@@ -92,12 +92,31 @@ async function handleTrpc(req: IncomingMessage, res: { statusCode: number; setHe
     createContext,
     endpoint: "/api/trpc",
     req: fetchReq,
-    onError:
-      process.env.NODE_ENV === "development"
-        ? ({ path, error }) => {
-            log.error("tRPC procedure error", { path: path ?? null, err: error });
-          }
-        : undefined,
+    onError: ({ path, error, type }) => {
+      // Toujours logger côté serveur — en prod aussi. Sans ça, impossible de
+      // diagnostiquer les erreurs utilisateur. Les TRPCError fonctionnels
+      // (UNAUTHORIZED, BAD_REQUEST, FORBIDDEN, NOT_FOUND) restent visibles
+      // mais en `warn` pour limiter le bruit.
+      const code = error.code;
+      const expected =
+        code === "UNAUTHORIZED" ||
+        code === "FORBIDDEN" ||
+        code === "BAD_REQUEST" ||
+        code === "NOT_FOUND" ||
+        code === "CONFLICT";
+      const meta = {
+        path: path ?? null,
+        type,
+        code,
+        message: error.message,
+        stack: expected ? undefined : error.stack,
+      };
+      if (expected) {
+        log.warn("tRPC procedure error", meta);
+      } else {
+        log.error("tRPC procedure error", meta);
+      }
+    },
   }).then((r) => {
     res.statusCode = r.status;
     r.headers.forEach((value: string, key: string) => {

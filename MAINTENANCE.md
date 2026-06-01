@@ -73,8 +73,44 @@ Console : https://console.hetzner.cloud — projet contenant le serveur `ubuntu-
 
 - Endpoint : `https://fsn1.your-objectstorage.com`
 - Bucket : `brol-storage`
-- Credentials : dans `/opt/brol/.env` (`S3_ACCESS_KEY`, `S3_SECRET_KEY`)
-- CLI sur le VPS : `s3cmd ls` (config dans `~/.s3cfg`)
+- Region : `eu-central-1`
+- Credentials : dans `/opt/brol/.env` (`S3_ACCESS_KEY`, `S3_SECRET_KEY`).
+  Génération : console Hetzner → Object Storage → S3 credentials →
+  "Generate credentials" (secret n'est affiché qu'une fois).
+- CLI sur le VPS : `s3cmd ls` (config dans `~/.s3cfg`). `host_bucket`
+  doit pointer vers `%(bucket)s.fsn1.your-objectstorage.com` (sinon
+  s3cmd tape `s3.amazonaws.com` par défaut → `InvalidAccessKeyId`).
+
+**Configuration du bucket (policy + CORS)** — codifiée dans
+[deploy/s3/](../deploy/s3/) :
+
+- [`bucket-policy.json`](../deploy/s3/bucket-policy.json) — public-read
+  sur `photos/*` (les keys sont des UUID v4, pas de risque d'énumération).
+  Le frontend rend `<img src>` directement depuis l'URL publique S3.
+- [`cors.xml`](../deploy/s3/cors.xml) — autorise `GET/PUT/HEAD` depuis
+  `https://app.brol.dev` (presigned PUT côté navigateur).
+- [`setup.sh`](../deploy/s3/setup.sh) — applique policy + CORS via
+  `s3cmd`. Idempotent.
+
+**Appliquer / réappliquer la conf** (depuis le VPS) :
+
+```bash
+ssh piet@91.98.87.65
+cd /opt/brol
+bash deploy/s3/setup.sh        # bucket défaut = brol-storage
+```
+
+⚠️ **Ne jamais éditer la policy ou CORS directement via la console
+Hetzner ou s3cmd ad-hoc** — modifier les fichiers du repo et
+ré-exécuter `setup.sh` pour garder prod ↔ repo en phase.
+
+**Flux upload** (web) :
+1. Client demande `photos.getPresignedUrl` → presigned PUT 15 min.
+2. Client `PUT` directement vers S3 avec `Content-Type` correct.
+3. Client appelle `photos.add` avec l'URL publique pour persister.
+
+Le fichier est ensuite servi public depuis
+`https://fsn1.your-objectstorage.com/brol-storage/photos/{objectId}/{uuid}.{ext}`.
 
 ---
 

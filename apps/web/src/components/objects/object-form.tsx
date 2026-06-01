@@ -254,16 +254,43 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         }
       }
 
-      // 3. Upload la photo si sélectionnée
+      // 3. Upload la photo si sélectionnée — séquentiel pour garantir que
+      // `photos.add` complète AVANT le redirect (`onSuccess?.(newObject)`).
+      // L'ancien flux laissait le PUT S3 + `photos.add` dans le `onSuccess`
+      // de la mutation, qui restait pending au moment du navigate → fetches
+      // abortés → photo perdue côté DB.
       if (selectedPhoto) {
         setUploadingPhoto(true);
-        await getPresignedUrlMutation.mutateAsync({
-          objectId: newObject.id,
-          filename: selectedPhoto.name,
-          contentType: selectedPhoto.type,
-          fileSize: selectedPhoto.size,
-        });
-        setUploadingPhoto(false);
+        try {
+          const presigned = await getPresignedUrlMutation.mutateAsync({
+            objectId: newObject.id,
+            filename: selectedPhoto.name,
+            contentType: selectedPhoto.type,
+            fileSize: selectedPhoto.size,
+          });
+          const putRes = await fetch(presigned.uploadUrl, {
+            method: "PUT",
+            body: selectedPhoto,
+            headers: { "Content-Type": selectedPhoto.type },
+          });
+          if (!putRes.ok) {
+            throw new Error(`Upload S3 échoué (${putRes.status})`);
+          }
+          await addPhotoMutation.mutateAsync({
+            objectId: newObject.id,
+            url: presigned.publicUrl,
+            position: 0,
+          });
+        } catch (uploadErr) {
+          console.error("Photo upload failed:", uploadErr);
+          toast.error(
+            uploadErr instanceof Error
+              ? `Photo non uploadée : ${uploadErr.message}`
+              : "Photo non uploadée",
+          );
+        } finally {
+          setUploadingPhoto(false);
+        }
       }
 
       setScannedQrCode(null);
@@ -300,39 +327,9 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   // Photo add mutation
   const addPhotoMutation = trpc.photos.add.useMutation();
 
-  // Photo presigned URL mutation (for upload)
-  const getPresignedUrlMutation = trpc.photos.getPresignedUrl.useMutation({
-    onSuccess: async (presignedData, vars) => {
-      if (!selectedPhoto) return;
-
-      const { uploadUrl, publicUrl } = presignedData;
-      if (!uploadUrl || !publicUrl) return;
-
-      setUploadingPhoto(true);
-      try {
-        // Upload vers S3
-        await fetch(uploadUrl, {
-          method: "PUT",
-          body: selectedPhoto,
-          headers: { "Content-Type": selectedPhoto.type },
-        });
-
-        // Enregistrer la photo en base via mutation
-        await addPhotoMutation.mutateAsync({
-          objectId: vars.objectId,
-          url: publicUrl,
-          position: 0,
-        });
-      } catch (uploadErr) {
-        console.error("Photo upload failed:", uploadErr);
-      }
-      setUploadingPhoto(false);
-    },
-    onError: (err) => {
-      console.error("Presigned URL failed:", err);
-      setUploadingPhoto(false);
-    },
-  });
+  // Photo presigned URL mutation — la logique d'upload est inline dans
+  // `onSubmit` pour garantir un séquencement strict avec le redirect.
+  const getPresignedUrlMutation = trpc.photos.getPresignedUrl.useMutation();
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
