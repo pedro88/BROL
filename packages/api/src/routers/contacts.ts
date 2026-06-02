@@ -5,11 +5,14 @@
 
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server";
 import {
   createContactSchema,
   updateContactSchema,
   paginationSchema,
 } from "@brol/shared";
+import { withComputedStatuses } from "../lib/loan-status";
+import { cursorOf } from "../lib/pagination";
 
 /**
  * Router pour les contacts.
@@ -47,9 +50,7 @@ export const contactsRouter = router({
 
       return {
         items: contacts,
-        nextCursor: contacts.length === (input?.limit ?? 50)
-          ? contacts[contacts.length - 1]?.id ?? null
-          : null,
+        nextCursor: cursorOf(contacts, input?.limit ?? 50).nextCursor,
       };
     }),
 
@@ -67,7 +68,7 @@ export const contactsRouter = router({
       });
 
       if (!contact) {
-        throw new Error("Contact non trouvé");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Contact non trouvé" });
       }
 
       // Récupérer l'historique des prêts pour ce contact (via borrowerContactId, borrowerId ou email)
@@ -101,15 +102,7 @@ export const contactsRouter = router({
       });
 
       // Calculer le statut OVERDUE à la volée
-      const loansWithComputedStatus = loans.map((loan) => ({
-        ...loan,
-        computedStatus:
-          loan.status === "ACTIVE" &&
-          loan.returnDueDate &&
-          loan.returnDueDate < new Date()
-            ? "OVERDUE"
-            : loan.status,
-      }));
+      const loansWithComputedStatus = withComputedStatuses(loans);
 
       return {
         ...contact,
@@ -131,7 +124,7 @@ export const contactsRouter = router({
       });
 
       if (!contact) {
-        throw new Error("Contact non trouvé");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Contact non trouvé" });
       }
 
       const loans = await ctx.prisma.loan.findMany({
@@ -166,20 +159,9 @@ export const contactsRouter = router({
         orderBy: { createdAt: "desc" },
       });
 
-      // Calculer le statut OVERDUE à la volée
-      const loansWithComputedStatus = loans.map((loan) => ({
-        ...loan,
-        computedStatus:
-          loan.status === "ACTIVE" &&
-          loan.returnDueDate &&
-          loan.returnDueDate < new Date()
-            ? "OVERDUE"
-            : loan.status,
-      }));
-
       return {
         contact,
-        loans: loansWithComputedStatus,
+        loans: withComputedStatuses(loans),
       };
     }),
 
@@ -208,7 +190,7 @@ export const contactsRouter = router({
       });
 
       if (!contact) {
-        throw new Error("Contact non trouvé");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Contact non trouvé" });
       }
 
       return ctx.prisma.contact.update({
@@ -228,7 +210,7 @@ export const contactsRouter = router({
       });
 
       if (!contact) {
-        throw new Error("Contact non trouvé");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Contact non trouvé" });
       }
 
       await ctx.prisma.contact.delete({
@@ -251,12 +233,12 @@ export const contactsRouter = router({
       });
 
       if (!scannedUser) {
-        throw new Error("Utilisateur non trouvé");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur non trouvé" });
       }
 
       // Ne pas s'ajouter soi-même
       if (scannedUser.id === ctx.userId) {
-        throw new Error("Vous ne pouvez pas vous ajouter vous-même");
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Vous ne pouvez pas vous ajouter vous-même" });
       }
 
       // Vérifier si le contact existe déjà
@@ -293,7 +275,7 @@ export const contactsRouter = router({
       });
 
       if (existingUser) {
-        throw new Error("Cet email est déjà utilisé par un compte Brol");
+        throw new TRPCError({ code: "CONFLICT", message: "Cet email est déjà utilisé par un compte Brol" });
       }
 
       // Vérifier si le contact existe déjà

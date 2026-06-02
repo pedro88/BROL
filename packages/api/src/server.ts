@@ -13,6 +13,7 @@ import { appRouter } from "./router";
 import { createContext } from "./trpc";
 import { prisma } from "@brol/db";
 import { logger } from "./lib/logger";
+import { signInLimiter, getClientIp } from "./lib/rate-limit";
 
 const log = logger.child("server");
 
@@ -40,18 +41,11 @@ function collectBody(req: IncomingMessage): Promise<Buffer> {
   });
 }
 
-/**
- * Convert a Node.js IncomingMessage to a fetch Request object (no body — unused, kept for reference).
- */
-function nodeToRequest(req: IncomingMessage): Request {
-  const protocol = req.socket.encrypted ? "https" : "http";
-  const host = req.headers.host ?? `localhost:${PORT}`;
-  const url = `${protocol}://${host}${req.url}`;
-  return new Request(url, {
-    method: req.method,
-    headers: req.headers as Record<string, string>,
-  });
-}
+type Res = {
+  statusCode: number;
+  setHeader: (k: string, v: string) => void;
+  end: (data?: string) => void;
+};
 
 /**
  * BetterAuth handler — converts IncomingMessage to fetch Request.
@@ -59,19 +53,63 @@ function nodeToRequest(req: IncomingMessage): Request {
 const betterAuthHandler = toNodeHandler(auth);
 
 /**
+ * Sign-in endpoint paths guarded by the in-memory rate limiter.
+ * Covers email/password sign-in + sign-up (same surface area, same abuse
+ * pattern). OAuth callbacks go through `/api/auth/callback/:providerId`
+ * and are short-circuited separately if needed.
+ */
+const SIGN_IN_PATH_RE = /^\/api\/auth\/(sign-?in|sign-?up)(\/|$)/;
+
+/**
+ * Apply CORS headers shared by every API response.
+ *
+ * When the request advertises `credentials: 'include'` (cookies cross-
+ * subdomain), the spec forbids `Access-Control-Allow-Origin: *` so we
+ * echo the request origin back if it's allowlisted. `Vary: Origin` is
+ * required so caches don't serve the wrong CORS answer to a different
+ * caller.
+ */
+function applyCorsHeaders(req: IncomingMessage, res: Res): void {
+  const envOrigins = (process.env.ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const allowedOrigins = [
+    "https://app.brol.dev",
+    "https://api.brol.dev",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:8081", // Expo Metro
+    "http://localhost:19006", // Expo web
+    ...envOrigins,
+  ];
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+}
+
+/**
+ * Pre-flight handler. Returns true if the request was an OPTIONS and
+ * was fully answered (caller must not continue).
+ */
+function handlePreflight(req: IncomingMessage, res: Res): boolean {
+  if (req.method !== "OPTIONS") return false;
+  res.statusCode = 204;
+  res.end();
+  return true;
+}
+
+/**
  * tRPC request handler — collects body first, then forwards to tRPC.
  */
-async function handleTrpc(req: IncomingMessage, res: { statusCode: number; setHeader: (k: string, v: string) => void; end: (data?: string) => void }) {
-  // CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  if (req.method === "OPTIONS") {
-    res.statusCode = 200;
-    res.end();
-    return;
-  }
+async function handleTrpc(req: IncomingMessage, res: Res) {
+  applyCorsHeaders(req, res);
+  if (handlePreflight(req, res)) return;
 
   // Collect body (needed for POST/PUT/PATCH; empty for GET)
   const bodyBuffer = await collectBody(req);
@@ -103,7 +141,8 @@ async function handleTrpc(req: IncomingMessage, res: { statusCode: number; setHe
         code === "FORBIDDEN" ||
         code === "BAD_REQUEST" ||
         code === "NOT_FOUND" ||
-        code === "CONFLICT";
+        code === "CONFLICT" ||
+        code === "TOO_MANY_REQUESTS";
       const meta = {
         path: path ?? null,
         type,
@@ -129,6 +168,39 @@ async function handleTrpc(req: IncomingMessage, res: { statusCode: number; setHe
 }
 
 /**
+ * BetterAuth dispatcher with sign-in rate limiting.
+ *
+ * The actual `toNodeHandler(auth)` runs as before, but we wrap it to
+ * short-circuit sign-in / sign-up attempts that exceed the per-IP quota.
+ */
+function handleBetterAuth(req: IncomingMessage, res: Res) {
+  applyCorsHeaders(req, res);
+  if (handlePreflight(req, res)) return;
+
+  const pathname = req.url?.split("?")[0] ?? "";
+  const isSignIn = req.method === "POST" && SIGN_IN_PATH_RE.test(pathname);
+
+  if (isSignIn) {
+    const ip = getClientIp(req.headers as Record<string, string>);
+    const result = signInLimiter.check(`ip:${ip}`);
+    if (!result.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
+      res.statusCode = 429;
+      res.setHeader("Retry-After", String(retryAfter));
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({
+        error: "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
+        retryAfter,
+      }));
+      log.warn("sign-in rate-limited", { ip, retryAfter });
+      return;
+    }
+  }
+
+  betterAuthHandler(req as never, res as never);
+}
+
+/**
  * Get the most recent session token for a user email.
  */
 async function handleGetToken(email: string): Promise<{ token: string | null }> {
@@ -140,72 +212,48 @@ async function handleGetToken(email: string): Promise<{ token: string | null }> 
 }
 
 /**
- * Wrap a Node.js handler to add CORS headers for cross-origin requests.
- * Required when the web app (port 3000) makes requests to the API (port 3001).
+ * Gate the `/api/test/*` helpers on TWO conditions, not one.
+ *
+ * NODE_ENV alone isn't enough — a misconfigured prod deploy with
+ * NODE_ENV=development would expose user-deletion endpoints. We also
+ * require a shared `TEST_API_SECRET` header. Same secret is read by
+ * the Playwright E2E helper (`apps/web/e2e/helpers/auth.ts`) to call
+ * `cleanup-user` and `get-token` from the browser.
  */
-function withCors(
-  handler: (req: IncomingMessage, res: { statusCode: number; setHeader: (k: string, v: string) => void; end: (data?: string) => void }) => void,
-) {
-  return (req: IncomingMessage, res: { statusCode: number; setHeader: (k: string, v: string) => void; end: (data?: string) => void }) => {
-    // Get the origin of the request
-    const origin = req.headers.origin;
-    // Origines autorisées pour CORS — extensible via env var ALLOWED_ORIGINS
-    // (séparées par virgule). Par défaut on autorise la prod + le dev local.
-    const envOrigins = (process.env.ALLOWED_ORIGINS ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const allowedOrigins = [
-      "https://app.brol.dev",
-      "http://localhost:3000",
-      "http://localhost:8081", // Expo Metro
-      "http://localhost:19006", // Expo web
-      ...envOrigins,
-    ];
-    // /!\ Quand le client envoie `credentials: 'include'`, le spec interdit
-    // Access-Control-Allow-Origin: *. On renvoie donc l'origin précis si
-    // autorisé, sinon on ne renvoie pas l'header (le browser bloquera).
-    if (origin && allowedOrigins.includes(origin)) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-    }
-    // L'header `Vary: Origin` est requis pour que les caches (Cloudflare, etc.)
-    // ne servent pas une réponse "mauvaise origin" à un autre client.
-    res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-
-    if (req.method === "OPTIONS") {
-      res.statusCode = 204;
-      res.end();
-      return;
-    }
-
-    handler(req, res);
-  };
+function isTestEndpointAuthorized(req: IncomingMessage): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  const expected = process.env.TEST_API_SECRET;
+  // Fail closed: if no secret is configured, refuse the call. This makes
+  // accidentally enabling NODE_ENV=development in prod a hard fail rather
+  // than an open door.
+  if (!expected) return false;
+  const provided = req.headers["x-test-api-secret"];
+  const providedStr = Array.isArray(provided) ? provided[0] : provided;
+  return providedStr === expected;
 }
 
 /**
  * Main request handler — routes to BetterAuth or tRPC.
  */
-function handler(req: IncomingMessage, res: { statusCode: number; setHeader: (k: string, v: string) => void; end: (data?: string) => void }) {
+function handler(req: IncomingMessage, res: Res) {
   const pathname = req.url?.split("?")[0] ?? "";
 
   // BetterAuth handles /api/auth/*
   if (pathname.startsWith("/api/auth")) {
-    withCors(betterAuthHandler)(req, res);
+    handleBetterAuth(req, res);
     return;
   }
 
-  // Test helpers (e2e cleanup) — only in development
+  // Test helpers (e2e cleanup) — gated by NODE_ENV != production AND a
+  // shared X-Test-Api-Secret header. See `isTestEndpointAuthorized`.
   if (pathname === "/api/test/cleanup-user" && req.method === "POST") {
-    if (process.env.NODE_ENV === "production") {
+    if (!isTestEndpointAuthorized(req)) {
       res.statusCode = 404;
       res.end();
       return;
     }
     res.setHeader("Content-Type", "application/json");
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    applyCorsHeaders(req, res);
     let body = "";
     req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
     req.on("end", async () => {
@@ -225,17 +273,16 @@ function handler(req: IncomingMessage, res: { statusCode: number; setHeader: (k:
   }
 
   if (pathname.startsWith("/api/test/get-token") && req.method === "GET") {
-    if (process.env.NODE_ENV === "production") {
+    if (!isTestEndpointAuthorized(req)) {
       res.statusCode = 404;
       res.end();
       return;
     }
     res.setHeader("Content-Type", "application/json");
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    applyCorsHeaders(req, res);
     const url = new URL(req.url ?? "", `http://localhost:${PORT}`);
     const email = url.searchParams.get("email");
     if (!email) { res.statusCode = 400; res.end(JSON.stringify({ error: "email required" })); return; }
-    // eslint-disable-next-line @typescript-eslint/no-floating-promise-declaration
     handleGetToken(email).then(({ token }) => {
       res.statusCode = 200;
       res.end(JSON.stringify({ token }));
@@ -263,5 +310,6 @@ server.listen(PORT, () => {
     baseUrl: API_BASE_URL,
     trpcEndpoint: `${API_BASE_URL}/api/trpc`,
     authEndpoint: `${API_BASE_URL}/api/auth`,
+    testEndpointGated: process.env.TEST_API_SECRET ? "by-secret" : "CLOSED (set TEST_API_SECRET)",
   });
 });

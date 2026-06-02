@@ -8,6 +8,8 @@ import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import { syncUserBadges } from "../lib/badge-service";
 import { logger } from "../lib/logger";
+import { assertObjectOwned, getOwnedObject } from "../lib/owned-objects";
+import { cursorOf } from "../lib/pagination";
 import {
   createObjectSchema,
   updateObjectSchema,
@@ -71,49 +73,45 @@ export const objectsRouter = router({
           cursor: input.cursor ? { id: input.cursor } : undefined,
         });
 
-        return {
-          items: loans.map((loan) => {
-            const obj = loan.object;
-            return {
-              id: obj.id,
-              name: obj.name,
-              author: obj.author,
-              condition: obj.condition,
-              coverImage: obj.coverImage,
-              collection: obj.collection,
-              objectType: obj.objectType,
-              clothingSize: obj.clothingSize,
-              clothingGender: obj.clothingGender,
-              clothingColor: obj.clothingColor,
-              clothingMaterial: obj.clothingMaterial,
-              toolManual: obj.toolManual,
-              toolSector: obj.toolSector,
-              toolBattery: obj.toolBattery,
-              toolPowerSource: obj.toolPowerSource,
-              brand: obj.brand,
-              cautionAmount: obj.cautionAmount ? Number(obj.cautionAmount) : null,
-              rentalPriceDay: obj.rentalPriceDay ? Number(obj.rentalPriceDay) : null,
-              rentalPriceHour: obj.rentalPriceHour ? Number(obj.rentalPriceHour) : null,
-              rentalPriceWeek: obj.rentalPriceWeek ? Number(obj.rentalPriceWeek) : null,
-              rentalPriceKm: obj.rentalPriceKm ? Number(obj.rentalPriceKm) : null,
-              currentLoan: {
-                id: loan.id,
-                status: loan.status,
-                borrower: null as { id: string; name: string | null } | null,
-                returnDueDate: loan.returnDueDate,
-                isOverdue:
-                  loan.status === "ACTIVE" &&
-                  loan.returnDueDate != null &&
-                  loan.returnDueDate < now,
-              },
-              owner: loan.owner,
-            };
-          }),
-          nextCursor:
-            loans.length === (input.limit ?? 100)
-              ? (loans[loans.length - 1]?.id ?? null)
-              : null,
-        };
+        const items = loans.map((loan) => {
+          const obj = loan.object;
+          return {
+            id: obj.id,
+            name: obj.name,
+            author: obj.author,
+            condition: obj.condition,
+            coverImage: obj.coverImage,
+            collection: obj.collection,
+            objectType: obj.objectType,
+            clothingSize: obj.clothingSize,
+            clothingGender: obj.clothingGender,
+            clothingColor: obj.clothingColor,
+            clothingMaterial: obj.clothingMaterial,
+            toolManual: obj.toolManual,
+            toolSector: obj.toolSector,
+            toolBattery: obj.toolBattery,
+            toolPowerSource: obj.toolPowerSource,
+            brand: obj.brand,
+            cautionAmount: obj.cautionAmount ? Number(obj.cautionAmount) : null,
+            rentalPriceDay: obj.rentalPriceDay ? Number(obj.rentalPriceDay) : null,
+            rentalPriceHour: obj.rentalPriceHour ? Number(obj.rentalPriceHour) : null,
+            rentalPriceWeek: obj.rentalPriceWeek ? Number(obj.rentalPriceWeek) : null,
+            rentalPriceKm: obj.rentalPriceKm ? Number(obj.rentalPriceKm) : null,
+            currentLoan: {
+              id: loan.id,
+              status: loan.status,
+              borrower: null as { id: string; name: string | null } | null,
+              returnDueDate: loan.returnDueDate,
+              isOverdue:
+                loan.status === "ACTIVE" &&
+                loan.returnDueDate != null &&
+                loan.returnDueDate < now,
+            },
+            owner: loan.owner,
+          };
+        });
+        const { nextCursor } = cursorOf(loans, input.limit ?? 100);
+        return { items, nextCursor };
       }
 
       const objects = await ctx.prisma.object.findMany({
@@ -188,10 +186,7 @@ export const objectsRouter = router({
             : null,
           owner: null as { id: string; name: string | null; image: string | null; handle: string | null } | null,
         })),
-        nextCursor:
-          objects.length === (input.limit ?? 100)
-            ? (objects[objects.length - 1]?.id ?? null)
-            : null,
+        nextCursor: cursorOf(objects, input.limit ?? 100).nextCursor,
       };
     }),
 
@@ -259,9 +254,7 @@ export const objectsRouter = router({
             : null,
           loans: undefined,
         })),
-        nextCursor: objects.length === (input.limit ?? 20)
-          ? objects[objects.length - 1]?.id ?? null
-          : null,
+        nextCursor: cursorOf(objects, input.limit ?? 20).nextCursor,
       };
     }),
 
@@ -472,7 +465,7 @@ export const objectsRouter = router({
       });
 
       if (!collection) {
-        throw new Error("Collection non trouvée");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Collection non trouvée" });
       }
 
       // objectType defaults to BOOK via Zod schema, override from collection type if not set by client
@@ -485,7 +478,7 @@ export const objectsRouter = router({
         });
 
         if (!qrStock) {
-          throw new Error("QR code non disponible");
+          throw new TRPCError({ code: "NOT_FOUND", message: "QR code non disponible" });
         }
 
         // Marquer le QR comme utilisé
@@ -517,18 +510,7 @@ export const objectsRouter = router({
   update: protectedProcedure
     .input(z.object({ id: z.string().cuid(), data: updateObjectSchema }))
     .mutation(async ({ ctx, input }) => {
-      const object = await ctx.prisma.object.findFirst({
-        where: {
-          id: input.id,
-          collection: {
-            userId: ctx.userId,
-          },
-        },
-      });
-
-      if (!object) {
-        throw new Error("Objet non trouvé");
-      }
+      await assertObjectOwned(ctx.prisma, ctx.userId, input.id);
 
       return ctx.prisma.object.update({
         where: { id: input.id },
@@ -542,18 +524,7 @@ export const objectsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
-      const object = await ctx.prisma.object.findFirst({
-        where: {
-          id: input.id,
-          collection: {
-            userId: ctx.userId,
-          },
-        },
-      });
-
-      if (!object) {
-        throw new Error("Objet non trouvé");
-      }
+      await assertObjectOwned(ctx.prisma, ctx.userId, input.id);
 
       await ctx.prisma.object.delete({
         where: { id: input.id },

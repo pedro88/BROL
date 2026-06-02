@@ -9,6 +9,7 @@ import { router, publicProcedure, protectedProcedure, TRPCError } from "../trpc"
 import {
   paginationSchema,
 } from "@brol/shared";
+import { cursorOf } from "../lib/pagination";
 
 const OBJECT_TYPES = [
   "BOOK",
@@ -72,9 +73,7 @@ export const collectionsRouter = router({
           objectCount: c._count.objects,
           _count: undefined,
         })),
-        nextCursor: collections.length === (input?.limit ?? 20)
-          ? collections[collections.length - 1]?.id ?? null
-          : null,
+        nextCursor: cursorOf(collections, input?.limit ?? 20).nextCursor,
       };
     }),
 
@@ -144,9 +143,7 @@ export const collectionsRouter = router({
           ownerName: c.user.name,
           objectCount: c._count.objects,
         })),
-        nextCursor: collections.length === (input?.limit ?? 20)
-          ? collections[collections.length - 1]?.id ?? null
-          : null,
+        nextCursor: cursorOf(collections, input?.limit ?? 20).nextCursor,
       };
     }),
 
@@ -251,7 +248,7 @@ export const collectionsRouter = router({
       });
 
       if (!collection) {
-        throw new Error("Collection non trouvée");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Collection non trouvée" });
       }
 
       // Build update data, excluding undefined fields. Typed via Prisma's
@@ -282,7 +279,7 @@ export const collectionsRouter = router({
       });
 
       if (!collection) {
-        throw new Error("Collection non trouvée");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Collection non trouvée" });
       }
 
       // Cascade delete des objets et prêts associés

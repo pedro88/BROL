@@ -12,6 +12,52 @@ import {
   paginationSchema,
 } from "@brol/shared";
 import { generateScanCode } from "@brol/shared";
+import { cursorOf } from "../lib/pagination";
+import type { Prisma } from "@prisma/client";
+
+/**
+ * Shared body for `assign` and `assignToObject` — both procedures end up
+ * doing the exact same DB work (find QR → check object → transaction)
+ * once the QR has been resolved. Centralizing it removes ~80 lines of
+ * duplication and guarantees the two procedures stay in lock-step on
+ * authorization + invariants.
+ */
+async function assignQrToObject(
+  prisma: import("@brol/db").PrismaClient,
+  userId: string,
+  objectId: string,
+  qrWhere: Prisma.QrStockWhereInput,
+  qrNotFoundMessage: string,
+) {
+  const qrStock = await prisma.qrStock.findFirst({ where: qrWhere });
+  if (!qrStock) {
+    throw new TRPCError({ code: "NOT_FOUND", message: qrNotFoundMessage });
+  }
+
+  const object = await prisma.object.findFirst({
+    where: { id: objectId, collection: { userId } },
+  });
+  if (!object) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Objet non trouvé" });
+  }
+
+  if (object.qrStockId) {
+    throw new TRPCError({ code: "CONFLICT", message: "Cet objet a déjà un QR code assigné" });
+  }
+
+  const [updatedObject] = await prisma.$transaction([
+    prisma.object.update({
+      where: { id: objectId },
+      data: { qrStockId: qrStock.id },
+    }),
+    prisma.qrStock.update({
+      where: { id: qrStock.id },
+      data: { used: true, usedAt: new Date() },
+    }),
+  ]);
+
+  return updatedObject;
+}
 
 /**
  * Router pour les QR codes.
@@ -59,9 +105,7 @@ export const qrRouter = router({
           object: qr.objects[0] ?? null,
           objects: undefined,
         })),
-        nextCursor: qrCodes.length === (input?.limit ?? 50)
-          ? qrCodes[qrCodes.length - 1].id
-          : null,
+        nextCursor: cursorOf(qrCodes, input?.limit ?? 50).nextCursor,
       };
     }),
 
@@ -102,106 +146,26 @@ export const qrRouter = router({
    */
   assign: protectedProcedure
     .input(z.object({ objectId: z.string().cuid(), qrCode: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      // Trouver le QR stock par son code
-      const qrStock = await ctx.prisma.qrStock.findFirst({
-        where: {
-          code: input.qrCode,
-          userId: ctx.userId,
-          used: false,
-        },
-      });
-
-      if (!qrStock) {
-        throw new Error("QR code non disponible ou déjà utilisé");
-      }
-
-      // Vérifier que l'objet appartient à l'utilisateur
-      const object = await ctx.prisma.object.findFirst({
-        where: {
-          id: input.objectId,
-          collection: {
-            userId: ctx.userId,
-          },
-        },
-      });
-
-      if (!object) {
-        throw new Error("Objet non trouvé");
-      }
-
-      // Vérifier que l'objet n'a pas déjà un QR assigné
-      if (object.qrStockId) {
-        throw new Error("Cet objet a déjà un QR code assigné");
-      }
-
-      // Assigner le QR à l'objet
-      const [updatedObject] = await ctx.prisma.$transaction([
-        ctx.prisma.object.update({
-          where: { id: input.objectId },
-          data: { qrStockId: qrStock.id },
-        }),
-        ctx.prisma.qrStock.update({
-          where: { id: qrStock.id },
-          data: { used: true, usedAt: new Date() },
-        }),
-      ]);
-
-      return updatedObject;
-    }),
+    .mutation(({ ctx, input }) =>
+      assignQrToObject(ctx.prisma, ctx.userId, input.objectId, {
+        code: input.qrCode,
+        userId: ctx.userId,
+        used: false,
+      }, "QR code non disponible ou déjà utilisé")
+    ),
 
   /**
    * Assigne un QR code de stock à un objet (par ID interne).
    */
   assignToObject: protectedProcedure
     .input(assignQrStockSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Vérifier que le QR appartient à l'utilisateur et n'est pas utilisé
-      const qrStock = await ctx.prisma.qrStock.findFirst({
-        where: {
-          id: input.qrStockId,
-          userId: ctx.userId,
-          used: false,
-        },
-      });
-
-      if (!qrStock) {
-        throw new Error("QR code non disponible");
-      }
-
-      // Vérifier que l'objet appartient à l'utilisateur
-      const object = await ctx.prisma.object.findFirst({
-        where: {
-          id: input.objectId,
-          collection: {
-            userId: ctx.userId,
-          },
-        },
-      });
-
-      if (!object) {
-        throw new Error("Objet non trouvé");
-      }
-
-      // Vérifier que l'objet n'a pas déjà un QR assigné
-      if (object.qrStockId) {
-        throw new Error("Cet objet a déjà un QR code assigné");
-      }
-
-      // Assigner le QR à l'objet
-      const [updatedObject] = await ctx.prisma.$transaction([
-        ctx.prisma.object.update({
-          where: { id: input.objectId },
-          data: { qrStockId: input.qrStockId },
-        }),
-        ctx.prisma.qrStock.update({
-          where: { id: input.qrStockId },
-          data: { used: true, usedAt: new Date() },
-        }),
-      ]);
-
-      return updatedObject;
-    }),
+    .mutation(({ ctx, input }) =>
+      assignQrToObject(ctx.prisma, ctx.userId, input.objectId, {
+        id: input.qrStockId,
+        userId: ctx.userId,
+        used: false,
+      }, "QR code non disponible")
+    ),
 
   /**
    * Récupère un QR code par son code (pour scan).
@@ -266,7 +230,7 @@ export const qrRouter = router({
       });
 
       if (!qrStock) {
-        throw new Error("QR code non trouvé ou déjà utilisé");
+        throw new TRPCError({ code: "NOT_FOUND", message: "QR code non trouvé ou déjà utilisé" });
       }
 
       await ctx.prisma.qrStock.delete({

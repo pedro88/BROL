@@ -49,6 +49,32 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
+  sca:
+    name: SCA (dependency audit)
+    runs-on: ubuntu-latest
+    # Run on push to main + on PRs touching the lockfile or workflow.
+    # Cheap (no install needed) so we can run on every PR.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # pnpm audit reads pnpm-lock.yaml directly — no install required.
+      # Fails the build on high/critical vulns (--audit-level=high).
+      # Advisory DB stays fresh on the GH runner image; pin via the
+      # GitHub Advisory Database snapshot if false positives become a
+      # problem.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
+
+      - name: Audit dev dependencies
+        # Same threshold for dev — a vuln in a test harness can still bite
+        # in CI. If this becomes noisy, bump to --audit-level=critical.
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
   test:
     name: Unit Tests + Coverage Gate
     runs-on: ubuntu-latest

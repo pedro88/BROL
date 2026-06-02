@@ -10,6 +10,15 @@ import { Page } from "@playwright/test";
 const API_BASE = process.env.PLAYWRIGHT_API_BASE ?? "http://localhost:3001";
 const WEB_BASE = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 
+/**
+ * Shared secret required to call `/api/test/*` endpoints since the
+ * P0-5 fix (sprint rev 4). Set the same value in the API's `.env`
+ * (`TEST_API_SECRET=...`) and in the Playwright runner env. The
+ * default below is only for local dev — it matches the value in
+ * `.env.example`.
+ */
+const TEST_API_SECRET = process.env.TEST_API_SECRET ?? "dev-test-secret";
+
 // ============================================================================
 // API helpers
 // ============================================================================
@@ -46,6 +55,7 @@ export async function getSessionToken(email: string): Promise<string | null> {
   try {
     const res = await fetch(
       `${API_BASE}/api/test/get-token?email=${encodeURIComponent(email)}`,
+      { headers: { "X-Test-Api-Secret": TEST_API_SECRET } },
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -62,7 +72,10 @@ export async function cleanupUser(email: string): Promise<void> {
   try {
     await fetch(`${API_BASE}/api/test/cleanup-user`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Test-Api-Secret": TEST_API_SECRET,
+      },
       body: JSON.stringify({ email }),
     });
   } catch {

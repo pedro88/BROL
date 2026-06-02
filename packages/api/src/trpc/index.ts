@@ -7,6 +7,11 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { prisma } from "@brol/db";
 import { getSession } from "../auth";
+import {
+  trpcReadLimiter,
+  trpcMutationLimiter,
+  getClientIp,
+} from "../lib/rate-limit";
 
 /**
  * Type pour le context de la requête.
@@ -58,14 +63,52 @@ const t = initTRPC.context<Context>().create({
 });
 
 /**
- * Créateur de procédure tRPC publique (sans auth requise).
+ * Sliding-window rate limit on every tRPC call.
+ *
+ * Keys: prefer `user:<id>` (one bucket per account, fair across devices)
+ * and fall back to `ip:<addr>` for unauthenticated traffic. Health
+ * endpoint is skipped (ops/LB need to poll it freely).
+ *
+ * Reads use the read bucket (60/min), mutations the write bucket
+ * (20/min) — both per the strict policy decided in rev 4 audit.
+ *
+ * Skipped in Vitest (unit tests use `appRouter.createCaller` which
+ * still goes through middleware, and the limit would break tests that
+ * perform many mutations in a row). E2E tests (`pnpm test:e2e`) go
+ * through the real HTTP adapter and DO exercise the limiter — see
+ * `apps/web/e2e/helpers/auth.ts` for the dedicated suite when added.
  */
-export const publicProcedure = t.procedure;
+const rateLimitMiddleware = t.middleware(async ({ ctx, path, type, next }) => {
+  if (path === "health") return next();
+  if (process.env.VITEST === "true") return next();
+
+  const limiter = type === "mutation" ? trpcMutationLimiter : trpcReadLimiter;
+  const key = ctx.userId
+    ? `user:${ctx.userId}`
+    : `ip:${getClientIp(ctx.headers)}`;
+
+  const result = limiter.check(key);
+  if (!result.allowed) {
+    const retryAfterSec = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
+    throw new TRPCError({
+      code: "TOO_MANY_REQUESTS",
+      message: "Trop de requêtes. Réessayez dans quelques secondes.",
+    });
+  }
+  return next({ ctx });
+});
+
+/**
+ * Créateur de procédure tRPC publique (sans auth requise).
+ * Includes the global rate-limit middleware.
+ */
+export const publicProcedure = t.procedure.use(rateLimitMiddleware);
 
 /**
  * Créateur de procédure tRPC protégée (auth requise).
+ * Includes the global rate-limit middleware.
  */
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
   if (!ctx.userId) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
