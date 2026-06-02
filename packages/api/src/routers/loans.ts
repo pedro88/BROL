@@ -18,6 +18,9 @@ import {
 import { sendReminderEmail } from "../emails";
 import { syncUserBadges } from "../lib/badge-service";
 import { logger } from "../lib/logger";
+import { withComputedStatuses } from "../lib/loan-status";
+import { assertObjectOwned } from "../lib/owned-objects";
+import { cursorOf } from "../lib/pagination";
 
 const log = logger.child("loans.remind");
 
@@ -36,7 +39,6 @@ export const loansRouter = router({
   lentOut: protectedProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
-      const now = new Date();
       const loans = await ctx.prisma.loan.findMany({
         where: {
           ownerId: ctx.userId,
@@ -73,27 +75,15 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
-      // Calculer le statut OVERDUE à la volée et dériver le nom de l'emprunteur
-      const loansWithComputedStatus = loans.map((loan) => ({
+      // Dériver computedStatus (overdue à la volée) + borrowerName
+      // (priorité User > Contact).
+      const items = withComputedStatuses(loans).map((loan) => ({
         ...loan,
-        computedStatus:
-          loan.status === "ACTIVE" &&
-          loan.returnDueDate &&
-          loan.returnDueDate < now
-            ? "OVERDUE"
-            : loan.status,
-        // borrowerName: priorise User > Contact (si contact a un compte)
         borrowerName:
           loan.borrower?.name ?? loan.borrowerContact?.name ?? "Inconnu",
       }));
 
-      return {
-        items: loansWithComputedStatus,
-        nextCursor:
-          loans.length === (input?.limit ?? 20)
-            ? (loans[loans.length - 1]?.id ?? null)
-            : null,
-      };
+      return cursorOf(items, input?.limit ?? 20);
     }),
 
   /**
@@ -104,7 +94,6 @@ export const loansRouter = router({
   borrowed: protectedProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
-      const now = new Date();
       const loans = await ctx.prisma.loan.findMany({
         where: {
           borrowerId: ctx.userId,
@@ -143,25 +132,12 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
-      // Calculer le statut OVERDUE à la volée
-      const loansWithComputedStatus = loans.map((loan) => ({
+      const items = withComputedStatuses(loans).map((loan) => ({
         ...loan,
-        computedStatus:
-          loan.status === "ACTIVE" &&
-          loan.returnDueDate &&
-          loan.returnDueDate < now
-            ? "OVERDUE"
-            : loan.status,
         ownerName: loan.owner.name ?? "Inconnu",
       }));
 
-      return {
-        items: loansWithComputedStatus,
-        nextCursor:
-          loans.length === (input?.limit ?? 20)
-            ? (loans[loans.length - 1]?.id ?? null)
-            : null,
-      };
+      return cursorOf(items, input?.limit ?? 20);
     }),
 
   /**
@@ -170,7 +146,6 @@ export const loansRouter = router({
   history: protectedProcedure
     .input(paginationSchema.optional())
     .query(async ({ ctx, input }) => {
-      const now = new Date();
       const loans = await ctx.prisma.loan.findMany({
         where: {
           OR: [{ ownerId: ctx.userId }, { borrowerId: ctx.userId }],
@@ -210,18 +185,11 @@ export const loansRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
       });
 
-      // Calculer le statut OVERDUE à la volée + flag viewAs : la page de
-      // l'historique mélange les prêts où le caller est owner ET ceux où
-      // il est borrower. On l'expose ici pour que le frontend rende le bon
+      // Mélange les prêts où le caller est owner ET ceux où il est
+      // borrower. On expose `viewAs` pour que le frontend rende le bon
       // libellé / actions.
-      const loansWithComputedStatus = loans.map((loan) => ({
+      const items = withComputedStatuses(loans).map((loan) => ({
         ...loan,
-        computedStatus:
-          loan.status === "ACTIVE" &&
-          loan.returnDueDate &&
-          loan.returnDueDate < now
-            ? "OVERDUE"
-            : loan.status,
         borrowerName:
           loan.borrower?.name ?? loan.borrowerContact?.name ?? "Inconnu",
         viewAs: (loan.ownerId === ctx.userId ? "owner" : "borrower") as
@@ -229,13 +197,7 @@ export const loansRouter = router({
           | "borrower",
       }));
 
-      return {
-        items: loansWithComputedStatus,
-        nextCursor:
-          loans.length === (input?.limit ?? 20)
-            ? (loans[loans.length - 1]?.id ?? null)
-            : null,
-      };
+      return cursorOf(items, input?.limit ?? 20);
     }),
 
   /**
@@ -247,21 +209,7 @@ export const loansRouter = router({
     .input(createLoanSchema)
     .mutation(async ({ ctx, input }) => {
       // Vérifier que l'objet appartient à l'utilisateur
-      const object = await ctx.prisma.object.findFirst({
-        where: {
-          id: input.objectId,
-          collection: {
-            userId: ctx.userId,
-          },
-        },
-      });
-
-      if (!object) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Objet non trouvé.",
-        });
-      }
+      await assertObjectOwned(ctx.prisma, ctx.userId, input.objectId);
 
       // Vérifier qu'il n'y a pas déjà un prêt actif
       const existingLoan = await ctx.prisma.loan.findFirst({

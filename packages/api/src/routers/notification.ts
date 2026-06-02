@@ -6,6 +6,7 @@
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { pageOf } from "../lib/pagination";
 
 export const notificationRouter = router({
   /**
@@ -32,14 +33,7 @@ export const notificationRouter = router({
         cursor: input.cursor ? { id: input.cursor } : undefined,
       });
 
-      const hasMore = notifications.length > input.limit;
-      const items = hasMore ? notifications.slice(0, -1) : notifications;
-      const nextCursor = hasMore ? items[items.length - 1]?.id : null;
-
-      return {
-        items,
-        nextCursor: nextCursor ?? undefined,
-      };
+      return pageOf(notifications, input.limit);
     }),
 
   /**

@@ -5,8 +5,8 @@
 
 import { z } from "zod";
 import { router, publicProcedure, TRPCError } from "../trpc";
-import { Resend } from "resend";
 import { logger } from "../lib/logger";
+import { getResendClient, getResendFromAddress } from "../lib/resend";
 
 const log = logger.child("messages.sendOwnerContactEmail");
 
@@ -95,11 +95,8 @@ async function sendOwnerContactEmail(params: {
   content: string;
   objectUrl: string;
 }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    log.warn("RESEND_API_KEY not configured, skipping email");
-    return;
-  }
+  const resend = getResendClient();
+  if (!resend) return;
 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
@@ -135,9 +132,8 @@ Voir l'objet: ${params.objectUrl}
   `;
 
   try {
-    const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL ?? "Brol <noreply@brol.app>",
+      from: getResendFromAddress(),
       to: params.to,
       subject: `[Brol] Message pour votre objet "${params.objectName}"`,
       html,

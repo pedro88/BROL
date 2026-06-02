@@ -7,6 +7,7 @@ import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { syncUserBadges } from "../lib/badge-service";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { pageOf } from "../lib/pagination";
 
 export const reviewRouter = router({
   /**
@@ -37,14 +38,7 @@ export const reviewRouter = router({
         cursor: input.cursor ? { id: input.cursor } : undefined,
       });
 
-      const hasMore = reviews.length > input.limit;
-      const items = hasMore ? reviews.slice(0, -1) : reviews;
-      const nextCursor = hasMore ? items[items.length - 1]?.id : null;
-
-      return {
-        items,
-        nextCursor: nextCursor ?? undefined,
-      };
+      return pageOf(reviews, input.limit);
     }),
 
   /**

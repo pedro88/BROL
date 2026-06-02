@@ -9,6 +9,7 @@ import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { haversineSql, haversineKm } from "../lib/geo";
 import { logger } from "../lib/logger";
+import { pageOf } from "../lib/pagination";
 
 const log = logger.child("communityRequest");
 
@@ -186,14 +187,7 @@ export const communityRequestRouter = router({
         cursor: input.cursor ? { id: input.cursor } : undefined,
       });
 
-      const hasMore = requests.length > input.limit;
-      const items = hasMore ? requests.slice(0, -1) : requests;
-      const nextCursor = hasMore ? items[items.length - 1]?.id : null;
-
-      return {
-        items,
-        nextCursor: nextCursor ?? undefined,
-      };
+      return pageOf(requests, input.limit);
     }),
 
   /**

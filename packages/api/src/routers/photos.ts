@@ -12,6 +12,7 @@ import {
   extractKeyFromUrl,
 } from "../lib/s3";
 import { logger } from "../lib/logger";
+import { assertObjectOwned, getOwnedObject } from "../lib/owned-objects";
 
 const log = logger.child("photos");
 
@@ -56,23 +57,7 @@ export const photosRouter = router({
   getPresignedUrl: protectedProcedure
     .input(getPresignedUrlSchema)
     .mutation(async ({ ctx, input }) => {
-      // Vérifier ownership de l'objet
-      const object = await ctx.prisma.object.findFirst({
-        where: {
-          id: input.objectId,
-          collection: {
-            userId: ctx.userId,
-          },
-        },
-        select: { id: true },
-      });
-
-      if (!object) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Objet non trouvé",
-        });
-      }
+      await assertObjectOwned(ctx.prisma, ctx.userId, input.objectId);
 
       return getPresignedUploadUrl(
         input.objectId,
@@ -89,23 +74,7 @@ export const photosRouter = router({
   add: protectedProcedure
     .input(addPhotoSchema)
     .mutation(async ({ ctx, input }) => {
-      // Vérifier ownership de l'objet
-      const object = await ctx.prisma.object.findFirst({
-        where: {
-          id: input.objectId,
-          collection: {
-            userId: ctx.userId,
-          },
-        },
-        select: { id: true },
-      });
-
-      if (!object) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Objet non trouvé",
-        });
-      }
+      await assertObjectOwned(ctx.prisma, ctx.userId, input.objectId);
 
       const photo = await ctx.prisma.photo.create({
         data: {
@@ -204,23 +173,7 @@ export const photosRouter = router({
   list: protectedProcedure
     .input(z.object({ objectId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
-      // Vérifier ownership de l'objet
-      const object = await ctx.prisma.object.findFirst({
-        where: {
-          id: input.objectId,
-          collection: {
-            userId: ctx.userId,
-          },
-        },
-        select: { id: true },
-      });
-
-      if (!object) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Objet non trouvé",
-        });
-      }
+      await assertObjectOwned(ctx.prisma, ctx.userId, input.objectId);
 
       return ctx.prisma.photo.findMany({
         where: { objectId: input.objectId },
@@ -235,23 +188,7 @@ export const photosRouter = router({
   reorder: protectedProcedure
     .input(reorderPhotosSchema)
     .mutation(async ({ ctx, input }) => {
-      // Vérifier ownership de l'objet
-      const object = await ctx.prisma.object.findFirst({
-        where: {
-          id: input.objectId,
-          collection: {
-            userId: ctx.userId,
-          },
-        },
-        select: { id: true },
-      });
-
-      if (!object) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Objet non trouvé",
-        });
-      }
+      await assertObjectOwned(ctx.prisma, ctx.userId, input.objectId);
 
       // Mettre à jour les positions en transaction
       await ctx.prisma.$transaction(

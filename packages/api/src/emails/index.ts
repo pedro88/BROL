@@ -3,17 +3,11 @@
  * @package @brol/api
  */
 
-import { Resend } from "resend";
 import { reminderEmailTemplate, reminderEmailText } from "./reminder";
 import { logger } from "../lib/logger";
+import { getResendClient, getResendFromAddress } from "../lib/resend";
 
 const log = logger.child("emails.sendReminderEmail");
-
-function getResendClient(): Resend | null {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-  return new Resend(apiKey);
-}
 
 export interface ReminderEmailParams {
   to: string;
@@ -25,9 +19,8 @@ export interface ReminderEmailParams {
 }
 
 export async function sendReminderEmail(params: ReminderEmailParams): Promise<{ success: boolean; message: string }> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    log.error("RESEND_API_KEY not configured");
+  const resend = getResendClient();
+  if (!resend) {
     return {
       success: false,
       message: "Service de rappel désactivé (clé API non configurée)",
@@ -55,9 +48,8 @@ export async function sendReminderEmail(params: ReminderEmailParams): Promise<{ 
       appUrl,
     });
 
-    const resend = new Resend(apiKey);
     const result = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL ?? "Brol <noreply@brol.app>",
+      from: getResendFromAddress(),
       to,
       subject: `Rappel : Pensez à retourner "${objectName}"`,
       html,
