@@ -38,6 +38,18 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           url: process.env.NEXT_PUBLIC_API_URL
             ? `${process.env.NEXT_PUBLIC_API_URL}/api/trpc`
             : "http://localhost:3001/api/trpc",
+          // Send the BetterAuth session cookie with every tRPC call.
+          // Without this, auth depended entirely on the Bearer token in the
+          // in-memory store, which AuthSessionSyncer populates *async* after
+          // mount — so the dashboard's first query wave fired unauthenticated
+          // and 401'd (stuck on "..."). The cookie is set synchronously at
+          // sign-in, so it authenticates the very first request. Same-site
+          // (localhost:3000↔3001, app↔api.brol.dev) so the Lax cookie is sent;
+          // CORS already returns Allow-Credentials. Bearer header kept for
+          // React Native (no cookie jar).
+          fetch(url, options) {
+            return fetch(url, { ...options, credentials: "include" });
+          },
           headers() {
             const token = getSessionToken();
             return token ? { Authorization: `Bearer ${token}` } : {};
@@ -47,20 +59,22 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
     }),
   );
 
-  // Purge les queries quand le token de session change (sign-in/out
-  // ou sync différé par AuthSessionSyncer). On utilise `removeQueries`
-  // plutôt que `invalidateQueries` : invalidate marque stale mais sert
-  // toujours la data cachée pendant le refetch — du coup le user
-  // suivant voyait brièvement les données du user précédent (ex:
-  // `users.me.postalCode` de l'ancien user → redirect home par
-  // erreur sur /onboarding/location). `removeQueries` purge la cache
-  // → les queries en cours repartent en `isLoading` jusqu'au refetch.
+  // Purge + refetch les queries quand le token de session change (sign-in/out
+  // ou sync différé par AuthSessionSyncer). On utilise `resetQueries` :
+  // - `invalidateQueries` marque stale mais sert la data cachée pendant le
+  //   refetch → le user suivant voyait brièvement les données du précédent.
+  // - `removeQueries` purge la cache mais NE relance PAS les observers actifs
+  //   → les queries qui avaient 401 (token pas encore synced) restaient
+  //   bloquées en `isLoading` ("..." sur le dashboard, jamais de chiffres).
+  // `resetQueries` fait les deux : revert à l'état initial (pas de data stale)
+  // ET refetch les queries montées → les stats se chargent dès que le token
+  // arrive.
   useEffect(() => {
     let prev = sessionTokenStore.get();
     const unsub = sessionTokenStore.subscribe((token) => {
       if (token !== prev) {
         prev = token;
-        queryClient.removeQueries();
+        void queryClient.resetQueries();
       }
     });
     return () => {
