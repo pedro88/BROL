@@ -164,12 +164,15 @@
     cachées au premier render.
   - Tests unit : 5 cas pour `getPublic` (anonyme, owner, viaContact,
     unauthenticated, null id).
-- [ ] **Bug** — Page d'un objet prêté : on ne voit pas à qui il est
-  prêté. Afficher l'emprunteur (nom + date retour) sur `/objects/[id]`
-  quand `currentLoan` existe.
-- [ ] **Bug** — Page d'un objet prêté : le bouton « Prêter » reste
-  visible → l'objet peut être prêté 2× (incohérent). Masquer/désactiver
-  « Prêter » si un prêt actif existe.
+- [x] **Bug** — ~~Page d'un objet prêté : on ne voit pas à qui il est
+  prêté.~~ livré 2026-06-04. Bloc emprunteur (nom + date retour) sur
+  `/objects/[id]` quand un prêt ACTIVE/OVERDUE existe, + badge "En retard"
+  si `computedStatus === OVERDUE`. Sélection explicite du prêt en cours
+  (pas `loans[0]`, qui peut être CANCELLED/RETURNED).
+- [x] **Bug** — ~~Page d'un objet prêté : le bouton « Prêter » reste
+  visible → l'objet peut être prêté 2×.~~ livré 2026-06-04. Bouton
+  « Prêter » désactivé (`disabled`) + libellé "Prêt en cours" si un prêt
+  actif existe.
 
 ### Loans / contacts
 
@@ -369,18 +372,20 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 ### Internationalisation
 
-- [ ] **Feat** — i18n web + mobile. Locales cibles : `fr-BE`
+- [~] **Feat** — i18n web + mobile. Locales cibles : `fr-BE`
   (défaut), `en`, `nl-BE` (Belgique néerlandophone).
-  - Web : `next-intl` ou `next-i18next`. Routing `/fr/...` ou
-    middleware language detection (Accept-Language + cookie
-    `brol_locale`). Extract strings hardcodées (toasts, labels,
-    Header, dialogs, error messages tRPC FR-only à externaliser).
-  - Mobile : `react-i18next` + `expo-localization` (déjà installé
-    via `app.json.plugins`).
-  - Backend : `User.locale` déjà au schema (cf. `users.ts:189`),
-    à exposer dans tRPC context pour les emails Resend localisés.
-  - Setup : `packages/i18n` partagé (clés communes) + fichiers
-    JSON par locale.
+  - [x] Web : ~~`next-intl` sans préfixe d'URL, locale via cookie
+    `brol_locale` + Accept-Language. Catalogue partagé `@brol/shared`
+    (`src/i18n/index.ts`). Switcher de langue.~~ livré 2026-06 (`dce8a90`,
+    `cb7ea6d`).
+  - [x] Backend : ~~erreurs tRPC, emails Resend et notifications
+    localisés (fr/nl/en) via `ctx.locale` + `User.locale`.~~ livré
+    2026-06 (`1b98a6a`).
+  - [ ] Mobile : i18n **scaffoldé mais non câblé** —
+    `apps/mobile/src/i18n/index.ts` initialise i18next mais **aucun
+    écran n'utilise `useTranslation()`**, et il duplique les strings
+    inline au lieu de consommer `getI18nextResources()` de `@brol/shared`.
+    Reste : brancher sur le catalogue partagé + traduire les écrans.
 
 ### Messaging & notifications
 

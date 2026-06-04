@@ -10,6 +10,7 @@ import { syncUserBadges } from "../lib/badge-service";
 import { logger } from "../lib/logger";
 import { assertObjectOwned, getOwnedObject } from "../lib/owned-objects";
 import { cursorOf } from "../lib/pagination";
+import { withComputedStatuses } from "../lib/loan-status";
 import {
   createObjectSchema,
   updateObjectSchema,
@@ -292,7 +293,15 @@ export const objectsRouter = router({
         },
       });
 
-      return object;
+      if (!object) return null;
+
+      // Enrichit chaque loan avec `computedStatus` (ACTIVE/OVERDUE/RETURNED/CANCELLED)
+      // pour que le frontend puisse distinguer un prêt en cours d'un prêt
+      // échu (OVERDUE) sans dupliquer la logique de calcul.
+      return {
+        ...object,
+        loans: withComputedStatuses(object.loans),
+      };
     }),
 
   /**

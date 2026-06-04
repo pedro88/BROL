@@ -160,6 +160,7 @@ export default function ObjectDetailPage() {
     loans: Array<{
       id: string;
       status: string;
+      computedStatus: "ACTIVE" | "OVERDUE" | "RETURNED" | "CANCELLED";
       returnDueDate: Date | string | null;
       borrower: { id: string; name: string | null } | null;
     }>;
@@ -167,9 +168,17 @@ export default function ObjectDetailPage() {
     notes: string | null;
     brand: string | null;
   }>;
-  const currentLoan = ownerView.loans?.[0];
-  const hasActiveLoan = currentLoan?.status === "ACTIVE";
-  const pastLoans = ownerView.loans?.slice(1) ?? [];
+  // `loans` est trié par lentAt desc, mais le premier prêt peut être
+  // CANCELLED ou RETURNED alors qu'un prêt plus ancien est encore en
+  // cours. On cherche explicitement le prêt ACTIVE/OVERDUE le plus récent
+  // pour piloter l'affichage.
+  const currentLoan = ownerView.loans?.find(
+    (l) => l.computedStatus === "ACTIVE" || l.computedStatus === "OVERDUE",
+  ) ?? null;
+  const hasActiveLoan = currentLoan !== null;
+  const isOverdue = currentLoan?.computedStatus === "OVERDUE";
+  const pastLoans =
+    ownerView.loans?.filter((l) => l.id !== currentLoan?.id) ?? [];
   const qrStock = ownerView.qrStock ?? null;
 
   return (
@@ -334,10 +343,22 @@ export default function ObjectDetailPage() {
         {/* Current loan — owner only */}
         {isOwner && hasActiveLoan && currentLoan && (
           <div className="mt-6">
-            <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
+            <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3 flex items-center gap-2">
               {t("loans.active")}
+              {isOverdue && (
+                <span
+                  className="px-2 py-0.5 text-[10px] uppercase bg-destructive/20 text-destructive border border-destructive/40"
+                  aria-label={t("loans.overdue")}
+                >
+                  {t("loans.overdue")}
+                </span>
+              )}
             </h2>
-            <div className="card-vhs border-secondary/50 p-4">
+            <div
+              className={`card-vhs p-4 ${
+                isOverdue ? "border-destructive/50" : "border-secondary/50"
+              }`}
+            >
               <div className="flex items-center gap-2 mb-2">
                 <User className="w-4 h-4 text-secondary" />
                 <span className="font-mono text-sm text-secondary">
@@ -347,7 +368,11 @@ export default function ObjectDetailPage() {
               {currentLoan.returnDueDate && (
                 <div className="flex items-center gap-2 mb-3">
                   <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <span
+                    className={`font-mono text-xs ${
+                      isOverdue ? "text-destructive" : "text-muted-foreground"
+                    }`}
+                  >
                     {t("loans.returnDueDateLabel", {
                       returnDueDate: new Date(
                         currentLoan.returnDueDate,
@@ -468,6 +493,12 @@ export default function ObjectDetailPage() {
               variant="outline"
               className="w-full"
               onClick={() => setLoanDialogOpen(true)}
+              disabled={hasActiveLoan}
+              aria-label={
+                hasActiveLoan
+                  ? t("objects.activeLoanStatus")
+                  : t("objects.lendThisObject")
+              }
             >
               <User className="w-4 h-4 mr-2" />
               {hasActiveLoan
