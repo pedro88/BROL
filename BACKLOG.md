@@ -203,11 +203,15 @@
   `BorrowerSelectDialog` accepte maintenant aussi le champ `note`
   (manquait par rapport au `ContactDialog` standalone). Parité
   Nom/Email/Téléphone/Note avec `/contacts`.
-- [ ] **Bug (notable)** — Après avoir prêté un objet d'une collection,
-  retourner sur la collection → erreur 404. Probable régression sur
-  `collections.get` / `objects.list` quand un objet a un prêt actif (cf.
-  `apps/web/src/app/collections/[id]/page.tsx`). À reproduire + corriger
-  en priorité (casse la navigation collection).
+- [x] **Bug (notable)** — ~~Après avoir prêté un objet d'une collection,
+  retourner sur la collection → erreur.~~ livré 2026-06-04. Cause : le
+  client tRPC n'a pas de transformer superjson → les dates arrivent en
+  `string`, mais `transformPrivateObject` appelait
+  `returnDueDate?.toISOString()` (le `?.` ne protège que du null, pas du
+  type) → crash au render dès qu'un objet a un prêt actif **avec date de
+  retour**. Fix : `new Date(returnDueDate).toISOString()` (tolère
+  string|Date) dans `collections/[id]/page.tsx`. À re-vérifier en
+  reproduisant (prêt avec échéance → retour collection).
 
 ### QR codes / impression
 

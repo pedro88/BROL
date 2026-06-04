@@ -28,7 +28,8 @@ function transformPrivateObject(obj: {
     id: string;
     status: string;
     borrower?: { id: string; name: string | null; image: string | null };
-    returnDueDate?: Date;
+    // Sérialisé en string via tRPC (pas de transformer superjson), pas en Date.
+    returnDueDate?: string | Date | null;
   }[];
 }) {
   const activeLoan = obj.loans?.find((l) => l.status === "ACTIVE");
@@ -42,7 +43,11 @@ function transformPrivateObject(obj: {
       ? {
           id: activeLoan.id,
           borrower: activeLoan.borrower,
-          returnDueDate: activeLoan.returnDueDate?.toISOString(),
+          // `new Date(...)` tolère string ET Date → plus de crash quand le
+          // prêt a une date de retour (cause du "404" au retour collection).
+          returnDueDate: activeLoan.returnDueDate
+            ? new Date(activeLoan.returnDueDate).toISOString()
+            : undefined,
         }
       : null,
   };
