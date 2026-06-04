@@ -662,6 +662,7 @@ export const qrCodes = {
   assign: { fr: "Assigner un QR code", nl: "Wijs een QR-code toe", en: "Assign a QR code" },
   downloadPng: { fr: "Télécharger PNG", nl: "Download PNG", en: "Download PNG" },
   none: { fr: "Aucun QR code", nl: "Geen QR-code", en: "No QR code" },
+  scan: { fr: "Scanner un QR", nl: "QR scannen", en: "Scan a QR" },
   selectExisting: { fr: "Sélectionner un QR existant", nl: "Selecteer een bestaande QR-code", en: "Select an existing QR code" },
   createNew: { fr: "Créer un nouveau QR", nl: "Maak een nieuwe QR-code", en: "Create a new QR code" },
   scanned: { fr: "✓ QR scanné : {code}", nl: "✓ QR gescand: {code}", en: "✓ QR scanned: {code}" },
