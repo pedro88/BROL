@@ -10,6 +10,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logger } from "../lib/logger";
 import { getResendClient, getResendFromAddress } from "../lib/resend";
+import { translate, type Locale } from "@brol/shared";
 
 const log = logger.child("requestMessages.email");
 
@@ -26,48 +27,59 @@ async function sendRequestMessageEmail(params: {
   requestTitle: string;
   preview: string;
   requestUrl: string;
+  locale: Locale;
 }) {
   const resend = getResendClient();
   if (!resend) return;
 
+  const { locale } = params;
+  const toName = params.toName ?? "voisin";
+
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Nouveau message sur Brol</h2>
-      <p>Bonjour ${params.toName ?? "voisin"},</p>
+      <h2 style="color: #333;">${translate(locale, "emails.requestMessageSubject")}</h2>
+      <p>${translate(locale, "emails.requestMessageGreeting", { toName })}</p>
       <p>
-        <strong>${params.fromName}</strong> vous a écrit à propos de votre
-        demande <strong>"${params.requestTitle}"</strong>.
+        ${translate(locale, "emails.requestMessageIntro", {
+          fromName: `<strong>${params.fromName}</strong>`,
+          requestTitle: `<strong>"${params.requestTitle}"</strong>`,
+        })}
       </p>
       <div style="background: #f9f9f9; padding: 16px; border-radius: 8px;">
         <p style="margin: 0; white-space: pre-wrap;">${params.preview}</p>
       </div>
       <p style="margin-top: 20px;">
         <a href="${params.requestUrl}" style="background: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
-          Ouvrir la conversation
+          ${translate(locale, "emails.requestMessageOpenConversationButton")}
         </a>
       </p>
       <p style="color: #666; font-size: 12px; margin-top: 20px;">
-        Email envoyé via Brol. Pour répondre, ouvrez la conversation
-        directement dans l'app — votre email ne sera pas partagé.
+        ${translate(locale, "emails.requestMessageFooter")}
       </p>
     </div>
   `;
 
   const text = `
-Nouveau message sur Brol
+${translate(locale, "emails.requestMessageSubject")}
 
-${params.fromName} vous a écrit à propos de votre demande "${params.requestTitle}".
+${translate(locale, "emails.requestMessageIntro", {
+    fromName: params.fromName,
+    requestTitle: params.requestTitle,
+  })}
 
 ${params.preview}
 
-Ouvrir la conversation: ${params.requestUrl}
+${translate(locale, "emails.requestMessageOpenConversationButton")}: ${params.requestUrl}
   `;
 
   try {
     await resend.emails.send({
       from: getResendFromAddress(),
       to: params.to,
-      subject: `[Brol] ${params.fromName} : "${params.requestTitle}"`,
+      subject: translate(locale, "emails.requestMessageEmailSubject", {
+        fromName: params.fromName,
+        requestTitle: params.requestTitle,
+      }),
       html,
       text,
     });
@@ -112,7 +124,7 @@ export const requestMessagesRouter = router({
       if (!isAuthor && !isParticipant) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Vous n'avez pas accès à ce thread.",
+          message: translate(ctx.locale, "errors.threadAccessDenied"),
         });
       }
 
@@ -173,8 +185,7 @@ export const requestMessagesRouter = router({
         if (!lastOwnerMessage) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message:
-              "Aucun voisin n'a encore proposé son aide — vous ne pouvez pas écrire en premier.",
+            message: translate(ctx.locale, "errors.cannotInitiateMessage"),
           });
         }
         toUserId = lastOwnerMessage.fromUserId;
@@ -199,12 +210,25 @@ export const requestMessagesRouter = router({
 
       const preview = input.content.slice(0, 120) + (input.content.length > 120 ? "…" : "");
 
+      // Le destinataire (in-app notif + email) reçoit les contenus dans SA langue.
+      const recipient = await ctx.prisma.user.findUnique({
+        where: { id: toUserId },
+        select: { email: true, name: true, locale: true },
+      });
+      const recipientLocale = (recipient?.locale ?? "fr") as Locale;
+      const senderName = sender?.name ?? "Un voisin";
+
       await ctx.prisma.notification.create({
         data: {
           userId: toUserId,
           type: "COMMUNITY_REQUEST",
-          title: `Nouveau message pour "${request.title}"`,
-          message: `${sender?.name ?? "Un voisin"} : ${preview}`,
+          title: translate(recipientLocale, "notifications.requestMessageTitle", {
+            requestTitle: request.title,
+          }),
+          message: translate(recipientLocale, "notifications.requestMessageMessage", {
+            senderName,
+            preview,
+          }),
           relatedId: input.requestId,
           relatedType: "request",
         },
@@ -213,19 +237,16 @@ export const requestMessagesRouter = router({
       // Email out-of-band : fire-and-forget. On `await` quand même pour que
       // les tests puissent stub Resend, mais toute erreur est swallow dans
       // sendRequestMessageEmail.
-      const recipient = await ctx.prisma.user.findUnique({
-        where: { id: toUserId },
-        select: { email: true, name: true },
-      });
       if (recipient?.email) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://brol.app";
         await sendRequestMessageEmail({
           to: recipient.email,
           toName: recipient.name,
-          fromName: sender?.name ?? "Un voisin",
+          fromName: senderName,
           requestTitle: request.title,
           preview,
           requestUrl: `${appUrl}/requests/${input.requestId}`,
+          locale: recipientLocale,
         });
       }
 

@@ -14,6 +14,8 @@ import {
   createLoanSchema,
   returnLoanSchema,
   paginationSchema,
+  translate,
+  type Locale,
 } from "@brol/shared";
 import { sendReminderEmail } from "../emails";
 import { syncUserBadges } from "../lib/badge-service";
@@ -222,7 +224,7 @@ export const loansRouter = router({
       if (existingLoan) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Cet objet est déjà prêté.",
+          message: translate(ctx.locale, "errors.objectAlreadyLent"),
         });
       }
 
@@ -233,10 +235,10 @@ export const loansRouter = router({
         // Emprunt direct à un utilisateur Brol (via ID/QR)
         const user = await ctx.prisma.user.findUnique({ where: { id: input.userId } });
         if (!user) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur non trouvé." });
+          throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.userNotFoundPeriod") });
         }
         if (user.id === ctx.userId) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Vous ne pouvez pas vous prêter à vous-même." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: translate(ctx.locale, "errors.cannotLendToYourself") });
         }
         borrowerId = user.id;
 
@@ -268,7 +270,7 @@ export const loansRouter = router({
         });
 
         if (!contact) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Contact non trouvé." });
+          throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.contactNotFoundPeriod") });
         }
 
         borrowerId = contact.borrowerId ?? null;
@@ -277,7 +279,7 @@ export const loansRouter = router({
         if (!borrowerId && !borrowerContactId) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: "Impossible de déterminer l'emprunteur pour ce contact.",
+            message: translate(ctx.locale, "errors.cannotDetermineBorrower"),
           });
         }
       }
@@ -311,8 +313,13 @@ export const loansRouter = router({
           data: {
             userId: borrowerId,
             type: "RETURN_REMINDER",
-            title: "Nouvel emprunt",
-            message: `${loan.object.name} vous a été prêté. Retour prévu: ${input.returnDueDate ? new Date(input.returnDueDate).toLocaleDateString("fr-BE") : "non défini"}.`,
+            title: translate(ctx.locale, "notifications.newLoanTitle"),
+            message: translate(ctx.locale, "notifications.newLoanMessage", {
+              objectName: loan.object.name,
+              returnDueDate: input.returnDueDate
+                ? new Date(input.returnDueDate).toLocaleDateString("fr-BE")
+                : "non défini",
+            }),
             relatedId: loan.id,
             relatedType: "loan",
           },
@@ -342,7 +349,7 @@ export const loansRouter = router({
       if (!loan) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Prêt non trouvé ou déjà retourné.",
+          message: translate(ctx.locale, "errors.loanNotFoundOrReturned"),
         });
       }
 
@@ -371,7 +378,7 @@ export const loansRouter = router({
         },
         include: {
           borrower: {
-            select: { email: true, name: true },
+            select: { email: true, name: true, locale: true },
           },
           object: {
             select: { name: true },
@@ -385,16 +392,14 @@ export const loansRouter = router({
       if (!loan) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message:
-            "Prêt non trouvé ou emprunteur sans compte (email non disponible).",
+          message: translate(ctx.locale, "errors.loanNotFoundOrBorrowerHasNoEmail"),
         });
       }
 
       if (!loan.borrower) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message:
-            "Prêt non trouvé ou emprunteur sans compte (email non disponible).",
+          message: translate(ctx.locale, "errors.loanNotFoundOrBorrowerHasNoEmail"),
         });
       }
       const emailResult = await sendReminderEmail({
@@ -404,6 +409,7 @@ export const loansRouter = router({
         ownerName: loan.owner.name ?? "Le propriétaire",
         lentAt: loan.lentAt,
         returnDueDate: loan.returnDueDate,
+        locale: (loan.borrower.locale ?? "fr") as Locale,
       });
 
       if (!emailResult.success) {
@@ -440,7 +446,7 @@ export const loansRouter = router({
       if (!loan) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Prêt non trouvé.",
+          message: translate(ctx.locale, "errors.loanNotFound"),
         });
       }
 

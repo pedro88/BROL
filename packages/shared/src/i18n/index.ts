@@ -722,6 +722,52 @@ export const errors = {
   serverError: { fr: "Erreur serveur", nl: "Serverfout", en: "Server error" },
   validationError: { fr: "Erreur de validation", nl: "Validatiefout", en: "Validation error" },
   networkError: { fr: "Erreur réseau", nl: "Netwerkfout", en: "Network error" },
+
+  // Backend error messages (résolus via translate()).
+  collectionLimitReached: { fr: "Limite de {maxCollections} collections atteinte. Upgradez vers un plan supérieur pour continuer.", nl: "Limiet van {maxCollections} collecties bereikt. Upgrade naar een hoger plan om verder te gaan.", en: "Collection limit of {maxCollections} reached. Upgrade to a higher plan to continue." },
+  collectionNotFound: { fr: "Collection non trouvée", nl: "Collectie niet gevonden", en: "Collection not found." },
+  locationIncomplete: { fr: "Veuillez compléter votre localisation avant de poster une demande.", nl: "Vul uw locatie aan voordat u een aanvraag plaatst.", en: "Please complete your location before posting a request." },
+  requestNotFound: { fr: "Demande introuvable", nl: "Aanvraag niet gevonden", en: "Request not found." },
+  canOnlyCancelOwnRequest: { fr: "Vous ne pouvez annuler que vos propres demandes.", nl: "U kunt alleen uw eigen aanvragen annuleren.", en: "You can only cancel your own requests." },
+  onlyOpenRequestsCanBeCancelled: { fr: "Seules les demandes ouvertes peuvent être annulées.", nl: "Alleen open aanvragen kunnen worden geannuleerd.", en: "Only open requests can be cancelled." },
+  onlyOpenRequestsCanBeFulfilled: { fr: "Seules les demandes ouvertes peuvent être fulfill.", nl: "Alleen open aanvragen kunnen worden vervuld.", en: "Only open requests can be fulfilled." },
+  contactNotFound: { fr: "Contact non trouvé", nl: "Contact niet gevonden", en: "Contact not found." },
+  userNotFound: { fr: "Utilisateur non trouvé", nl: "Gebruiker niet gevonden", en: "User not found." },
+  cannotAddYourself: { fr: "Vous ne pouvez pas vous ajouter vous-même", nl: "U kunt uzelf niet toevoegen", en: "You cannot add yourself." },
+  emailAlreadyInUse: { fr: "Cet email est déjà utilisé par un compte Brol", nl: "Dit e-mailadres is al in gebruik door een Brol-account", en: "This email is already in use by a Brol account." },
+  objectAlreadyLent: { fr: "Cet objet est déjà prêté.", nl: "Dit object is al uitgeleend.", en: "This object is already lent." },
+  userNotFoundPeriod: { fr: "Utilisateur non trouvé.", nl: "Gebruiker niet gevonden.", en: "User not found." },
+  cannotLendToYourself: { fr: "Vous ne pouvez pas vous prêter à vous-même.", nl: "U kunt niet aan uzelf uitlenen.", en: "You cannot lend to yourself." },
+  contactNotFoundPeriod: { fr: "Contact non trouvé.", nl: "Contact niet gevonden.", en: "Contact not found." },
+  cannotDetermineBorrower: { fr: "Impossible de déterminer l'emprunteur pour ce contact.", nl: "Kan de lener voor dit contact niet bepalen.", en: "Unable to determine borrower for this contact." },
+  loanNotFoundOrReturned: { fr: "Prêt non trouvé ou déjà retourné.", nl: "Lening niet gevonden of al teruggebracht.", en: "Loan not found or already returned." },
+  loanNotFoundOrBorrowerHasNoEmail: { fr: "Prêt non trouvé ou emprunteur sans compte (email non disponible).", nl: "Lening niet gevonden of lener zonder account (e-mail niet beschikbaar).", en: "Loan not found or borrower has no account (email not available)." },
+  loanNotFound: { fr: "Prêt non trouvé.", nl: "Lening niet gevonden.", en: "Loan not found." },
+  objectNotFound: { fr: "Objet non trouvé", nl: "Object niet gevonden", en: "Object not found." },
+  ownerNotFound: { fr: "Propriétaire non trouvé", nl: "Eigenaar niet gevonden", en: "Owner not found." },
+  notificationNotFound: { fr: "", nl: "", en: "Notification not found." },
+  notificationAccessDenied: { fr: "", nl: "", en: "Access denied." },
+  collectionNotFoundUnauthorized: { fr: "Collection non trouvée", nl: "Collectie niet gevonden", en: "Collection not found." },
+  qrCodeNotAvailable: { fr: "QR code non disponible", nl: "QR-code niet beschikbaar", en: "QR code not available." },
+  photoNotFound: { fr: "Photo non trouvée", nl: "Foto niet gevonden", en: "Photo not found." },
+  qrObjectNotFound: { fr: "Objet non trouvé", nl: "Object niet gevonden", en: "Object not found." },
+  objectAlreadyHasQR: { fr: "Cet objet a déjà un QR code assigné", nl: "Aan dit object is al een QR-code toegewezen", en: "This object already has a QR code assigned." },
+  qrNotFound: { fr: "QR code non trouvé", nl: "QR-code niet gevonden", en: "QR code not found." },
+  qrNotAvailableOrUsed: { fr: "QR code non disponible ou déjà utilisé", nl: "QR-code niet beschikbaar of al gebruikt", en: "QR code not available or already used." },
+  threadAccessDenied: { fr: "Vous n'avez pas accès à ce thread.", nl: "U hebt geen toegang tot dit gesprek.", en: "You do not have access to this thread." },
+  cannotInitiateMessage: { fr: "Aucun voisin n'a encore proposé son aide — vous ne pouvez pas écrire en premier.", nl: "Nog geen buur heeft hulp aangeboden — u kunt niet als eerste schrijven.", en: "No neighbor has offered help yet — you cannot write first." },
+  cannotReviewYourself: { fr: "Vous ne pouvez pas vous noter vous-même.", nl: "U kunt uzelf niet beoordelen.", en: "You cannot review yourself." },
+  noExchangeFound: { fr: "Aucun échange trouvé avec cet utilisateur.", nl: "Geen uitwisseling gevonden met deze gebruiker.", en: "No exchange found with this user." },
+  reviewAlreadyExists: { fr: "Vous avez déjà laissé un avis pour cet échange.", nl: "U hebt al een beoordeling voor deze uitwisseling achtergelaten.", en: "You have already left a review for this exchange." },
+  handleImmutable: { fr: "Le pseudo est définitif : il est utilisé dans les URLs publiques et les QR codes partagés.", nl: "De gebruikersnaam is definitief: deze wordt gebruikt in openbare URL's en gedeelde QR-codes.", en: "The handle is permanent: it is used in public URLs and shared QR codes." },
+  postalCodeUnknown: { fr: "Code postal inconnu pour ce pays.", nl: "Postcode onbekend voor dit land.", en: "Postal code unknown for this country." },
+  objectNotFoundOwned: { fr: "Objet non trouvé", nl: "Object niet gevonden", en: "Object not found." },
+  collectionNotFoundOwned: { fr: "Collection non trouvée", nl: "Collectie niet gevonden", en: "Collection not found." },
+  s3NotConfigured: { fr: "S3 non configuré. Définissez S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY dans .env", nl: "S3 niet geconfigureerd. Stel S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY in in .env", en: "S3 not configured. Define S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY in .env" },
+  s3BucketNotConfigured: { fr: "S3_BUCKET non configuré dans .env", nl: "S3_BUCKET niet geconfigureerd in .env", en: "S3_BUCKET not configured in .env" },
+  fileTypeNotAllowed: { fr: "Type de fichier non autorisé: {contentType}. Types acceptés: {allowedTypes}", nl: "Bestandstype niet toegestaan: {contentType}. Toegestane types: {allowedTypes}", en: "File type not allowed: {contentType}. Allowed types: {allowedTypes}" },
+  fileTooLarge: { fr: "Fichier trop volumineux. Maximum: {maxSizeMB}MB", nl: "Bestand te groot. Maximum: {maxSizeMB}MB", en: "File too large. Maximum: {maxSizeMB}MB" },
+  s3EndpointNotConfigured: { fr: "S3_ENDPOINT non configuré", nl: "S3_ENDPOINT niet geconfigureerd", en: "S3_ENDPOINT not configured" },
 };
 
 /**
@@ -811,6 +857,59 @@ export const photos = {
   confirmDelete: { fr: "Confirmer ?", nl: "Bevestigen?", en: "Confirm?" },
 };
 
+/**
+ * Traductions pour les emails (backend — résolus via translate()).
+ */
+export const emails = {
+  reminderSubject: { fr: "Rappel : Pensez à retourner \"{objectName}\"", nl: "Herinnering: Vergeet niet terug te brengen \"{objectName}\"", en: "Reminder: Remember to return \"{objectName}\"" },
+  reminderServiceDisabled: { fr: "Service de rappel désactivé (clé API non configurée)", nl: "Herinneringsservice uitgeschakeld (API-sleutel niet geconfigureerd)", en: "Reminder service disabled (API key not configured)" },
+  reminderSendFailed: { fr: "Échec de l'envoi du rappel: {error}", nl: "Herinnering verzenden mislukt: {error}", en: "Failed to send reminder: {error}" },
+  reminderSentSuccess: { fr: "Rappel envoyé à {borrowerName}", nl: "Herinnering verzonden naar {borrowerName}", en: "Reminder sent to {borrowerName}" },
+  reminderSendError: { fr: "Erreur lors de l'envoi du rappel email", nl: "Fout bij verzenden herinneringsemail", en: "Error sending reminder email" },
+  reminderGreeting: { fr: "Bonjour {borrowerName},", nl: "Hallo {borrowerName},", en: "Hello {borrowerName}," },
+  reminderIntro: { fr: "{ownerName} vous envoie un rappel concernant un prêt.", nl: "{ownerName} stuurt u een herinnering over een uitlening.", en: "{ownerName} is sending you a reminder about a loan." },
+  reminderBorrowedObjectLabel: { fr: "OBJET EMPRUNTÉ", nl: "GELEEND OBJECT", en: "BORROWED OBJECT" },
+  reminderExpectedReturnDate: { fr: "DATE DE RETOUR ATTENDUE: {returnDueDate}", nl: "VERWACHTE RETOURDATE: {returnDueDate}", en: "EXPECTED RETURN DATE: {returnDueDate}" },
+  reminderReturnRequest: { fr: "Merci de bien vouloir retourner cet objet à {ownerName}.", nl: "Breng dit object alstublieft terug naar {ownerName}.", en: "Please return this item to {ownerName}." },
+  reminderOpenBrolButton: { fr: "Ouvrir BROL", nl: "BROL openen", en: "Open BROL" },
+  reminderTextTitle: { fr: "BROL — RAPPEL DE PRÊT", nl: "BROL — HERINNERINGSBRIEF LENEN", en: "BROL — LOAN REMINDER" },
+  reminderTextObject: { fr: "OBJET: {objectName}", nl: "OBJECT: {objectName}", en: "OBJECT: {objectName}" },
+  reminderTextLoanDate: { fr: "DATE DU PRÊT: {lentAt}", nl: "UITLEENDATUM: {lentAt}", en: "LOAN DATE: {lentAt}" },
+  reminderTextExpectedReturnDate: { fr: "DATE DE RETOUR ATTENDUE: {returnDueDate}", nl: "VERWACHTE RETOURDATE: {returnDueDate}", en: "EXPECTED RETURN DATE: {returnDueDate}" },
+  ownerContactObjectNotFound: { fr: "Objet non trouvé", nl: "Object niet gevonden", en: "Object not found" },
+  ownerContactOwnerNotFound: { fr: "Propriétaire non trouvé", nl: "Eigenaar niet gevonden", en: "Owner not found" },
+  ownerContactSubject: { fr: "Nouveau message pour \"{objectName}\"", nl: "Nieuw bericht voor \"{objectName}\"", en: "New message for \"{objectName}\"" },
+  ownerContactFromLabel: { fr: "De:", nl: "Van:", en: "From:" },
+  ownerContactCollectionLabel: { fr: "Collection:", nl: "Collectie:", en: "Collection:" },
+  ownerContactViewObjectButton: { fr: "Voir l'objet sur Brol", nl: "Object op Brol bekijken", en: "View object on Brol" },
+  ownerContactFooter: { fr: "Cet email a été envoyé via Brol. Vous pouvez répondre directement à {fromEmail}.", nl: "Deze e-mail is via Brol verstuurd. U kunt direct antwoorden op {fromEmail}.", en: "This email was sent via Brol. You can reply directly to {fromEmail}." },
+  ownerContactEmailSubject: { fr: "[Brol] Message pour votre objet \"{objectName}\"", nl: "[Brol] Bericht voor uw object \"{objectName}\"", en: "[Brol] Message for your object \"{objectName}\"" },
+  requestMessageSubject: { fr: "Nouveau message sur Brol", nl: "Nieuw bericht op Brol", en: "New message on Brol" },
+  requestMessageGreeting: { fr: "Bonjour {toName},", nl: "Hallo {toName},", en: "Hello {toName}," },
+  requestMessageIntro: { fr: "{fromName} vous a écrit à propos de votre demande \"{requestTitle}\".", nl: "{fromName} heeft u geschreven over uw verzoek \"{requestTitle}\".", en: "{fromName} wrote to you about your request \"{requestTitle}\"." },
+  requestMessageOpenConversationButton: { fr: "Ouvrir la conversation", nl: "Gesprek openen", en: "Open conversation" },
+  requestMessageFooter: { fr: "Email envoyé via Brol. Pour répondre, ouvrez la conversation directement dans l'app — votre email ne sera pas partagé.", nl: "E-mail verzonden via Brol. Om te antwoorden, opent u het gesprek rechtstreeks in de app — uw e-mail wordt niet gedeeld.", en: "Email sent via Brol. To reply, open the conversation directly in the app — your email will not be shared." },
+  requestMessageEmailSubject: { fr: "[Brol] {fromName} : \"{requestTitle}\"", nl: "[Brol] {fromName}: \"{requestTitle}\"", en: "[Brol] {fromName}: \"{requestTitle}\"" },
+};
+
+/**
+ * Traductions pour les notifications (backend — résolues via translate()).
+ */
+export const notifications = {
+  requestMessageTitle: { fr: "Nouveau message pour \"{requestTitle}\"", nl: "Nieuw bericht voor \"{requestTitle}\"", en: "New message for \"{requestTitle}\"" },
+  requestMessageMessage: { fr: "{senderName} : {preview}", nl: "{senderName}: {preview}", en: "{senderName}: {preview}" },
+  communityRequestNotFound: { fr: "Demande introuvable", nl: "Verzoek niet gevonden", en: "Request not found" },
+  communityRequestTitle: { fr: "Un voisin recherche un objet", nl: "Een buur zoekt een object", en: "A neighbor is looking for an item" },
+  communityRequestMessage: { fr: "{requesterName} cherche \"{searchTitle}\" près de chez vous (≈ {distance} km). Vous avez \"{matchObjectName}\".", nl: "{requesterName} zoekt \"{searchTitle}\" in uw buurt (≈ {distance} km). U hebt \"{matchObjectName}\".", en: "{requesterName} is looking for \"{searchTitle}\" near you (≈ {distance} km). You have \"{matchObjectName}\"." },
+  requestFulfilledTitle: { fr: "Votre demande a été traitée", nl: "Uw verzoek is voltooid", en: "Your request has been fulfilled" },
+  requestFulfilledMessage: { fr: "Quelqu'un a répondu à votre demande: \"{requestTitle}\"", nl: "Iemand heeft op uw verzoek geantwoord: \"{requestTitle}\"", en: "Someone has responded to your request: \"{requestTitle}\"" },
+  newLoanTitle: { fr: "Nouvel emprunt", nl: "Nieuwe uitlening", en: "New loan" },
+  newLoanMessage: { fr: "{objectName} vous a été prêté. Retour prévu: {returnDueDate}.", nl: "{objectName} is u uitgeleend. Terugbrengen voorzien: {returnDueDate}.", en: "{objectName} has been lent to you. Return expected: {returnDueDate}." },
+  reviewReceivedTitle: { fr: "Nouvel avis de {reviewerName}", nl: "Nieuwe recensie van {reviewerName}", en: "New review from {reviewerName}" },
+  reviewReceivedMessageWithComment: { fr: "\"{comment}\"", nl: "\"{comment}\"", en: "\"{comment}\"" },
+  reviewReceivedMessageWithoutComment: { fr: "{rating}/5 étoiles", nl: "{rating}/5 sterren", en: "{rating}/5 stars" },
+};
+
 // ===========================================================================
 // Adapter — source de vérité unique projetée vers next-intl (web), i18next
 // (mobile) et le backend. Chaque feuille du catalogue est un objet
@@ -837,6 +936,8 @@ export const catalog = {
   errors,
   settings,
   photos,
+  emails,
+  notifications,
 } as const;
 
 /** Valide une string arbitraire comme Locale (fallback défaut sinon). */
@@ -896,4 +997,38 @@ export function getI18nextResources(): Record<Locale, { translation: Record<stri
     },
     {} as Record<Locale, { translation: Record<string, unknown> }>,
   );
+}
+
+/**
+ * Traduction côté serveur (backend) — résout une clé pointée dans le catalogue
+ * pour une `locale` donnée, avec interpolation ICU single-brace `{var}`.
+ *
+ * Usage : `translate(ctx.locale, "errors.collectionNotFound")` ou
+ * `translate(locale, "errors.collectionLimitReached", { maxCollections: 5 })`.
+ * Fallback : `fr` si la locale manque pour la clé, puis la clé brute si la
+ * clé est introuvable (jamais d'exception — un message vaut mieux qu'un crash).
+ */
+export function translate(
+  locale: Locale,
+  dottedKey: string,
+  vars?: Record<string, string | number>,
+): string {
+  let node: unknown = catalog;
+  for (const seg of dottedKey.split(".")) {
+    if (node && typeof node === "object" && seg in (node as Record<string, unknown>)) {
+      node = (node as Record<string, unknown>)[seg];
+    } else {
+      return dottedKey;
+    }
+  }
+  if (!node || typeof node !== "object") return dottedKey;
+  const leaf = node as Record<string, string>;
+  let str = leaf[locale] ?? leaf.fr;
+  if (typeof str !== "string") return dottedKey;
+  if (vars) {
+    for (const [k, v] of Object.entries(vars)) {
+      str = str.split(`{${k}}`).join(String(v));
+    }
+  }
+  return str;
 }

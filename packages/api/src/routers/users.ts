@@ -8,6 +8,7 @@ import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { router, protectedProcedure } from "../trpc";
 import { geocodePostalCode } from "../lib/geo";
+import { LOCALES, translate } from "@brol/shared";
 
 const COUNTRY_REGEX = /^[A-Z]{2}$/;
 const POSTAL_CODE_REGEX = /^[A-Za-z0-9 -]{3,10}$/;
@@ -199,10 +200,25 @@ export const usersRouter = router({
         country: true,
         postalCode: true,
         city: true,
+        locale: true,
       },
     });
     return user;
   }),
+
+  /**
+   * Met à jour la langue préférée de l'utilisateur (fr/nl/en).
+   * Persiste le choix du switcher et sert à localiser les emails.
+   */
+  updateLocale: protectedProcedure
+    .input(z.object({ locale: z.enum(LOCALES) }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.user.update({
+        where: { id: ctx.userId },
+        data: { locale: input.locale },
+      });
+      return { success: true, locale: input.locale };
+    }),
 
   /**
    * Vérifie la disponibilité d'un handle pour pré-check UI.
@@ -243,11 +259,10 @@ export const usersRouter = router({
    */
   updateHandle: protectedProcedure
     .input(z.object({ handle: z.string().min(1).max(64) }))
-    .mutation(async () => {
+    .mutation(async ({ ctx }) => {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message:
-          "Le pseudo est définitif : il est utilisé dans les URLs publiques et les QR codes partagés.",
+        message: translate(ctx.locale, "errors.handleImmutable"),
       });
     }),
 
@@ -274,7 +289,7 @@ export const usersRouter = router({
       if (!result) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Code postal inconnu pour ce pays.",
+          message: translate(ctx.locale, "errors.postalCodeUnknown"),
         });
       }
       const updated = await ctx.prisma.user.update({

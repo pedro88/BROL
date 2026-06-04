@@ -13,6 +13,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { TRPCError } from "@trpc/server";
+import { translate, type Locale } from "@brol/shared";
 
 // ===========================================
 // TYPES
@@ -52,7 +53,7 @@ const PRESIGNED_URL_EXPIRES_IN = 15 * 60;
 
 let _s3Client: S3Client | null = null;
 
-function getS3Client(): S3Client {
+function getS3Client(locale: Locale = "fr"): S3Client {
   if (_s3Client) return _s3Client;
 
   const endpoint = process.env.S3_ENDPOINT;
@@ -63,8 +64,7 @@ function getS3Client(): S3Client {
   if (!endpoint || !accessKeyId || !secretAccessKey) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
-      message:
-        "S3 non configuré. Définissez S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY dans .env",
+      message: translate(locale, "errors.s3NotConfigured"),
     });
   }
 
@@ -82,12 +82,12 @@ function getS3Client(): S3Client {
   return _s3Client;
 }
 
-function getBucket(): string {
+function getBucket(locale: Locale = "fr"): string {
   const bucket = process.env.S3_BUCKET;
   if (!bucket) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
-      message: "S3_BUCKET non configuré dans .env",
+      message: translate(locale, "errors.s3BucketNotConfigured"),
     });
   }
   return bucket;
@@ -138,18 +138,23 @@ export function validateFileSize(sizeBytes: number): boolean {
  * @param filename  - Nom original du fichier (pour l'extension)
  * @param contentType - MIME type (ex: image/jpeg)
  * @param fileSize - Taille du fichier en bytes (pour validation)
+ * @param locale - Locale pour les messages d'erreur (défaut fr)
  */
 export async function getPresignedUploadUrl(
   objectId: string,
   filename: string,
   contentType: string,
-  fileSize: number
+  fileSize: number,
+  locale: Locale = "fr"
 ): Promise<PresignedUpload> {
   // Valider le content-type
   if (!validateContentType(contentType)) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Type de fichier non autorisé: ${contentType}. Types acceptés: ${ALLOWED_TYPES.join(", ")}`,
+      message: translate(locale, "errors.fileTypeNotAllowed", {
+        contentType,
+        allowedTypes: ALLOWED_TYPES.join(", "),
+      }),
     });
   }
 
@@ -157,12 +162,14 @@ export async function getPresignedUploadUrl(
   if (!validateFileSize(fileSize)) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Fichier trop volumineux. Maximum: ${MAX_FILE_SIZE_MB}MB`,
+      message: translate(locale, "errors.fileTooLarge", {
+        maxSizeMB: MAX_FILE_SIZE_MB,
+      }),
     });
   }
 
-  const client = getS3Client();
-  const bucket = getBucket();
+  const client = getS3Client(locale);
+  const bucket = getBucket(locale);
   const key = generatePhotoKey(objectId, filename);
 
   const command = new PutObjectCommand({
@@ -183,7 +190,7 @@ export async function getPresignedUploadUrl(
   });
 
   // Construire l'URL publique
-  const publicUrl = buildPublicUrl(key);
+  const publicUrl = buildPublicUrl(key, locale);
 
   return { uploadUrl, publicUrl, key };
 }
@@ -192,14 +199,14 @@ export async function getPresignedUploadUrl(
  * Génère une URL publique pour accéder à un fichier.
  * Pour S3-compatible avec endpoint custom (Backblaze, MinIO).
  */
-export function buildPublicUrl(key: string): string {
+export function buildPublicUrl(key: string, locale: Locale = "fr"): string {
   const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, ""); // retire le trailing slash
-  const bucket = getBucket();
+  const bucket = getBucket(locale);
 
   if (!endpoint) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
-      message: "S3_ENDPOINT non configuré",
+      message: translate(locale, "errors.s3EndpointNotConfigured"),
     });
   }
 

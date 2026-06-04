@@ -13,6 +13,7 @@
 
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient, Prisma } from "@prisma/client";
+import { translate, DEFAULT_LOCALE, type Locale } from "@brol/shared";
 
 /**
  * Lookup an object by id, asserting it belongs to the caller.
@@ -30,10 +31,11 @@ export async function getOwnedObject<S extends Prisma.ObjectSelect | undefined, 
   userId: string,
   objectId: string,
   args?: { select?: S; include?: I },
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<NonNullable<Awaited<ReturnType<typeof runObjectQuery<S, I>>>>> {
   const object = await runObjectQuery<S, I>(prisma, userId, objectId, args);
   if (!object) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Objet non trouvé" });
+    throw new TRPCError({ code: "NOT_FOUND", message: translate(locale, "errors.objectNotFoundOwned") });
   }
   return object as NonNullable<typeof object>;
 }
@@ -47,13 +49,14 @@ export async function assertObjectOwned(
   prisma: PrismaClient,
   userId: string,
   objectId: string,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<void> {
   const exists = await prisma.object.findFirst({
     where: { id: objectId, collection: { userId } },
     select: { id: true },
   });
   if (!exists) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Objet non trouvé" });
+    throw new TRPCError({ code: "NOT_FOUND", message: translate(locale, "errors.objectNotFoundOwned") });
   }
 }
 
@@ -65,12 +68,13 @@ export async function getOwnedCollection(
   prisma: PrismaClient,
   userId: string,
   collectionId: string,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<NonNullable<Awaited<ReturnType<typeof prisma.collection.findFirst>>>> {
   const collection = await prisma.collection.findFirst({
     where: { id: collectionId, userId },
   });
   if (!collection) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Collection non trouvée" });
+    throw new TRPCError({ code: "NOT_FOUND", message: translate(locale, "errors.collectionNotFoundOwned") });
   }
   return collection;
 }

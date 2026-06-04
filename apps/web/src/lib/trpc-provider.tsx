@@ -52,7 +52,16 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           },
           headers() {
             const token = getSessionToken();
-            return token ? { Authorization: `Bearer ${token}` } : {};
+            // Locale courante (cookie brol_locale) → en-tête pour les messages
+            // serveur localisés (erreurs tRPC).
+            const locale =
+              typeof document !== "undefined"
+                ? document.cookie.match(/(?:^|;\s*)brol_locale=([^;]+)/)?.[1]
+                : undefined;
+            return {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              ...(locale ? { "x-locale": locale } : {}),
+            };
           },
         }),
       ],

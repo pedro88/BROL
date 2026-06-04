@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { translate, type Locale } from "@brol/shared";
 import { router, publicProcedure, TRPCError } from "../trpc";
 import { logger } from "../lib/logger";
 import { getResendClient, getResendFromAddress } from "../lib/resend";
@@ -41,20 +42,20 @@ export const messagesRouter = router({
       if (!object) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Objet non trouvé",
+          message: translate(ctx.locale, "errors.objectNotFound"),
         });
       }
 
       // Vérifier que l'owner existe et a un email
       const owner = await ctx.prisma.user.findUnique({
         where: { id: ownerId },
-        select: { name: true, email: true },
+        select: { name: true, email: true, locale: true },
       });
 
       if (!owner || !owner.email) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Propriétaire non trouvé",
+          message: translate(ctx.locale, "errors.ownerNotFound"),
         });
       }
 
@@ -69,7 +70,8 @@ export const messagesRouter = router({
         },
       });
 
-      // Envoyer l'email au propriétaire
+      // Envoyer l'email au propriétaire (dans SA locale, pas celle du visiteur)
+      const locale = (owner.locale ?? "fr") as Locale;
       await sendOwnerContactEmail({
         to: owner.email,
         ownerName: owner.name ?? "Propriétaire",
@@ -79,6 +81,7 @@ export const messagesRouter = router({
         collectionName: object.collection.name,
         content,
         objectUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://brol.app"}/qr/${object.id}`,
+        locale,
       });
 
       return { success: true, messageId: message.id };
@@ -94,35 +97,38 @@ async function sendOwnerContactEmail(params: {
   collectionName: string;
   content: string;
   objectUrl: string;
+  locale: Locale;
 }) {
   const resend = getResendClient();
   if (!resend) return;
 
+  const { locale } = params;
+
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Nouveau message pour "${params.objectName}"</h2>
-      <p><strong>De:</strong> ${params.fromName} (${params.fromEmail})</p>
-      <p><strong>Collection:</strong> ${params.collectionName}</p>
+      <h2 style="color: #333;">${translate(locale, "emails.ownerContactSubject", { objectName: params.objectName })}</h2>
+      <p><strong>${translate(locale, "emails.ownerContactFromLabel")}</strong> ${params.fromName} (${params.fromEmail})</p>
+      <p><strong>${translate(locale, "emails.ownerContactCollectionLabel")}</strong> ${params.collectionName}</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
       <div style="background: #f9f9f9; padding: 16px; border-radius: 8px;">
         <p style="margin: 0; white-space: pre-wrap;">${params.content}</p>
       </div>
       <p style="margin-top: 20px;">
         <a href="${params.objectUrl}" style="background: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
-          Voir l'objet sur Brol
+          ${translate(locale, "emails.ownerContactViewObjectButton")}
         </a>
       </p>
       <p style="color: #666; font-size: 12px; margin-top: 20px;">
-        Cet email a été envoyé via Brol. Vous pouvez répondre directement à ${params.fromEmail}.
+        ${translate(locale, "emails.ownerContactFooter", { fromEmail: params.fromEmail })}
       </p>
     </div>
   `;
 
   const text = `
-Nouveau message pour "${params.objectName}"
+${translate(locale, "emails.ownerContactSubject", { objectName: params.objectName })}
 
-De: ${params.fromName} (${params.fromEmail})
-Collection: ${params.collectionName}
+${translate(locale, "emails.ownerContactFromLabel")} ${params.fromName} (${params.fromEmail})
+${translate(locale, "emails.ownerContactCollectionLabel")} ${params.collectionName}
 
 Message:
 ${params.content}
@@ -135,7 +141,7 @@ Voir l'objet: ${params.objectUrl}
     await resend.emails.send({
       from: getResendFromAddress(),
       to: params.to,
-      subject: `[Brol] Message pour votre objet "${params.objectName}"`,
+      subject: translate(locale, "emails.ownerContactEmailSubject", { objectName: params.objectName }),
       html,
       text,
     });

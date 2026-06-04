@@ -14,6 +14,7 @@ import {
   createObjectSchema,
   updateObjectSchema,
   paginationSchema,
+  translate,
 } from "@brol/shared";
 
 const log = logger.child("objects.lookupIsbn");
@@ -209,7 +210,7 @@ export const objectsRouter = router({
       });
 
       if (!collection) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Collection non trouvée" });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: translate(ctx.locale, "errors.collectionNotFoundUnauthorized") });
       }
 
       const objects = await ctx.prisma.object.findMany({
@@ -478,7 +479,7 @@ export const objectsRouter = router({
         });
 
         if (!qrStock) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "QR code non disponible" });
+          throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.qrCodeNotAvailable") });
         }
 
         // Marquer le QR comme utilisé

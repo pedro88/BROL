@@ -8,6 +8,7 @@ import { syncUserBadges } from "../lib/badge-service";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { pageOf } from "../lib/pagination";
+import { translate } from "@brol/shared";
 
 export const reviewRouter = router({
   /**
@@ -100,7 +101,7 @@ export const reviewRouter = router({
       if (authorId === input.targetId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Vous ne pouvez pas vous noter vous-même.",
+          message: translate(ctx.locale, "errors.cannotReviewYourself"),
         });
       }
 
@@ -118,7 +119,7 @@ export const reviewRouter = router({
       if (!loan) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Aucun échange trouvé avec cet utilisateur.",
+          message: translate(ctx.locale, "errors.noExchangeFound"),
         });
       }
 
@@ -129,7 +130,7 @@ export const reviewRouter = router({
       if (existing) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Vous avez déjà laissé un avis pour cet échange.",
+          message: translate(ctx.locale, "errors.reviewAlreadyExists"),
         });
       }
 
@@ -153,10 +154,22 @@ export const reviewRouter = router({
         data: {
           userId: input.targetId,
           type: "REVIEW_RECEIVED",
-          title: `Nouvel avis de ${review.author.name ?? "quelqu'un"}`,
+          title: translate(ctx.locale, "notifications.reviewReceivedTitle", {
+            reviewerName: review.author.name ?? "quelqu'un",
+          }),
           message: input.comment
-            ? `"${input.comment.slice(0, 100)}${input.comment.length > 100 ? "..." : ""}"`
-            : `${input.rating}/5 étoiles`,
+            ? translate(
+                ctx.locale,
+                "notifications.reviewReceivedMessageWithComment",
+                {
+                  comment: `${input.comment.slice(0, 100)}${input.comment.length > 100 ? "..." : ""}`,
+                }
+              )
+            : translate(
+                ctx.locale,
+                "notifications.reviewReceivedMessageWithoutComment",
+                { rating: input.rating }
+              ),
           relatedId: review.id,
           relatedType: "review",
         },

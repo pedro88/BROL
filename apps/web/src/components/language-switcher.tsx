@@ -10,7 +10,9 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { Globe } from "lucide-react";
-import { LOCALES } from "@brol/shared";
+import { LOCALES, type Locale } from "@brol/shared";
+import { trpc } from "@/lib/trpc";
+import { getSessionToken } from "@/lib/auth-store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,10 +27,20 @@ const ONE_YEAR = 60 * 60 * 24 * 365;
 export function LanguageSwitcher() {
   const locale = useLocale();
   const t = useTranslations("language");
+  const updateLocale = trpc.users.updateLocale.useMutation();
 
-  function setLocale(next: string) {
+  async function setLocale(next: Locale) {
     if (next === locale) return;
     document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=${ONE_YEAR}; SameSite=Lax`;
+    // Persiste sur User.locale si connecté (sert à localiser les emails). On
+    // attend le persist avant le reload (qui annulerait la requête en vol).
+    if (getSessionToken()) {
+      try {
+        await updateLocale.mutateAsync({ locale: next });
+      } catch {
+        // best-effort : le cookie suffit pour l'affichage
+      }
+    }
     // Hard reload : force le serveur à relire le cookie et reprojeter les
     // messages (les Server Components ne réagissent pas au changement de cookie
     // via un simple router.refresh sur certaines versions).

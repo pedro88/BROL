@@ -12,6 +12,7 @@ import {
   trpcMutationLimiter,
   getClientIp,
 } from "../lib/rate-limit";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@brol/shared";
 
 /**
  * Type pour le context de la requête.
@@ -22,6 +23,8 @@ export interface Context {
   session: { user: { id: string } } | null;
   /** Raw request headers (lowercase keys) for auth helpers */
   headers: Record<string, string>;
+  /** Locale résolue (header `x-locale` → défaut fr) pour les messages serveur. */
+  locale: Locale;
 }
 
 /**
@@ -38,11 +41,18 @@ export async function createContext(opts: FetchCreateContextFnOptions): Promise<
     headers[key.toLowerCase()] = value;
   });
 
+  // Locale depuis l'en-tête `x-locale` posé par les clients (web cookie /
+  // mobile i18n). Fallback fr. (On évite un lookup DB ici — les emails, eux,
+  // utilisent la locale persistée du destinataire.)
+  const headerLocale = headers["x-locale"];
+  const locale = isLocale(headerLocale) ? headerLocale : DEFAULT_LOCALE;
+
   return {
     prisma,
     userId: session?.user?.id ?? null,
     session,
     headers,
+    locale,
   };
 }
 

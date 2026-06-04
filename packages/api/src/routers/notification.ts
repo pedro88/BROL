@@ -6,6 +6,7 @@
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { translate } from "@brol/shared";
 import { pageOf } from "../lib/pagination";
 
 export const notificationRouter = router({
@@ -57,11 +58,17 @@ export const notificationRouter = router({
       });
 
       if (!notification) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: translate(ctx.locale, "errors.notificationNotFound"),
+        });
       }
 
       if (notification.userId !== ctx.session.user.id) {
-        throw new TRPCError({ code: "FORBIDDEN" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: translate(ctx.locale, "errors.notificationAccessDenied"),
+        });
       }
 
       return ctx.prisma.notification.update({

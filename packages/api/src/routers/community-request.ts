@@ -4,6 +4,7 @@
  */
 
 import { router, protectedProcedure, publicProcedure } from "../trpc";
+import { translate } from "@brol/shared";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
@@ -69,7 +70,7 @@ export const communityRequestRouter = router({
       if (!author?.lat || !author.lng || !author.postalCode) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Veuillez compléter votre localisation avant de poster une demande.",
+          message: translate(ctx.locale, "errors.locationIncomplete"),
         });
       }
 
@@ -127,10 +128,15 @@ export const communityRequestRouter = router({
           data: matches.map((m) => ({
             userId: m.ownerId,
             type: "COMMUNITY_REQUEST" as const,
-            title: "Un voisin recherche un objet",
-            message: `${request.author.name ?? "Quelqu'un"} cherche "${input.title}" près de chez vous (≈ ${Math.round(
-              haversineKm(author.lat!, author.lng!, m.ownerLat, m.ownerLng),
-            )} km). Vous avez "${m.objectName}".`,
+            title: translate(ctx.locale, "notifications.communityRequestTitle"),
+            message: translate(ctx.locale, "notifications.communityRequestMessage", {
+              requesterName: request.author.name ?? "Quelqu'un",
+              searchTitle: input.title,
+              distance: Math.round(
+                haversineKm(author.lat!, author.lng!, m.ownerLat, m.ownerLng),
+              ),
+              matchObjectName: m.objectName,
+            }),
             relatedId: request.id,
             relatedType: "request",
           })),
@@ -205,7 +211,7 @@ export const communityRequestRouter = router({
       });
 
       if (!request) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Demande introuvable" });
+        throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.requestNotFound") });
       }
 
       return request;
@@ -224,20 +230,20 @@ export const communityRequestRouter = router({
       });
 
       if (!request) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Demande introuvable" });
+        throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.requestNotFound") });
       }
 
       if (request.authorId !== authorId) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Vous ne pouvez annuler que vos propres demandes.",
+          message: translate(ctx.locale, "errors.canOnlyCancelOwnRequest"),
         });
       }
 
       if (request.status !== "OPEN") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Seules les demandes ouvertes peuvent être annulées.",
+          message: translate(ctx.locale, "errors.onlyOpenRequestsCanBeCancelled"),
         });
       }
 
@@ -265,13 +271,13 @@ export const communityRequestRouter = router({
       });
 
       if (!request) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Demande introuvable" });
+        throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.requestNotFound") });
       }
 
       if (request.status !== "OPEN") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Seules les demandes ouvertes peuvent être fulfill.",
+          message: translate(ctx.locale, "errors.onlyOpenRequestsCanBeFulfilled"),
         });
       }
 
@@ -289,8 +295,10 @@ export const communityRequestRouter = router({
           data: {
             userId: request.authorId,
             type: "REQUEST_FULFILLED",
-            title: "Votre demande a été traitée",
-            message: `Quelqu'un a répondu à votre demande: "${request.title}"`,
+            title: translate(ctx.locale, "notifications.requestFulfilledTitle"),
+            message: translate(ctx.locale, "notifications.requestFulfilledMessage", {
+              requestTitle: request.title,
+            }),
             relatedId: request.id,
             relatedType: "request",
           },
