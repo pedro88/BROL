@@ -8,7 +8,7 @@ import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { router, protectedProcedure } from "../trpc";
 import { geocodePostalCode } from "../lib/geo";
-import { LOCALES, translate } from "@brol/shared";
+import { LOCALES, THEMES, translate } from "@brol/shared";
 
 const COUNTRY_REGEX = /^[A-Z]{2}$/;
 const POSTAL_CODE_REGEX = /^[A-Za-z0-9 -]{3,10}$/;
@@ -201,6 +201,7 @@ export const usersRouter = router({
         postalCode: true,
         city: true,
         locale: true,
+        theme: true,
       },
     });
     return user;
@@ -218,6 +219,22 @@ export const usersRouter = router({
         data: { locale: input.locale },
       });
       return { success: true, locale: input.locale };
+    }),
+
+  /**
+   * Met à jour le thème graphique préféré de l'utilisateur. Persiste le choix
+   * du sélecteur (page Paramètres) pour qu'il suive l'utilisateur entre
+   * appareils. "magenta" = défaut → stocké en null.
+   */
+  updateTheme: protectedProcedure
+    .input(z.object({ theme: z.enum(THEMES) }))
+    .mutation(async ({ ctx, input }) => {
+      const theme = input.theme === "magenta" ? null : input.theme;
+      await ctx.prisma.user.update({
+        where: { id: ctx.userId },
+        data: { theme },
+      });
+      return { success: true, theme: input.theme };
     }),
 
   /**

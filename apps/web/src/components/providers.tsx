@@ -2,6 +2,7 @@
 
 import { TRPCProvider } from "../lib/trpc-provider";
 import { AuthSessionSyncer } from "../lib/auth-session-syncer";
+import { ThemeSyncer } from "../lib/theme-syncer";
 import { Toaster } from "sonner";
 
 /**
@@ -11,6 +12,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <TRPCProvider>
       <AuthSessionSyncer />
+      <ThemeSyncer />
       <Toaster
         position="bottom-center"
         toastOptions={{

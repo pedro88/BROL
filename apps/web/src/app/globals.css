@@ -55,6 +55,73 @@
     --chart-4: 120 100% 40%;
     --chart-5: 280 100% 60%;
   }
+
+  /* ============================================
+     PRESETS DE THÈME — switchés via [data-theme]
+     posé sur <html> (localStorage `brol_theme`).
+     Défaut = Magenta VHS (:root ci-dessus).
+     ============================================ */
+
+  /* Néon cyan — cyan dominant, magenta relégué en accent rare. */
+  html[data-theme="cyan"] {
+    --primary: 180 100% 50%;
+    --secondary: 300 100% 50%;
+    --accent: 60 100% 50%;
+    --border: 180 100% 50% / 30%;
+    --ring: 180 100% 50%;
+    --chart-1: 180 100% 50%;
+    --chart-2: 300 100% 50%;
+    --chart-3: 60 100% 50%;
+    --chart-4: 200 100% 55%;
+    --chart-5: 160 100% 45%;
+  }
+
+  /* CRT ambre — monochrome ambre sur fond noir, terminal 80s. */
+  html[data-theme="crt-amber"] {
+    --primary: 41 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 35 90% 45%;
+    --secondary-foreground: 0 0% 0%;
+    --accent: 48 100% 55%;
+    --accent-foreground: 0 0% 0%;
+    --border: 41 100% 50% / 30%;
+    --ring: 41 100% 50%;
+    --chart-1: 41 100% 50%;
+    --chart-2: 35 90% 45%;
+    --chart-3: 48 100% 55%;
+    --chart-4: 30 100% 50%;
+    --chart-5: 45 80% 40%;
+  }
+
+  /* Classique ("chiant") — thème clair corporate, zéro néon. Les effets VHS
+     (scanlines, grid, glow, noise) sont neutralisés plus bas. */
+  html[data-theme="boring"] {
+    --background: 0 0% 98%;
+    --foreground: 220 13% 18%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 18%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 18%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 13% 18%;
+    --accent: 221 83% 53%;
+    --accent-foreground: 0 0% 100%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+    --radius: 0.5rem;
+    --chart-1: 221 83% 53%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 0 72% 51%;
+  }
 }
 
 /* ============================================
@@ -319,4 +386,35 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ============================================
+   CLASSIQUE ("chiant") — neutralise les effets VHS
+   pour un rendu plat / corporate. Couleurs : voir
+   le bloc html[data-theme="boring"] plus haut.
+   ============================================ */
+
+/* Overlays plein écran (scanlines + gradient, posés dans layout.tsx) + noise. */
+html[data-theme="boring"] .vhs-scanlines::before,
+html[data-theme="boring"] .vhs-gradient-overlay,
+html[data-theme="boring"] .vhs-noise::after {
+  display: none;
+}
+
+/* Grille de fond du <body>. */
+html[data-theme="boring"] .vhs-grid {
+  background-image: none;
+}
+
+/* Glow texte → plat. */
+html[data-theme="boring"] .vhs-text-glow,
+html[data-theme="boring"] .vhs-text-glow-cyan {
+  text-shadow: none;
+}
+
+/* Glow box (boutons, inputs, cartes) → plat. */
+html[data-theme="boring"] .vhs-glow,
+html[data-theme="boring"] .vhs-glow-cyan,
+html[data-theme="boring"] .input-vhs {
+  box-shadow: none;
 }

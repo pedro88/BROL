@@ -11,6 +11,7 @@ import { UserAvatar } from "@/components/profile/user-avatar";
 import { QrCodeImage } from "@/components/qr/qr-code-image";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { ThemeSection } from "@/components/theme-section";
 
 function ProgressBar({
   current,
@@ -127,6 +128,9 @@ export default function SettingsPage() {
         <h1 className="font-display text-3xl vhs-text-glow text-primary">
           {t("settings.title")}
         </h1>
+
+        {/* Apparence : choix du thème graphique (persiste + suit l'utilisateur) */}
+        <ThemeSection initialTheme={meData?.theme} />
 
         {/* Mon Profil section */}
         <div className="card-vhs p-6 space-y-4">

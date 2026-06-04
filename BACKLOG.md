@@ -102,6 +102,9 @@
   champs du form. Fallback manuel si pas de match. À élargir
   ensuite : IGDB pour VIDEOGAME, TMDB pour MOVIE (OpenLibrary déjà
   câblé pour BOOK via `objects.lookupIsbn`).
+- [ ] **Tech** — Retirer le champ « Code-barres » du formulaire de
+  création d'objet (`object-form.tsx`). Garder en DB (`barcode`) mais
+  hors UI de création.
 
 ### Flux UX d'ajout d'objet
 
@@ -161,6 +164,12 @@
     cachées au premier render.
   - Tests unit : 5 cas pour `getPublic` (anonyme, owner, viaContact,
     unauthenticated, null id).
+- [ ] **Bug** — Page d'un objet prêté : on ne voit pas à qui il est
+  prêté. Afficher l'emprunteur (nom + date retour) sur `/objects/[id]`
+  quand `currentLoan` existe.
+- [ ] **Bug** — Page d'un objet prêté : le bouton « Prêter » reste
+  visible → l'objet peut être prêté 2× (incohérent). Masquer/désactiver
+  « Prêter » si un prêt actif existe.
 
 ### Loans / contacts
 
@@ -190,6 +199,11 @@
   `BorrowerSelectDialog` accepte maintenant aussi le champ `note`
   (manquait par rapport au `ContactDialog` standalone). Parité
   Nom/Email/Téléphone/Note avec `/contacts`.
+- [ ] **Bug (notable)** — Après avoir prêté un objet d'une collection,
+  retourner sur la collection → erreur 404. Probable régression sur
+  `collections.get` / `objects.list` quand un objet a un prêt actif (cf.
+  `apps/web/src/app/collections/[id]/page.tsx`). À reproduire + corriger
+  en priorité (casse la navigation collection).
 
 ### QR codes / impression
 
@@ -205,6 +219,13 @@
   CSS (auto-fill + page-break-inside avoid). Pas de dépendance
   jsPDF — utilise le dialog d'impression du navigateur pour générer
   le PDF.
+- [ ] **Bug** — Les QR créés à la création d'un objet n'apparaissent pas
+  sur la page `/qr` → impossible de les imprimer. Vérifier le lien
+  objet↔qrStock à la création (`objects.create` + `qr.listStock`).
+- [ ] **Feat** — Filtrer les QR assignés par collection + recherche par
+  nom d'objet sur `/qr`.
+- [ ] **Feat** — Afficher le nom de l'objet sur le QR assigné (à l'écran
+  + sur le PDF d'impression) pour savoir où coller chaque étiquette.
 
 Web a 19 pages, mobile a 12 écrans.
 
@@ -392,6 +413,25 @@ community-request.ts`) mais l'UX et le matching sont à construire.
   - Garde-fou : limite `maxSelfBorrowPerWeek` configurable par owner.
   - UI : toggle dans `EditObjectDialog` + bandeau "Self-service"
     sur la card objet côté borrower.
+
+### Thème / apparence
+
+- [x] **Feat** — ~~Switcher de thème graphique.~~ livré 2026-06-04. 4 presets
+  via CSS variables (`[data-theme]` sur `<html>`) : Magenta (défaut) / Cyan /
+  CRT ambre / Classique (mode clair "chiant", désactive les effets VHS).
+  Sélecteur dans Paramètres (section Apparence, dispo mobile). Persistance :
+  cookie `brol_theme` (lu côté serveur → pas de FOUC) + `User.theme` (suit
+  l'utilisateur entre appareils via `users.updateTheme` + `ThemeSyncer`).
+  Pistes initiales conservées ci-dessous pour mémoire :
+  - **Cyan-dominant** : `--primary` = cyan `#00ffff`, magenta relégué en
+    accent rare. Garde la vibe néon sans l'agression rose.
+  - **CRT phosphore** : monochrome vert (`#33ff66`) ou ambre (`#ffb000`)
+    sur fond noir — terminal 80s, très lisible, le plus « safe ».
+  - **Synthwave** : violet/indigo (`#7b2ff7`) + cyan, dégradés sunset.
+    Néon mais froid, moins criard que le magenta pur.
+  - **Outrun** : orange/teal coucher de soleil (`#ff6b35` + `#00b3a4`).
+  Reco : livrer 3 presets (Magenta actuel / Cyan / CRT ambre) + le
+  switcher, garder Magenta par défaut.
 
 ### Vues bibliothèque
 

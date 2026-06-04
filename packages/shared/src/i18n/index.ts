@@ -176,6 +176,17 @@ export const language = {
 };
 
 /**
+ * Traductions pour le sélecteur de thème graphique (presets de couleurs).
+ */
+export const theme = {
+  label: { fr: "Thème", nl: "Thema", en: "Theme" },
+  magenta: { fr: "Magenta VHS", nl: "Magenta VHS", en: "VHS Magenta" },
+  cyan: { fr: "Néon cyan", nl: "Cyaan neon", en: "Cyan Neon" },
+  crtAmber: { fr: "CRT ambre", nl: "CRT amber", en: "Amber CRT" },
+  boring: { fr: "Classique", nl: "Klassiek", en: "Classic" },
+};
+
+/**
  * Traductions pour les collections.
  */
 export const collections = {
@@ -927,6 +938,7 @@ export const catalog = {
   auth,
   dashboard,
   language,
+  theme,
   collections,
   objects,
   loans,
