@@ -102,9 +102,10 @@
   champs du form. Fallback manuel si pas de match. À élargir
   ensuite : IGDB pour VIDEOGAME, TMDB pour MOVIE (OpenLibrary déjà
   câblé pour BOOK via `objects.lookupIsbn`).
-- [ ] **Tech** — Retirer le champ « Code-barres » du formulaire de
+- [x] **Tech** — ~~Retirer le champ « Code-barres » du formulaire de
   création d'objet (`object-form.tsx`). Garder en DB (`barcode`) mais
-  hors UI de création.
+  hors UI de création.~~ livré 2026-06-04. Bloc input retiré ; `barcode`
+  conservé dans le form state (default "") et en DB.
 
 ### Flux UX d'ajout d'objet
 

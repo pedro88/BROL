@@ -511,17 +511,9 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         </div>
       )}
 
-      {/* Barcode — all types */}
-      <div className="space-y-2">
-        <Label htmlFor="barcode" className="font-mono text-xs uppercase">
-          {t("objects.barcode")}
-        </Label>
-        <Input
-          id="barcode"
-          placeholder={t("objects.barcodePlaceholder")}
-          {...register("barcode")}
-        />
-      </div>
+      {/* Code-barres : retiré de l'UI de création (backlog) mais conservé en
+          DB (`barcode`) — le champ reste dans le form state (default "") pour
+          ne pas casser le schéma de création / l'autofill ISBN. */}
 
       {/* CUSTOM fields */}
       {showCustomFields && (
