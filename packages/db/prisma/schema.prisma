@@ -23,6 +23,7 @@ model User {
   name   String?
   image  String? // BetterAuth: avatarUrl → image
   locale String  @default("fr") // fr, nl, en
+  theme  String? // preset graphique: cyan, crt-amber, boring (null = magenta défaut)
 
   // Localisation (soft gate au 1er login si null) — utilisée pour matching CommunityRequest
   country    String? // ISO-3166 alpha-2 (BE, FR, NL, LU, DE...)

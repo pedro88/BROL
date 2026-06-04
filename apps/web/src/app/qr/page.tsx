@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -31,6 +32,7 @@ const QR_SIZE_MM: Record<QrSize, number> = {
  * Liste les codes existants, permet d'en générer et de supprimer.
  */
 export default function QrStockPage() {
+  const t = useTranslations();
   const [generateCount, setGenerateCount] = useState(10);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [printSize, setPrintSize] = useState<QrSize>("30mm");
@@ -119,7 +121,7 @@ export default function QrStockPage() {
   });
 
   const handleDelete = (id: string) => {
-    if (confirm("Supprimer ce QR code ?")) {
+    if (confirm(t("qrCodes.confirmDelete"))) {
       deleteMutation.mutate({ id });
     }
   };
@@ -142,11 +144,11 @@ export default function QrStockPage() {
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-display text-3xl vhs-text-glow text-primary">
+          <h1 className="font-display text-3xl vhs-text-glow text-primary uppercase">
             QR CODES
           </h1>
           <p className="font-mono text-sm text-muted-foreground mt-2">
-            Gérez votre stock de QR codes à coller sur vos objets.
+            {t("qrCodes.pageDescription")}
           </p>
         </div>
 
@@ -158,7 +160,7 @@ export default function QrStockPage() {
                 htmlFor="count"
                 className="font-mono text-xs text-muted-foreground uppercase block mb-2"
               >
-                Nombre de codes à générer
+                {t("qrCodes.countLabel")}
               </label>
               <Input
                 id="count"
@@ -182,7 +184,7 @@ export default function QrStockPage() {
               ) : (
                 <Plus className="w-4 h-4 mr-2" />
               )}
-              Générer
+              {t("qrCodes.generateButton")}
             </Button>
           </div>
           {generateMutation.isError && (
@@ -192,7 +194,7 @@ export default function QrStockPage() {
           )}
           {generateMutation.isSuccess && (
             <p className="font-mono text-xs text-green-400 mt-2">
-              {generateMutation.data.count} code(s) généré(s) !
+              {t("qrCodes.generatedSuccess", { count: generateMutation.data.count })}
             </p>
           )}
         </div>
@@ -202,7 +204,7 @@ export default function QrStockPage() {
           <div className="card-vhs p-4 mb-4 space-y-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <p className="font-mono text-xs text-muted-foreground uppercase">
-                Sélection : {selectedIds.size} code(s)
+                {t("qrCodes.selectionCount", { count: selectedIds.size })}
               </p>
               <div className="flex gap-2">
                 <Button
@@ -211,7 +213,7 @@ export default function QrStockPage() {
                   onClick={selectAllAvailable}
                   className="font-mono text-xs"
                 >
-                  Tout sélectionner
+                  {t("qrCodes.selectAll")}
                 </Button>
                 {selectedIds.size > 0 && (
                   <Button
@@ -220,7 +222,7 @@ export default function QrStockPage() {
                     onClick={clearSelection}
                     className="font-mono text-xs"
                   >
-                    Effacer
+                    {t("qrCodes.clearSelection")}
                   </Button>
                 )}
               </div>
@@ -231,7 +233,7 @@ export default function QrStockPage() {
                   htmlFor="qrSize"
                   className="font-mono text-xs text-muted-foreground uppercase block mb-2"
                 >
-                  Taille des QR
+                  {t("qrCodes.sizeLabel")}
                 </label>
                 <select
                   id="qrSize"
@@ -240,7 +242,7 @@ export default function QrStockPage() {
                   className="flex h-10 w-full bg-input border-2 border-border px-3 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
                 >
                   <option value="20mm">20 mm</option>
-                  <option value="30mm">30 mm (recommandé)</option>
+                  <option value="30mm">{t("qrCodes.sizeRecommended")}</option>
                   <option value="40mm">40 mm</option>
                   <option value="60mm">60 mm</option>
                 </select>
@@ -249,16 +251,14 @@ export default function QrStockPage() {
                 onClick={handlePrint}
                 disabled={selectedIds.size === 0}
                 className="shrink-0"
-                aria-label="Imprimer / PDF"
+                aria-label={t("qrCodes.printButton")}
               >
                 <Printer className="w-4 h-4 mr-2" />
-                Imprimer / PDF
+                {t("qrCodes.printButton")}
               </Button>
             </div>
             <p className="font-mono text-[10px] text-muted-foreground">
-              L&apos;impression ouvre une nouvelle fenêtre. Choisissez
-              &quot;Enregistrer en PDF&quot; dans le dialog du navigateur
-              pour obtenir un PDF.
+              {t("qrCodes.printInstructions")}
             </p>
           </div>
         )}
@@ -271,7 +271,7 @@ export default function QrStockPage() {
                 {data.items.length}
               </span>
               <span className="font-mono text-xs text-muted-foreground ml-2">
-                codes
+                {t("qrCodes.codesLabel")}
               </span>
             </div>
             <div className="card-vhs px-4 py-2">
@@ -279,7 +279,7 @@ export default function QrStockPage() {
                 {data.items.filter((q) => q.used).length}
               </span>
               <span className="font-mono text-xs text-muted-foreground ml-2">
-                utilisés
+                {t("qrCodes.usedLabel")}
               </span>
             </div>
             <div className="card-vhs px-4 py-2">
@@ -287,7 +287,7 @@ export default function QrStockPage() {
                 {data.items.filter((q) => !q.used).length}
               </span>
               <span className="font-mono text-xs text-muted-foreground ml-2">
-                disponibles
+                {t("qrCodes.availableLabel")}
               </span>
             </div>
           </div>
@@ -301,11 +301,11 @@ export default function QrStockPage() {
         ) : data?.items.length === 0 ? (
           <div className="card-vhs p-8 text-center">
             <QrCode className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <h2 className="font-display text-xl text-muted-foreground mb-2">
-              AUCUN QR CODE
+            <h2 className="font-display text-xl text-muted-foreground mb-2 uppercase">
+              {t("qrCodes.emptyTitle")}
             </h2>
             <p className="font-mono text-sm text-muted-foreground">
-              Générez votre premier batch de codes ci-dessus.
+              {t("qrCodes.emptyDescription")}
             </p>
           </div>
         ) : (
@@ -325,7 +325,7 @@ export default function QrStockPage() {
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleSelect(qr.id)}
-                      aria-label={`Sélectionner ${qr.code}`}
+                      aria-label={t("qrCodes.selectAriaLabel", { code: qr.code })}
                       className="w-4 h-4 rounded border-2 border-border bg-input text-primary focus:ring-2 focus:ring-primary"
                     />
                   </label>
@@ -377,7 +377,7 @@ export default function QrStockPage() {
                         : "bg-green-500/20 text-green-400"
                     }`}
                   >
-                    {qr.used ? "Utilisé" : "Libre"}
+                    {qr.used ? t("qrCodes.statusUsed") : t("qrCodes.statusFree")}
                   </span>
 
                   {!qr.used && (

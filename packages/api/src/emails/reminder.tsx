@@ -3,6 +3,8 @@
  * @package @brol/api
  */
 
+import { translate, type Locale } from "@brol/shared";
+
 interface ReminderEmailData {
   borrowerName: string;
   objectName: string;
@@ -10,6 +12,7 @@ interface ReminderEmailData {
   lentAt: Date;
   returnDueDate: Date | null;
   appUrl: string;
+  locale: Locale;
 }
 
 function formatDate(date: Date): string {
@@ -22,7 +25,7 @@ function formatDate(date: Date): string {
 }
 
 export function reminderEmailTemplate(data: ReminderEmailData): string {
-  const { borrowerName, objectName, ownerName, lentAt, returnDueDate, appUrl } = data;
+  const { borrowerName, objectName, ownerName, lentAt, returnDueDate, appUrl, locale } = data;
 
   return `
 <!DOCTYPE html>
@@ -37,17 +40,17 @@ export function reminderEmailTemplate(data: ReminderEmailData): string {
       <h1 style="font-size: 32px; margin: 0; color: #00ff88;">BROL</h1>
     </div>
     <div style="border: 2px solid #333; padding: 20px; background: #111;">
-      <p>Bonjour <strong>${borrowerName || "vous"}</strong>,</p>
-      <p>${ownerName} vous envoie un rappel concernant un prêt.</p>
+      <p>${translate(locale, "emails.reminderGreeting", { borrowerName: borrowerName || "vous" })}</p>
+      <p>${translate(locale, "emails.reminderIntro", { ownerName })}</p>
       <div style="border: 2px dashed #00ff88; padding: 16px; margin: 20px 0; background: #0d1f14;">
-        <p style="font-size: 10px; color: #00ccff; margin: 0 0 8px; letter-spacing: 2px;">OBJET EMPRUNTÉ</p>
+        <p style="font-size: 10px; color: #00ccff; margin: 0 0 8px; letter-spacing: 2px;">${translate(locale, "emails.reminderBorrowedObjectLabel")}</p>
         <p style="font-size: 18px; font-weight: bold; color: #00ff88; margin: 0;">${objectName}</p>
       </div>
-      ${returnDueDate ? `<p style="font-size: 12px;">DATE DE RETOUR ATTENDUE: ${formatDate(returnDueDate)}</p>` : ""}
-      <p>Merci de bien vouloir retourner cet objet à ${ownerName}.</p>
+      ${returnDueDate ? `<p style="font-size: 12px;">${translate(locale, "emails.reminderExpectedReturnDate", { returnDueDate: formatDate(returnDueDate) })}</p>` : ""}
+      <p>${translate(locale, "emails.reminderReturnRequest", { ownerName })}</p>
     </div>
     <div style="padding: 16px; text-align: center;">
-      <p style="font-size: 10px; color: #666;"><a href="${appUrl}" style="color: #00ccff;">Ouvrir BROL</a></p>
+      <p style="font-size: 10px; color: #666;"><a href="${appUrl}" style="color: #00ccff;">${translate(locale, "emails.reminderOpenBrolButton")}</a></p>
     </div>
   </div>
 </body>
@@ -56,17 +59,17 @@ export function reminderEmailTemplate(data: ReminderEmailData): string {
 }
 
 export function reminderEmailText(data: ReminderEmailData): string {
-  const { borrowerName, objectName, ownerName, lentAt, returnDueDate } = data;
-  return `BROL — RAPPEL DE PRÊT
+  const { borrowerName, objectName, ownerName, lentAt, returnDueDate, locale } = data;
+  return `${translate(locale, "emails.reminderTextTitle")}
 
-Bonjour ${borrowerName || "vous"},
+${translate(locale, "emails.reminderGreeting", { borrowerName: borrowerName || "vous" })}
 
-${ownerName} vous envoie un rappel concernant un prêt.
+${translate(locale, "emails.reminderIntro", { ownerName })}
 
-OBJET: ${objectName}
-DATE DU PRÊT: ${formatDate(lentAt)}
-${returnDueDate ? `DATE DE RETOUR ATTENDUE: ${formatDate(returnDueDate)}` : ""}
+${translate(locale, "emails.reminderTextObject", { objectName })}
+${translate(locale, "emails.reminderTextLoanDate", { lentAt: formatDate(lentAt) })}
+${returnDueDate ? translate(locale, "emails.reminderTextExpectedReturnDate", { returnDueDate: formatDate(returnDueDate) }) : ""}
 
-Merci de bien vouloir retourner cet objet à ${ownerName}.
+${translate(locale, "emails.reminderReturnRequest", { ownerName })}
   `.trim();
 }

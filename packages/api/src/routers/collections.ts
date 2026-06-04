@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import { router, publicProcedure, protectedProcedure, TRPCError } from "../trpc";
 import {
   paginationSchema,
+  translate,
 } from "@brol/shared";
 import { cursorOf } from "../lib/pagination";
 
@@ -216,7 +217,7 @@ export const collectionsRouter = router({
         if (count >= maxCollections) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: `Limite de ${maxCollections} collections atteinte. Upgradez vers un plan supérieur pour continuer.`,
+            message: translate(ctx.locale, "errors.collectionLimitReached", { maxCollections }),
           });
         }
       }
@@ -248,7 +249,7 @@ export const collectionsRouter = router({
       });
 
       if (!collection) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Collection non trouvée" });
+        throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.collectionNotFound") });
       }
 
       // Build update data, excluding undefined fields. Typed via Prisma's
@@ -279,7 +280,7 @@ export const collectionsRouter = router({
       });
 
       if (!collection) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Collection non trouvée" });
+        throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.collectionNotFound") });
       }
 
       // Cascade delete des objets et prêts associés

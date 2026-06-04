@@ -11,7 +11,7 @@ import {
   assignQrStockSchema,
   paginationSchema,
 } from "@brol/shared";
-import { generateScanCode } from "@brol/shared";
+import { generateScanCode, translate, type Locale } from "@brol/shared";
 import { cursorOf } from "../lib/pagination";
 import type { Prisma } from "@prisma/client";
 
@@ -24,6 +24,7 @@ import type { Prisma } from "@prisma/client";
  */
 async function assignQrToObject(
   prisma: import("@brol/db").PrismaClient,
+  locale: Locale,
   userId: string,
   objectId: string,
   qrWhere: Prisma.QrStockWhereInput,
@@ -38,11 +39,11 @@ async function assignQrToObject(
     where: { id: objectId, collection: { userId } },
   });
   if (!object) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Objet non trouvé" });
+    throw new TRPCError({ code: "NOT_FOUND", message: translate(locale, "errors.qrObjectNotFound") });
   }
 
   if (object.qrStockId) {
-    throw new TRPCError({ code: "CONFLICT", message: "Cet objet a déjà un QR code assigné" });
+    throw new TRPCError({ code: "CONFLICT", message: translate(locale, "errors.objectAlreadyHasQR") });
   }
 
   const [updatedObject] = await prisma.$transaction([
@@ -147,11 +148,11 @@ export const qrRouter = router({
   assign: protectedProcedure
     .input(z.object({ objectId: z.string().cuid(), qrCode: z.string() }))
     .mutation(({ ctx, input }) =>
-      assignQrToObject(ctx.prisma, ctx.userId, input.objectId, {
+      assignQrToObject(ctx.prisma, ctx.locale, ctx.userId, input.objectId, {
         code: input.qrCode,
         userId: ctx.userId,
         used: false,
-      }, "QR code non disponible ou déjà utilisé")
+      }, translate(ctx.locale, "errors.qrNotAvailableOrUsed"))
     ),
 
   /**
@@ -160,7 +161,7 @@ export const qrRouter = router({
   assignToObject: protectedProcedure
     .input(assignQrStockSchema)
     .mutation(({ ctx, input }) =>
-      assignQrToObject(ctx.prisma, ctx.userId, input.objectId, {
+      assignQrToObject(ctx.prisma, ctx.locale, ctx.userId, input.objectId, {
         id: input.qrStockId,
         userId: ctx.userId,
         used: false,
@@ -208,7 +209,7 @@ export const qrRouter = router({
       if (!qrStock) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "QR code non trouvé",
+          message: translate(ctx.locale, "errors.qrNotFound"),
         });
       }
 

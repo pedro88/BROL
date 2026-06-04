@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Header, Navigation } from "@/components/navigation";
@@ -43,7 +43,7 @@ export default function RequestDetailPage() {
     onSuccess: () => {
       setDraft("");
       utils.requestMessages.list.invalidate({ requestId });
-      utils.notification.unreadCount.invalidate();
+      utils.messages.unreadCount.invalidate();
       toast.success("Message envoyé");
     },
     onError: (err) => {
@@ -52,6 +52,15 @@ export default function RequestDetailPage() {
   });
 
   const [draft, setDraft] = useState("");
+
+  // L'ouverture du thread marque les messages reçus comme lus côté serveur
+  // (requestMessages.list). On rafraîchit le badge Mail dès que la liste est
+  // chargée pour qu'il se vide sans attendre le polling.
+  useEffect(() => {
+    if (messagesQuery.data) {
+      utils.messages.unreadCount.invalidate();
+    }
+  }, [messagesQuery.data, utils]);
 
   if (requestQuery.isLoading || meQuery.isLoading) {
     return (

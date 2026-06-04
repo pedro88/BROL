@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { VT323, Inter } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
+import { cookies } from "next/headers";
 import { Providers } from "../components/providers";
+import { THEME_COOKIE, asThemeId, themeAttr } from "../lib/theme";
 import "./globals.css";
 
 /**
@@ -65,13 +69,29 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Locale résolue côté serveur (cookie → Accept-Language → défaut) via
+  // src/i18n/request.ts. NextIntlClientProvider hérite automatiquement des
+  // messages fournis par la request config — pas besoin de les passer ici.
+  const locale = await getLocale();
+  const messages = await getMessages();
+
+  // Thème résolu côté serveur depuis le cookie → rendu dans data-theme, donc
+  // pas de flash du magenta par défaut ni de mismatch d'hydratation.
+  const cookieStore = await cookies();
+  const themeId = asThemeId(cookieStore.get(THEME_COOKIE)?.value);
+  const dataTheme = themeAttr(themeId);
+
   return (
-    <html lang="fr" className={`${vt323.variable} ${inter.variable}`}>
+    <html
+      lang={locale}
+      className={`${vt323.variable} ${inter.variable}`}
+      {...(dataTheme ? { "data-theme": dataTheme } : {})}
+    >
       <head>
         {/* Favicons auto-générés par Next via app/icon.png + app/apple-icon.png. */}
       </head>
@@ -80,7 +100,9 @@ export default function RootLayout({
         <div className="fixed inset-0 pointer-events-none z-50 vhs-scanlines" />
         {/* Gradient overlay */}
         <div className="fixed inset-0 pointer-events-none z-40 vhs-gradient-overlay" />
-        <Providers>{children}</Providers>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

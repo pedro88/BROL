@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { X, Camera, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "../ui/button";
@@ -15,6 +16,7 @@ interface QrScannerProps {
 }
 
 export function QrScanner({ onCodeScanned, onClose, disabled }: QrScannerProps) {
+  const t = useTranslations();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [cameraError, setCameraError] = useState<string>("");
@@ -86,7 +88,7 @@ export function QrScanner({ onCodeScanned, onClose, disabled }: QrScannerProps) 
     } catch (err) {
       if (!isMounted.current) return;
 
-      const message = err instanceof Error ? err.message : "Erreur caméra";
+      const message = err instanceof Error ? err.message : t("qrCodes.cameraError");
       setCameraError(message);
       setStatus("error");
 
@@ -153,7 +155,7 @@ export function QrScanner({ onCodeScanned, onClose, disabled }: QrScannerProps) 
     <div className="fixed inset-0 z-50 flex flex-col bg-black/90">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border/50">
-        <h2 className="font-mono text-sm font-medium text-white">Scanner QR Code</h2>
+        <h2 className="font-mono text-sm font-medium text-white">{t("qrCodes.scannerTitle")}</h2>
         <button
           onClick={() => {
             stopScanner();
@@ -180,7 +182,7 @@ export function QrScanner({ onCodeScanned, onClose, disabled }: QrScannerProps) 
           {status === "idle" && (
             <>
               <p className="font-mono text-xs text-white/70 mb-4">
-                Positionnez le QR code dans le cadre
+                {t("qrCodes.scannerPositionHint")}
               </p>
               <Button
                 onClick={handleStart}
@@ -188,7 +190,7 @@ export function QrScanner({ onCodeScanned, onClose, disabled }: QrScannerProps) 
                 className="gap-2"
               >
                 <Camera className="w-4 h-4" />
-                Ouvrir la caméra
+                {t("qrCodes.openCameraButton")}
               </Button>
             </>
           )}
@@ -197,14 +199,14 @@ export function QrScanner({ onCodeScanned, onClose, disabled }: QrScannerProps) 
             <>
               <div className="flex items-center justify-center gap-2 text-primary mb-4">
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="font-mono text-sm">Recherche du QR...</span>
+                <span className="font-mono text-sm">{t("qrCodes.scanning")}</span>
               </div>
               <Button
                 variant="ghost"
                 onClick={handleStop}
                 className="text-white/70"
               >
-                Annuler
+                {t("common.cancel")}
               </Button>
             </>
           )}
@@ -212,7 +214,7 @@ export function QrScanner({ onCodeScanned, onClose, disabled }: QrScannerProps) 
           {status === "found" && (
             <div className="flex flex-col items-center gap-2 text-green-400">
               <CheckCircle className="w-8 h-8" />
-              <p className="font-mono text-sm">QR Code détecté !</p>
+              <p className="font-mono text-sm">{t("qrCodes.detectedSuccess")}</p>
             </div>
           )}
 
@@ -228,7 +230,7 @@ export function QrScanner({ onCodeScanned, onClose, disabled }: QrScannerProps) 
                 className="gap-2"
               >
                 <Camera className="w-4 h-4" />
-                Réessayer
+                {t("qrCodes.retryButton")}
               </Button>
             </div>
           )}
@@ -238,7 +240,7 @@ export function QrScanner({ onCodeScanned, onClose, disabled }: QrScannerProps) 
       {/* Instructions */}
       <div className="p-4 border-t border-border/50">
         <p className="font-mono text-xs text-white/50 text-center">
-          Tenez le QR code à une distance de 15-30 cm de la caméra
+          {t("qrCodes.scannerDistanceHint")}
         </p>
       </div>
     </div>

@@ -10,6 +10,7 @@ import { CreateLoanDialog } from "../../components/loans/create-loan-dialog";
 import { Input } from "../../components/ui/input";
 import { trpc } from "../../lib/trpc";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   Plus,
   Repeat,
@@ -25,18 +26,25 @@ import {
 
 type Tab = "lent" | "borrowed" | "history";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "lent", label: "Prêtés" },
-  { id: "borrowed", label: "Empruntés" },
-  { id: "history", label: "Historique" },
+const TAB_LABEL_KEYS: Record<Tab, string> = {
+  lent: "nav.lent",
+  borrowed: "nav.borrowed",
+  history: "loans.history",
+};
+
+const TABS: { id: Tab }[] = [
+  { id: "lent" },
+  { id: "borrowed" },
+  { id: "history" },
 ];
 
 function StatusBadge({ status }: { status: string }) {
+  const t = useTranslations();
   if (status === "OVERDUE" || status === "OVERDUE") {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-mono uppercase">
         <AlertCircle className="w-3 h-3" />
-        En retard
+        {t("loans.overdue")}
       </span>
     );
   }
@@ -44,7 +52,7 @@ function StatusBadge({ status }: { status: string }) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-mono uppercase">
         <Clock className="w-3 h-3" />
-        Actif
+        {t("loans.active")}
       </span>
     );
   }
@@ -52,14 +60,14 @@ function StatusBadge({ status }: { status: string }) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-mono uppercase">
         <CheckCircle2 className="w-3 h-3" />
-        Rendu
+        {t("loans.returned")}
       </span>
     );
   }
   if (status === "CANCELLED") {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-mono uppercase">
-        Annulé
+        {t("loans.cancelled")}
       </span>
     );
   }
@@ -80,19 +88,21 @@ function formatDate(date: Date | string | null | undefined): string {
   });
 }
 
-function formatRelativeDate(date: Date | string | null | undefined): string {
+function formatRelativeDate(
+  date: Date | string | null | undefined,
+  t: ReturnType<typeof useTranslations>,
+): string {
   if (!date) return "—";
   const d = new Date(date);
   const now = new Date();
   const diff = d.getTime() - now.getTime();
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
-  if (days < -1)
-    return `En retard de ${Math.abs(days)} jour${Math.abs(days) !== 1 ? "s" : ""}`;
-  if (days === -1) return "En retard d'un jour";
-  if (days === 0) return "Aujourd'hui";
-  if (days === 1) return "Demain";
-  if (days <= 7) return `Dans ${days} jours`;
+  if (days < -1) return t("loans.overdueInDays", { days: Math.abs(days) });
+  if (days === -1) return t("loans.overdueOneDay");
+  if (days === 0) return t("loans.today");
+  if (days === 1) return t("loans.tomorrow");
+  if (days <= 7) return t("loans.inDays", { days });
   return formatDate(date);
 }
 
@@ -120,6 +130,7 @@ interface LoanCardProps {
 }
 
 function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
+  const t = useTranslations();
   const canReturn = viewAs === "owner" && loan.status === "ACTIVE";
   const canRemind =
     viewAs === "owner" &&
@@ -127,8 +138,8 @@ function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
   const isOverdue = loan.computedStatus === "OVERDUE";
   const contactName =
     viewAs === "owner"
-      ? (loan.borrower?.name ?? "Inconnu")
-      : (loan.owner?.name ?? "Inconnu");
+      ? (loan.borrower?.name ?? t("common.unknown"))
+      : (loan.owner?.name ?? t("common.unknown"));
 
   return (
     <div className={`card-vhs p-4 ${isOverdue ? "border-destructive/50" : ""}`}>
@@ -160,11 +171,11 @@ function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
       {/* Dates */}
       <div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-3">
         <span>
-          {viewAs === "owner" ? "Prêté" : "Emprunté"} le {formatDate(loan.lentAt)}
+          {viewAs === "owner" ? t("loans.lent") : t("loans.borrowed")} le {formatDate(loan.lentAt)}
         </span>
         {loan.returnDueDate && (
           <span className={isOverdue ? "text-destructive" : ""}>
-            ← {formatRelativeDate(loan.returnDueDate)}
+            ← {formatRelativeDate(loan.returnDueDate, t)}
           </span>
         )}
       </div>
@@ -184,11 +195,11 @@ function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
               variant="outline"
               size="sm"
               onClick={() => onReturn?.(loan.id)}
-              aria-label="Marquer comme retourné"
+              aria-label={t("loans.markReturnedAriaLabel")}
               className="flex-1"
             >
               <CheckCircle2 className="w-4 h-4 mr-1" />
-              Marquer rendu
+              {t("loans.markReturned")}
             </Button>
           )}
           {canRemind && (
@@ -225,6 +236,7 @@ export default function LoansPage() {
 }
 
 function LoansContent() {
+  const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
@@ -274,23 +286,23 @@ function LoansContent() {
 
   const returnMutation = trpc.loans.return.useMutation({
     onSuccess: () => {
-      toast.success("Prêt marqué comme rendu");
+      toast.success(t("loans.returnedSuccessToast"));
       utils.loans.lentOut.invalidate();
       utils.loans.borrowed.invalidate();
       utils.loans.history.invalidate();
     },
     onError: (error) => {
-      toast.error(error.message || "Erreur lors du retour");
+      toast.error(error.message || t("loans.returnErrorToast"));
     },
   });
 
   const remindMutation = trpc.loans.remind.useMutation({
     onSuccess: (data) => {
-      toast.success(data.message || "Rappel envoyé");
+      toast.success(data.message || t("loans.reminderSentToast"));
       utils.loans.lentOut.invalidate();
     },
     onError: (error) => {
-      toast.error(error.message || "Erreur lors du rappel");
+      toast.error(error.message || t("loans.reminderErrorToast"));
     },
   });
 
@@ -341,11 +353,11 @@ function LoansContent() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
           <div>
-            <h1 className="font-display text-3xl vhs-text-glow text-primary">
-              PRÊTS
+            <h1 className="font-display text-3xl vhs-text-glow text-primary uppercase">
+              {t("loans.pageTitle")}
             </h1>
             <p className="font-mono text-xs text-muted-foreground mt-1">
-              Suivez vos prêts et emprunts
+              {t("loans.pageSubtitle")}
             </p>
           </div>
           <Button
@@ -353,7 +365,7 @@ function LoansContent() {
             className="gap-2 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
-            NOUVEAU PRÊT
+            {t("loans.newLoan")}
           </Button>
         </div>
 
@@ -364,7 +376,7 @@ function LoansContent() {
               key={tab.id}
               role="tab"
               aria-selected={activeTab === tab.id}
-              aria-label={tab.label}
+              aria-label={t(TAB_LABEL_KEYS[tab.id])}
               onClick={() => changeTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-1 py-2 px-2 sm:px-3 rounded-md text-[10px] sm:text-xs font-mono uppercase transition-all whitespace-nowrap ${
                 activeTab === tab.id
@@ -372,7 +384,7 @@ function LoansContent() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {tab.label}
+              {t(TAB_LABEL_KEYS[tab.id])}
               {tabCounts[tab.id] > 0 && (
                 <span
                   className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
@@ -393,15 +405,15 @@ function LoansContent() {
           <div className="flex items-center gap-2 mb-4">
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-destructive/10 text-destructive text-xs font-mono">
               <AlertCircle className="w-3 h-3" />
-              Filtre : en retard ({currentLoans.length})
+              {t("loans.overdueFilter", { count: currentLoans.length })}
             </span>
             <button
               type="button"
               onClick={clearOverdueFilter}
               className="font-mono text-xs text-muted-foreground hover:text-primary"
-              aria-label="Retirer le filtre en retard"
+              aria-label={t("loans.removeOverdueFilterAriaLabel")}
             >
-              Effacer
+              {t("loans.clearFilter")}
             </button>
           </div>
         )}
@@ -417,19 +429,19 @@ function LoansContent() {
         {!isLoading && currentLoans.length === 0 && (
           <div className="card-vhs p-8 text-center">
             <Repeat className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <h2 className="font-display text-xl text-muted-foreground mb-2">
+            <h2 className="font-display text-xl text-muted-foreground mb-2 uppercase">
               {activeTab === "lent"
-                ? "AUCUN PRÊT EN COURS"
+                ? t("loans.emptyLent")
                 : activeTab === "borrowed"
-                  ? "AUCUN EMPRUNT"
-                  : "AUCUN HISTORIQUE"}
+                  ? t("loans.emptyBorrowed")
+                  : t("loans.emptyHistory")}
             </h2>
             <p className="font-mono text-sm text-muted-foreground">
               {activeTab === "lent"
-                ? "Vos objets prêtés apparaîtront ici"
+                ? t("loans.emptyLentDesc")
                 : activeTab === "borrowed"
-                  ? "Les objets que vous avez empruntés apparaîtront ici"
-                  : "Votre historique de prêts apparaîtra ici"}
+                  ? t("loans.emptyBorrowedDesc")
+                  : t("loans.emptyHistoryDesc")}
             </p>
           </div>
         )}
@@ -513,6 +525,7 @@ function ObjectPickerDialog({
   searchQuery: string;
   onSearchChange: (q: string) => void;
 }) {
+  const t = useTranslations();
   const { data, isLoading } = trpc.objects.all.useQuery({
     status: "available",
     search: searchQuery || undefined,
@@ -525,7 +538,7 @@ function ObjectPickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Sélectionner un objet à prêter</DialogTitle>
+          <DialogTitle>{t("loans.selectObjectTitle")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -533,7 +546,7 @@ function ObjectPickerDialog({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher un objet..."
+              placeholder={t("loans.searchObjectPlaceholder")}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-10"
@@ -551,8 +564,8 @@ function ObjectPickerDialog({
               <Package className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
               <p className="font-mono text-sm text-muted-foreground">
                 {searchQuery
-                  ? "Aucun objet disponible ne correspond"
-                  : "Aucun objet disponible — tous sont déjà prêtés ou vous n'avez pas d'objets"}
+                  ? t("loans.noMatchingObjects")
+                  : t("loans.noAvailableObjects")}
               </p>
             </div>
           ) : (

@@ -42,7 +42,19 @@
   `contacts.addFromScan`), QR code (scan profil Brol). Wire dans
   `/contacts/page.tsx`. Edit reste sur l'ancien `ContactDialog`.
 
----
+- [x] **Tech (dette)** — ~~Ajouter le transformer **superjson** au lien tRPC.~~
+  livré 2026-06-04 (api + web). Les `Date` traversent maintenant le fil en
+  `Date` (plus de string). `transformer: superjson` posé dans
+  `initTRPC...create()` (api) + `httpBatchLink` (web). Types frontend
+  corrigés là où superjson révélait l'hypothèse string (NotifData,
+  ReviewCard, RequestCard, profil `formatMemberSince` → `Date | string`).
+  Contournements `new Date(...)` laissés en place (inoffensifs, tolèrent
+  Date). Tests api OK (createCaller non affecté).
+  - **Reste mobile** : `transformer: superjson` + dep ajoutés dans le
+    working tree mais **non commités** (entremêlés avec le chantier mobile
+    WIP : expo-clipboard/image-picker dans `pnpm-lock`). À commiter avec ce
+    chantier. ⚠️ Le mobile commité reste désynchronisé du serveur superjson
+    tant que ce n'est pas fait (mobile non déployé → impact théorique).
 
 ## 🟡 P2 — Produit / mobile
 
@@ -102,6 +114,10 @@
   champs du form. Fallback manuel si pas de match. À élargir
   ensuite : IGDB pour VIDEOGAME, TMDB pour MOVIE (OpenLibrary déjà
   câblé pour BOOK via `objects.lookupIsbn`).
+- [x] **Tech** — ~~Retirer le champ « Code-barres » du formulaire de
+  création d'objet (`object-form.tsx`). Garder en DB (`barcode`) mais
+  hors UI de création.~~ livré 2026-06-04. Bloc input retiré ; `barcode`
+  conservé dans le form state (default "") et en DB.
 
 ### Flux UX d'ajout d'objet
 
@@ -161,6 +177,15 @@
     cachées au premier render.
   - Tests unit : 5 cas pour `getPublic` (anonyme, owner, viaContact,
     unauthenticated, null id).
+- [x] **Bug** — ~~Page d'un objet prêté : on ne voit pas à qui il est
+  prêté.~~ livré 2026-06-04. Bloc emprunteur (nom + date retour) sur
+  `/objects/[id]` quand un prêt ACTIVE/OVERDUE existe, + badge "En retard"
+  si `computedStatus === OVERDUE`. Sélection explicite du prêt en cours
+  (pas `loans[0]`, qui peut être CANCELLED/RETURNED).
+- [x] **Bug** — ~~Page d'un objet prêté : le bouton « Prêter » reste
+  visible → l'objet peut être prêté 2×.~~ livré 2026-06-04. Bouton
+  « Prêter » désactivé (`disabled`) + libellé "Prêt en cours" si un prêt
+  actif existe.
 
 ### Loans / contacts
 
@@ -190,6 +215,15 @@
   `BorrowerSelectDialog` accepte maintenant aussi le champ `note`
   (manquait par rapport au `ContactDialog` standalone). Parité
   Nom/Email/Téléphone/Note avec `/contacts`.
+- [x] **Bug (notable)** — ~~Après avoir prêté un objet d'une collection,
+  retourner sur la collection → erreur.~~ livré 2026-06-04. Cause : le
+  client tRPC n'a pas de transformer superjson → les dates arrivent en
+  `string`, mais `transformPrivateObject` appelait
+  `returnDueDate?.toISOString()` (le `?.` ne protège que du null, pas du
+  type) → crash au render dès qu'un objet a un prêt actif **avec date de
+  retour**. Fix : `new Date(returnDueDate).toISOString()` (tolère
+  string|Date) dans `collections/[id]/page.tsx`. À re-vérifier en
+  reproduisant (prêt avec échéance → retour collection).
 
 ### QR codes / impression
 
@@ -205,6 +239,13 @@
   CSS (auto-fill + page-break-inside avoid). Pas de dépendance
   jsPDF — utilise le dialog d'impression du navigateur pour générer
   le PDF.
+- [ ] **Bug** — Les QR créés à la création d'un objet n'apparaissent pas
+  sur la page `/qr` → impossible de les imprimer. Vérifier le lien
+  objet↔qrStock à la création (`objects.create` + `qr.listStock`).
+- [ ] **Feat** — Filtrer les QR assignés par collection + recherche par
+  nom d'objet sur `/qr`.
+- [ ] **Feat** — Afficher le nom de l'objet sur le QR assigné (à l'écran
+  + sur le PDF d'impression) pour savoir où coller chaque étiquette.
 
 Web a 19 pages, mobile a 12 écrans.
 
@@ -348,33 +389,36 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 ### Internationalisation
 
-- [ ] **Feat** — i18n web + mobile. Locales cibles : `fr-BE`
+- [~] **Feat** — i18n web + mobile. Locales cibles : `fr-BE`
   (défaut), `en`, `nl-BE` (Belgique néerlandophone).
-  - Web : `next-intl` ou `next-i18next`. Routing `/fr/...` ou
-    middleware language detection (Accept-Language + cookie
-    `brol_locale`). Extract strings hardcodées (toasts, labels,
-    Header, dialogs, error messages tRPC FR-only à externaliser).
-  - Mobile : `react-i18next` + `expo-localization` (déjà installé
-    via `app.json.plugins`).
-  - Backend : `User.locale` déjà au schema (cf. `users.ts:189`),
-    à exposer dans tRPC context pour les emails Resend localisés.
-  - Setup : `packages/i18n` partagé (clés communes) + fichiers
-    JSON par locale.
+  - [x] Web : ~~`next-intl` sans préfixe d'URL, locale via cookie
+    `brol_locale` + Accept-Language. Catalogue partagé `@brol/shared`
+    (`src/i18n/index.ts`). Switcher de langue.~~ livré 2026-06 (`dce8a90`,
+    `cb7ea6d`).
+  - [x] Backend : ~~erreurs tRPC, emails Resend et notifications
+    localisés (fr/nl/en) via `ctx.locale` + `User.locale`.~~ livré
+    2026-06 (`1b98a6a`).
+  - [ ] Mobile : i18n **scaffoldé mais non câblé** —
+    `apps/mobile/src/i18n/index.ts` initialise i18next mais **aucun
+    écran n'utilise `useTranslation()`**, et il duplique les strings
+    inline au lieu de consommer `getI18nextResources()` de `@brol/shared`.
+    Reste : brancher sur le catalogue partagé + traduire les écrans.
 
 ### Messaging & notifications
 
-- [ ] **Feat** — Distinguer **messages** vs **notifications**. Aujourd'hui
-  tout est mélangé sous `Notification` :
-  - **Notifications** = événements transactionnels (rappel retour,
-    retard, demande communauté matchée, contact ajouté).
-    Marquables comme lues, badge bell, pas de thread.
-  - **Messages** = conversations 1-1 (déjà partiellement via
-    `RequestMessage` sur `/requests/[id]`). Étendre à un router
-    `messages` générique avec `Conversation` + `Message`,
-    inbox dédiée `/messages`, badge séparé.
-  Cible : 2 icônes dans le header (Bell + Mail), 2 pages distinctes,
-  2 compteurs séparés. Migrer les `RequestMessage` existants
-  vers le nouveau modèle.
+- [x] **Feat** — ~~Distinguer **messages** vs **notifications**.~~ livré
+  2026-06-04 (approche incrémentale, **sans migration DB**) :
+  - Cloche dépolluée : `requestMessages.send` ne crée plus de
+    `Notification` — les messages alimentent désormais le badge Mail.
+  - Router `messages` étendu : `inbox` (threads `RequestMessage` agrégés
+    par demande + messages QR anonymes `Message` en lecture seule),
+    `unreadCount` (somme des 2 sources), `markQrRead`.
+  - Header : 2 icônes (Bell + Mail) avec compteurs séparés. Page dédiée
+    `/messages` (conversations → `/requests/[id]`, contacts QR → carte
+    lecture seule + `mailto`).
+  - Tests adaptés (`request-messages.test.ts` : plus de notif, unread Mail).
+  - Évolution future possible : modèle `Conversation`/`Message` générique
+    si besoin de threads hors-demande (pas nécessaire pour l'instant).
 
 ### Self-service
 
@@ -392,6 +436,25 @@ community-request.ts`) mais l'UX et le matching sont à construire.
   - Garde-fou : limite `maxSelfBorrowPerWeek` configurable par owner.
   - UI : toggle dans `EditObjectDialog` + bandeau "Self-service"
     sur la card objet côté borrower.
+
+### Thème / apparence
+
+- [x] **Feat** — ~~Switcher de thème graphique.~~ livré 2026-06-04. 4 presets
+  via CSS variables (`[data-theme]` sur `<html>`) : Magenta (défaut) / Cyan /
+  CRT ambre / Classique (mode clair "chiant", désactive les effets VHS).
+  Sélecteur dans Paramètres (section Apparence, dispo mobile). Persistance :
+  cookie `brol_theme` (lu côté serveur → pas de FOUC) + `User.theme` (suit
+  l'utilisateur entre appareils via `users.updateTheme` + `ThemeSyncer`).
+  Pistes initiales conservées ci-dessous pour mémoire :
+  - **Cyan-dominant** : `--primary` = cyan `#00ffff`, magenta relégué en
+    accent rare. Garde la vibe néon sans l'agression rose.
+  - **CRT phosphore** : monochrome vert (`#33ff66`) ou ambre (`#ffb000`)
+    sur fond noir — terminal 80s, très lisible, le plus « safe ».
+  - **Synthwave** : violet/indigo (`#7b2ff7`) + cyan, dégradés sunset.
+    Néon mais froid, moins criard que le magenta pur.
+  - **Outrun** : orange/teal coucher de soleil (`#ff6b35` + `#00b3a4`).
+  Reco : livrer 3 presets (Magenta actuel / Cyan / CRT ambre) + le
+  switcher, garder Magenta par défaut.
 
 ### Vues bibliothèque
 

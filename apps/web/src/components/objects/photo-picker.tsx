@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Camera, Upload, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "../ui/button";
 
 type Status = "idle" | "preview";
@@ -12,6 +13,7 @@ interface PhotoPickerProps {
 }
 
 export function PhotoPicker({ onPhotoSelected, disabled }: PhotoPickerProps) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const [activeSource, setActiveSource] = useState<"file" | "camera">("file");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -63,7 +65,7 @@ export function PhotoPicker({ onPhotoSelected, disabled }: PhotoPickerProps) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={previewUrl}
-          alt="Aperçu"
+          alt={t("objects.photoPreview")}
           className="w-full h-full object-contain"
         />
         <button
@@ -87,7 +89,7 @@ export function PhotoPicker({ onPhotoSelected, disabled }: PhotoPickerProps) {
         className="gap-2"
       >
         <Camera className="w-4 h-4" />
-        Ajouter une photo
+        {t("objects.addPhoto")}
       </Button>
 
       {/* Modal */}
@@ -96,7 +98,7 @@ export function PhotoPicker({ onPhotoSelected, disabled }: PhotoPickerProps) {
           <div className="bg-background border border-border w-full max-w-md">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="font-mono text-sm font-medium">Ajouter une photo</h2>
+              <h2 className="font-mono text-sm font-medium">{t("objects.photoPickerTitle")}</h2>
               <button
                 onClick={() => {
                   reset();
@@ -122,7 +124,7 @@ export function PhotoPicker({ onPhotoSelected, disabled }: PhotoPickerProps) {
                 `}
               >
                 <Upload className="w-4 h-4" />
-                Fichier
+                {t("objects.photoSource.file")}
               </button>
               <button
                 onClick={() => setActiveSource("camera")}
@@ -136,7 +138,7 @@ export function PhotoPicker({ onPhotoSelected, disabled }: PhotoPickerProps) {
                 `}
               >
                 <Camera className="w-4 h-4" />
-                Caméra
+                {t("objects.photoSource.camera")}
               </button>
             </div>
 
@@ -145,7 +147,7 @@ export function PhotoPicker({ onPhotoSelected, disabled }: PhotoPickerProps) {
               {activeSource === "file" ? (
                 <>
                   <p className="text-sm text-muted-foreground font-mono">
-                    Sélectionnez une image depuis votre appareil.
+                    {t("objects.photoFileDescription")}
                   </p>
                   <input
                     ref={fileInputRef}
@@ -160,16 +162,16 @@ export function PhotoPicker({ onPhotoSelected, disabled }: PhotoPickerProps) {
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="w-4 h-4" />
-                    Choisir un fichier
+                    {t("objects.photoChooseFile")}
                   </Button>
                   <p className="text-xs text-muted-foreground font-mono text-center">
-                    JPEG, PNG, WebP, GIF • Max 10 Mo
+                    {t("objects.photoFileFormats")}
                   </p>
                 </>
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground font-mono">
-                    Prenez une photo avec votre appareil.
+                    {t("objects.photoCameraDescription")}
                   </p>
                   <input
                     ref={cameraInputRef}
@@ -185,10 +187,10 @@ export function PhotoPicker({ onPhotoSelected, disabled }: PhotoPickerProps) {
                     onClick={() => cameraInputRef.current?.click()}
                   >
                     <Camera className="w-4 h-4" />
-                    Ouvrir la caméra
+                    {t("objects.photoOpenCamera")}
                   </Button>
                   <p className="text-xs text-muted-foreground font-mono text-center">
-                    Caméra arrière sur mobile
+                    {t("objects.photoCameraHint")}
                   </p>
                 </>
               )}

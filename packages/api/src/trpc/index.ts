@@ -5,6 +5,7 @@
 
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import superjson from "superjson";
 import { prisma } from "@brol/db";
 import { getSession } from "../auth";
 import {
@@ -12,6 +13,7 @@ import {
   trpcMutationLimiter,
   getClientIp,
 } from "../lib/rate-limit";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@brol/shared";
 
 /**
  * Type pour le context de la requête.
@@ -22,6 +24,8 @@ export interface Context {
   session: { user: { id: string } } | null;
   /** Raw request headers (lowercase keys) for auth helpers */
   headers: Record<string, string>;
+  /** Locale résolue (header `x-locale` → défaut fr) pour les messages serveur. */
+  locale: Locale;
 }
 
 /**
@@ -38,11 +42,18 @@ export async function createContext(opts: FetchCreateContextFnOptions): Promise<
     headers[key.toLowerCase()] = value;
   });
 
+  // Locale depuis l'en-tête `x-locale` posé par les clients (web cookie /
+  // mobile i18n). Fallback fr. (On évite un lookup DB ici — les emails, eux,
+  // utilisent la locale persistée du destinataire.)
+  const headerLocale = headers["x-locale"];
+  const locale = isLocale(headerLocale) ? headerLocale : DEFAULT_LOCALE;
+
   return {
     prisma,
     userId: session?.user?.id ?? null,
     session,
     headers,
+    locale,
   };
 }
 
@@ -50,6 +61,10 @@ export async function createContext(opts: FetchCreateContextFnOptions): Promise<
  * Initialisation de tRPC avec les plugins nécessaires.
  */
 const t = initTRPC.context<Context>().create({
+  // superjson : préserve Date/Map/Set/etc. sur le fil. Sans lui, les Date
+  // Prisma arrivaient en string côté client (cf. bug 404 collection).
+  // Le transformer doit être identique sur les liens client (web + mobile).
+  transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
       ...shape,

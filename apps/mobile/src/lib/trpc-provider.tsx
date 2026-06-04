@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { trpc, getApiUrl } from "./trpc";
 import { authAtom } from "./auth-store";
+import i18n from "../i18n";
 import type { TRPCClient } from "@trpc/client";
 import type { AppRouter } from "@brol/api";
 
@@ -46,9 +47,11 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           url: `${getApiUrl()}/api/trpc`,
           headers() {
             const currentToken = authAtom.get().sessionToken;
-            return currentToken
-              ? { Authorization: `Bearer ${currentToken}` }
-              : {};
+            const locale = i18n.language?.slice(0, 2);
+            return {
+              ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
+              ...(locale ? { "x-locale": locale } : {}),
+            };
           },
         }),
       ],

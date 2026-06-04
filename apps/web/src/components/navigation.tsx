@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut, Bell, Menu } from "lucide-react";
+import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut, Bell, Mail, Menu } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { signOut } from "@/lib/auth-client";
 import { setSessionToken, sessionTokenStore, getSessionToken } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { LogoMark, BROL_TAGLINE } from "./logo";
+import { LanguageSwitcher } from "./language-switcher";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,14 +38,15 @@ function useSessionToken(): string | undefined {
  * @decisions Navigation bottom-bar pour mobile-first,，侧栏 optionnelle pour desktop.
  */
 const navItems = [
-  { href: "/", label: "Accueil", icon: Home },
-  { href: "/collections", label: "Collections", icon: BookOpen },
-  { href: "/loans", label: "Prêts", icon: Repeat },
-  { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/qr", label: "QR Codes", icon: QrCode },
-];
+  { href: "/", labelKey: "home", icon: Home },
+  { href: "/collections", labelKey: "collections", icon: BookOpen },
+  { href: "/loans", labelKey: "loans", icon: Repeat },
+  { href: "/contacts", labelKey: "contacts", icon: Users },
+  { href: "/qr", labelKey: "qrCodes", icon: QrCode },
+] as const;
 
 export function Navigation() {
+  const t = useTranslations("nav");
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur border-t border-border pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around py-2 sm:py-3 max-w-lg mx-auto">
@@ -55,7 +58,7 @@ export function Navigation() {
           >
             <item.icon className="w-5 h-5" strokeWidth={1.5} />
             <span className="text-[10px] sm:text-xs font-mono uppercase tracking-wider">
-              {item.label}
+              {t(item.labelKey)}
             </span>
           </Link>
         ))}
@@ -79,6 +82,15 @@ function useUnreadCount(enabled: boolean): number {
   return data?.count ?? 0;
 }
 
+function useMessagesUnread(enabled: boolean): number {
+  const { data } = trpc.messages.unreadCount.useQuery(undefined, {
+    enabled,
+    refetchInterval: 30_000,
+    staleTime: 10_000,
+  });
+  return data?.count ?? 0;
+}
+
 function NotifBadge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
@@ -94,8 +106,14 @@ function NotifBadge({ count }: { count: number }) {
 export function Header() {
   const token = useSessionToken();
   const router = useRouter();
+  const t = useTranslations();
   const isAuthenticated = !!token;
   const unreadCount = useUnreadCount(isAuthenticated);
+  const messagesUnread = useMessagesUnread(isAuthenticated);
+  const notifAria =
+    unreadCount > 0 ? `${t("nav.notifications")} (${unreadCount})` : t("nav.notifications");
+  const messagesAria =
+    messagesUnread > 0 ? `${t("nav.messages")} (${messagesUnread})` : t("nav.messages");
 
   async function handleLogout() {
     await signOut();
@@ -128,7 +146,7 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <button
                 className="flex items-center justify-center w-10 h-10 text-muted-foreground hover:text-primary transition-colors"
-                aria-label="Menu"
+                aria-label={t("common.menu")}
               >
                 <Menu className="w-5 h-5" strokeWidth={1.5} />
               </button>
@@ -142,7 +160,16 @@ export function Header() {
                         <Bell className="w-4 h-4" />
                         <NotifBadge count={unreadCount} />
                       </span>
-                      Notifications
+                      {t("nav.notifications")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/messages" className="flex items-center gap-2">
+                      <span className="relative">
+                        <Mail className="w-4 h-4" />
+                        <NotifBadge count={messagesUnread} />
+                      </span>
+                      {t("nav.messages")}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -152,14 +179,14 @@ export function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/settings" className="flex items-center gap-2">
                     <Settings className="w-4 h-4" />
-                    Paramètres
+                    {t("nav.settings")}
                   </Link>
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem asChild>
                   <Link href="/sign-in" className="flex items-center gap-2">
                     <LogIn className="w-4 h-4" />
-                    Connexion
+                    {t("auth.signIn")}
                   </Link>
                 </DropdownMenuItem>
               )}
@@ -171,7 +198,7 @@ export function Header() {
                     className="flex items-center gap-2 text-destructive focus:text-destructive"
                   >
                     <LogOut className="w-4 h-4" />
-                    Déconnexion
+                    {t("auth.signOut")}
                   </DropdownMenuItem>
                 </>
               )}
@@ -181,14 +208,27 @@ export function Header() {
 
         {/* Desktop: Inline actions */}
         <div className="hidden md:flex items-center gap-1">
+          <LanguageSwitcher />
+
           {isAuthenticated && (
             <Link
               href="/notifications"
               className="relative p-2 text-muted-foreground hover:text-primary transition-colors"
-              aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} non lue${unreadCount > 1 ? "s" : ""})` : ""}`}
+              aria-label={notifAria}
             >
               <Bell className="w-5 h-5" strokeWidth={1.5} />
               <NotifBadge count={unreadCount} />
+            </Link>
+          )}
+
+          {isAuthenticated && (
+            <Link
+              href="/messages"
+              className="relative p-2 text-muted-foreground hover:text-primary transition-colors"
+              aria-label={messagesAria}
+            >
+              <Mail className="w-5 h-5" strokeWidth={1.5} />
+              <NotifBadge count={messagesUnread} />
             </Link>
           )}
 
@@ -196,19 +236,19 @@ export function Header() {
             <button
               onClick={handleLogout}
               className="flex items-center gap-1 p-2 text-muted-foreground hover:text-destructive transition-colors"
-              aria-label="Logout"
+              aria-label={t("auth.signOut")}
             >
               <LogOut className="w-5 h-5" strokeWidth={1.5} />
-              <span className="text-xs font-mono uppercase">Logout</span>
+              <span className="text-xs font-mono uppercase">{t("auth.signOut")}</span>
             </button>
           ) : (
             <Link
               href="/sign-in"
               className="flex items-center gap-1 p-2 text-muted-foreground hover:text-primary transition-colors"
-              aria-label="Login"
+              aria-label={t("auth.signIn")}
             >
               <LogIn className="w-5 h-5" strokeWidth={1.5} />
-              <span className="text-xs font-mono uppercase">Login</span>
+              <span className="text-xs font-mono uppercase">{t("auth.signIn")}</span>
             </Link>
           )}
 

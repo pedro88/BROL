@@ -1,3 +1,9 @@
+const createNextIntlPlugin = require("next-intl/plugin");
+
+// next-intl sans routing par préfixe d'URL : la locale vient d'un cookie
+// (cf. src/i18n/request.ts). Pointe le plugin sur notre request config.
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Build output minimal pour Docker (copie uniquement ce qui est nécessaire au runtime,
@@ -35,4 +41,4 @@ const nextConfig = {
   // },
 };
 
-module.exports = nextConfig;
+module.exports = withNextIntl(nextConfig);

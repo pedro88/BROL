@@ -3,6 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Header, Navigation } from "../../../components/navigation";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -78,6 +79,7 @@ interface PageProps {
 }
 
 export default function ContactDetailPage({ params }: PageProps) {
+  const t = useTranslations();
   const { id } = use(params);
   const utils = trpc.useUtils();
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -103,10 +105,10 @@ export default function ContactDetailPage({ params }: PageProps) {
         <Header />
         <main className="px-4 py-6 max-w-lg mx-auto text-center">
           <h2 className="font-display text-xl text-muted-foreground mb-4">
-            CONTACT INTROUVABLE
+            {t("contacts.notFoundTitle")}
           </h2>
           <Link href="/contacts">
-            <Button variant="outline">Retour aux contacts</Button>
+            <Button variant="outline">{t("contacts.backButtonLabel")}</Button>
           </Link>
         </main>
         <Navigation />
@@ -125,7 +127,7 @@ export default function ContactDetailPage({ params }: PageProps) {
         {/* Back button */}
         <Link href="/contacts" className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" />
-          <span className="font-mono text-xs uppercase">Contacts</span>
+          <span className="font-mono text-xs uppercase">{t("nav.contacts")}</span>
         </Link>
 
         {/* Contact info */}
@@ -143,10 +145,10 @@ export default function ContactDetailPage({ params }: PageProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEditOpen(true)}
-                  aria-label="Modifier le contact"
+                  aria-label={t("contacts.detailEditAriaLabel")}
                 >
                   <Pencil className="w-4 h-4 mr-1" />
-                  Modifier
+                  {t("common.edit")}
                 </Button>
               </div>
               {contact.email && (
@@ -177,10 +179,10 @@ export default function ContactDetailPage({ params }: PageProps) {
         {/* Loan history */}
         <div>
           <h2 className="font-display text-xl vhs-text-glow text-primary mb-4">
-            HISTORIQUE DE PRÊTS
+            {t("contacts.loanHistoryTitle")}
           </h2>
           <p className="font-mono text-xs text-muted-foreground mb-4">
-            {loans.length} prêt{loans.length !== 1 ? "s" : ""}
+            {t("contacts.loanCount", { count: loans.length })}
           </p>
 
           {loansQuery.isLoading && (
@@ -193,7 +195,7 @@ export default function ContactDetailPage({ params }: PageProps) {
             <div className="card-vhs p-6 text-center">
               <Package className="w-8 h-8 mx-auto text-muted-foreground/50 mb-3" />
               <p className="font-mono text-sm text-muted-foreground">
-                Aucun prêt avec ce contact
+                {t("contacts.noLoansMessage")}
               </p>
             </div>
           )}
@@ -212,19 +214,19 @@ export default function ContactDetailPage({ params }: PageProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <h3 className="font-mono text-sm font-medium truncate">
-                          {loan.object?.name ?? "Objet inconnu"}
+                          {loan.object?.name ?? t("contacts.unknownObject")}
                         </h3>
                         <StatusBadge status={loan.computedStatus} />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Prêté le {formatDate(loan.lentAt)}
+                        {t("contacts.lentOnDate", { date: formatDate(loan.lentAt) })}
                         {loan.returnDueDate && (
-                          <> — retour prévu le {formatDate(loan.returnDueDate)}</>
+                          <> — {t("contacts.returnDueDate", { date: formatDate(loan.returnDueDate) })}</>
                         )}
                       </p>
                       {loan.returnedAt && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Rendu le {formatDate(loan.returnedAt)}
+                          {t("contacts.returnedOnDate", { date: formatDate(loan.returnedAt) })}
                         </p>
                       )}
                     </div>
@@ -269,6 +271,7 @@ function EditContactDialog({
   contact: { id: string; name: string; email: string; phone: string; note: string };
   onSuccess: () => void;
 }) {
+  const t = useTranslations();
   const [form, setForm] = useState({
     name: contact.name,
     email: contact.email,
@@ -307,11 +310,11 @@ function EditContactDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Modifier le contact</DialogTitle>
+          <DialogTitle>{t("contacts.editDialogTitle")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-name">Nom *</Label>
+            <Label htmlFor="edit-name">{t("contacts.editNameLabel")}</Label>
             <Input
               id="edit-name"
               value={form.name}
@@ -320,7 +323,7 @@ function EditContactDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-email">Email</Label>
+            <Label htmlFor="edit-email">{t("contacts.editEmailLabel")}</Label>
             <Input
               id="edit-email"
               type="email"
@@ -329,7 +332,7 @@ function EditContactDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-phone">Téléphone</Label>
+            <Label htmlFor="edit-phone">{t("contacts.editPhoneLabel")}</Label>
             <Input
               id="edit-phone"
               type="tel"
@@ -338,7 +341,7 @@ function EditContactDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-note">Note</Label>
+            <Label htmlFor="edit-note">{t("contacts.editNoteLabel")}</Label>
             <Input
               id="edit-note"
               value={form.note}
@@ -351,7 +354,7 @@ function EditContactDialog({
             </Button>
             <Button type="submit" disabled={updateMutation.isPending}>
               {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Enregistrer
+              {t("contacts.editSaveButton")}
             </Button>
           </DialogFooter>
         </form>

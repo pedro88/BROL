@@ -13,6 +13,7 @@ import {
 } from "../lib/s3";
 import { logger } from "../lib/logger";
 import { assertObjectOwned, getOwnedObject } from "../lib/owned-objects";
+import { translate } from "@brol/shared";
 
 const log = logger.child("photos");
 
@@ -63,7 +64,8 @@ export const photosRouter = router({
         input.objectId,
         input.filename,
         input.contentType,
-        input.fileSize
+        input.fileSize,
+        ctx.locale
       );
     }),
 
@@ -126,7 +128,7 @@ export const photosRouter = router({
       if (!photo) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Photo non trouvée",
+          message: translate(ctx.locale, "errors.photoNotFound"),
         });
       }
 

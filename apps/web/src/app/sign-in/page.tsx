@@ -12,6 +12,7 @@ import { signInEmailPassword, signUpEmailPassword, getSession } from "@/lib/auth
 import { setSessionToken } from "@/lib/auth-store";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Wordmark } from "@/components/logo";
 
@@ -50,12 +51,13 @@ function getPasswordStrength(password: string): StrengthLevel {
   return "weak";
 }
 
-const STRENGTH_CONFIG: Record<StrengthLevel, { label: string; color: string; bar: number }> = {
-  empty: { label: "", color: "bg-muted", bar: 0 },
-  short: { label: "Trop court", color: "bg-destructive", bar: 1 },
-  weak: { label: "Faible", color: "bg-orange-500", bar: 2 },
-  fair: { label: "Correct", color: "bg-yellow-500", bar: 3 },
-  strong: { label: "Fort", color: "bg-green-500", bar: 4 },
+/** labelKey pointe vers une clé i18n du namespace `auth` (vide = pas de label). */
+const STRENGTH_CONFIG: Record<StrengthLevel, { labelKey: string; color: string; bar: number }> = {
+  empty: { labelKey: "", color: "bg-muted", bar: 0 },
+  short: { labelKey: "strengthShort", color: "bg-destructive", bar: 1 },
+  weak: { labelKey: "strengthWeak", color: "bg-orange-500", bar: 2 },
+  fair: { labelKey: "strengthFair", color: "bg-yellow-500", bar: 3 },
+  strong: { labelKey: "strengthStrong", color: "bg-green-500", bar: 4 },
 };
 
 // ---------------------------------------------------------------------------
@@ -64,6 +66,7 @@ const STRENGTH_CONFIG: Record<StrengthLevel, { label: string; color: string; bar
 
 export default function SignInPage() {
   const router = useRouter();
+  const t = useTranslations("auth");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -96,11 +99,11 @@ export default function SignInPage() {
     // S01: client-side validation before submit
     if (mode === "signup") {
       if (password.length < 8) {
-        setError("Le mot de passe doit contenir au moins 8 caractères.");
+        setError(t("passwordTooShort"));
         return;
       }
       if (password !== passwordConfirm) {
-        setError("Les mots de passe ne correspondent pas.");
+        setError(t("passwordMismatch"));
         return;
       }
     }
@@ -171,12 +174,10 @@ export default function SignInPage() {
             <Wordmark size="lg" showTagline />
           </div>
           <h1 className="font-display text-3xl mb-2 vhs-text-glow text-primary">
-            {mode === "signin" ? "CONNEXION" : "CRÉER UN COMPTE"}
+            {mode === "signin" ? t("signInTitle") : t("signUpTitle")}
           </h1>
           <p className="font-mono text-sm text-muted-foreground">
-            {mode === "signin"
-              ? "> Accédez à votre espace Brol_"
-              : "> Rejoignez Brol_"}
+            {mode === "signin" ? t("signInSubtitle") : t("signUpSubtitle")}
           </p>
         </div>
 
@@ -189,7 +190,7 @@ export default function SignInPage() {
                 className="font-mono text-xs text-muted-foreground uppercase tracking-wider"
                 htmlFor="name"
               >
-                Nom
+                {t("name")}
               </label>
               <input
                 id="name"
@@ -198,7 +199,7 @@ export default function SignInPage() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 autoComplete="name"
-                placeholder="Jean Dupont"
+                placeholder={t("namePlaceholder")}
                 className="w-full px-4 py-3 bg-background border-2 border-primary/30 rounded-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:shadow-[0_0_8px_rgba(var(--primary))] transition-all"
               />
             </div>
@@ -210,7 +211,7 @@ export default function SignInPage() {
               className="font-mono text-xs text-muted-foreground uppercase tracking-wider"
               htmlFor="email"
             >
-              Email
+              {t("email")}
             </label>
             <input
               id="email"
@@ -219,7 +220,7 @@ export default function SignInPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              placeholder="jean@example.com"
+              placeholder={t("emailPlaceholder")}
               className="w-full px-4 py-3 bg-background border-2 border-primary/30 rounded-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:shadow-[0_0_8px_rgba(var(--primary))] transition-all"
             />
           </div>
@@ -230,7 +231,7 @@ export default function SignInPage() {
               className="font-mono text-xs text-muted-foreground uppercase tracking-wider"
               htmlFor="password"
             >
-              Mot de passe
+              {t("password")}
             </label>
             <div className="relative">
               <input
@@ -241,13 +242,13 @@ export default function SignInPage() {
                 required
                 minLength={8}
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                placeholder={mode === "signup" ? "Min. 8 caractères" : "••••••••"}
+                placeholder={mode === "signup" ? t("passwordPlaceholderSignup") : "••••••••"}
                 className="w-full px-4 py-3 pr-12 bg-background border-2 border-primary/30 rounded-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:shadow-[0_0_8px_rgba(var(--primary))] transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 {showPassword ? (
@@ -277,10 +278,10 @@ export default function SignInPage() {
                       : "text-destructive"
                   }`}
                 >
-                  {strengthCfg.label}
+                  {strengthCfg.labelKey ? t(strengthCfg.labelKey) : ""}
                   {strength === "weak" && (
                     <span className="text-muted-foreground">
-                      {" "}— ajoutez une majuscule, un chiffre ou un caractère spécial
+                      {t("strengthWeakHint")}
                     </span>
                   )}
                 </p>
@@ -295,7 +296,7 @@ export default function SignInPage() {
                 className="font-mono text-xs text-muted-foreground uppercase tracking-wider"
                 htmlFor="passwordConfirm"
               >
-                Confirmer le mot de passe
+                {t("confirmPassword")}
               </label>
               <div className="relative">
                 <input
@@ -305,7 +306,7 @@ export default function SignInPage() {
                   onChange={(e) => setPasswordConfirm(e.target.value)}
                   required
                   autoComplete="new-password"
-                  placeholder="Ressayez votre mot de passe"
+                  placeholder={t("confirmPlaceholder")}
                   className={`w-full px-4 py-3 pr-12 bg-background border-2 rounded-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none transition-all ${
                     isPasswordConfirmInvalid
                       ? "border-destructive focus:border-destructive"
@@ -315,9 +316,7 @@ export default function SignInPage() {
                 <button
                   type="button"
                   onClick={() => setShowPasswordConfirm((v) => !v)}
-                  aria-label={
-                    showPasswordConfirm ? "Masquer le mot de passe" : "Afficher le mot de passe"
-                  }
+                  aria-label={showPasswordConfirm ? t("hidePassword") : t("showPassword")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   {showPasswordConfirm ? (
@@ -331,7 +330,7 @@ export default function SignInPage() {
                 <div className="flex items-center gap-1">
                   <AlertCircle className="w-3 h-3 text-destructive" />
                   <p className="font-mono text-xs text-destructive">
-                    Les mots de passe ne correspondent pas
+                    {t("passwordMismatchShort")}
                   </p>
                 </div>
               )}
@@ -351,10 +350,10 @@ export default function SignInPage() {
             className="w-full px-4 py-3 bg-primary text-primary-foreground border-2 border-primary rounded-sm font-display text-xl tracking-wider uppercase hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {loading
-              ? "..."
+              ? t("loadingShort")
               : mode === "signin"
-              ? "Se connecter"
-              : "Créer mon compte"}
+              ? t("submitSignIn")
+              : t("submitSignUp")}
           </button>
         </form>
 
@@ -365,9 +364,7 @@ export default function SignInPage() {
             onClick={toggleMode}
             className="font-mono text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
           >
-            {mode === "signin"
-              ? "Pas encore de compte ? Créez-en un."
-              : "Déjà un compte ? Connectez-vous."}
+            {mode === "signin" ? t("toggleToSignUp") : t("toggleToSignIn")}
           </button>
         </div>
 

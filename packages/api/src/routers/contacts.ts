@@ -10,6 +10,7 @@ import {
   createContactSchema,
   updateContactSchema,
   paginationSchema,
+  translate,
 } from "@brol/shared";
 import { withComputedStatuses } from "../lib/loan-status";
 import { cursorOf } from "../lib/pagination";
@@ -68,7 +69,7 @@ export const contactsRouter = router({
       });
 
       if (!contact) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Contact non trouvé" });
+        throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.contactNotFound") });
       }
 
       // Récupérer l'historique des prêts pour ce contact (via borrowerContactId, borrowerId ou email)
@@ -124,7 +125,7 @@ export const contactsRouter = router({
       });
 
       if (!contact) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Contact non trouvé" });
+        throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.contactNotFound") });
       }
 
       const loans = await ctx.prisma.loan.findMany({
@@ -190,7 +191,7 @@ export const contactsRouter = router({
       });
 
       if (!contact) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Contact non trouvé" });
+        throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.contactNotFound") });
       }
 
       return ctx.prisma.contact.update({
@@ -210,7 +211,7 @@ export const contactsRouter = router({
       });
 
       if (!contact) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Contact non trouvé" });
+        throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.contactNotFound") });
       }
 
       await ctx.prisma.contact.delete({
@@ -233,12 +234,12 @@ export const contactsRouter = router({
       });
 
       if (!scannedUser) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur non trouvé" });
+        throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.userNotFound") });
       }
 
       // Ne pas s'ajouter soi-même
       if (scannedUser.id === ctx.userId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Vous ne pouvez pas vous ajouter vous-même" });
+        throw new TRPCError({ code: "BAD_REQUEST", message: translate(ctx.locale, "errors.cannotAddYourself") });
       }
 
       // Vérifier si le contact existe déjà
@@ -275,7 +276,7 @@ export const contactsRouter = router({
       });
 
       if (existingUser) {
-        throw new TRPCError({ code: "CONFLICT", message: "Cet email est déjà utilisé par un compte Brol" });
+        throw new TRPCError({ code: "CONFLICT", message: translate(ctx.locale, "errors.emailAlreadyInUse") });
       }
 
       // Vérifier si le contact existe déjà

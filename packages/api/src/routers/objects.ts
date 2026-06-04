@@ -10,10 +10,12 @@ import { syncUserBadges } from "../lib/badge-service";
 import { logger } from "../lib/logger";
 import { assertObjectOwned, getOwnedObject } from "../lib/owned-objects";
 import { cursorOf } from "../lib/pagination";
+import { withComputedStatuses } from "../lib/loan-status";
 import {
   createObjectSchema,
   updateObjectSchema,
   paginationSchema,
+  translate,
 } from "@brol/shared";
 
 const log = logger.child("objects.lookupIsbn");
@@ -209,7 +211,7 @@ export const objectsRouter = router({
       });
 
       if (!collection) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Collection non trouvée" });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: translate(ctx.locale, "errors.collectionNotFoundUnauthorized") });
       }
 
       const objects = await ctx.prisma.object.findMany({
@@ -291,7 +293,15 @@ export const objectsRouter = router({
         },
       });
 
-      return object;
+      if (!object) return null;
+
+      // Enrichit chaque loan avec `computedStatus` (ACTIVE/OVERDUE/RETURNED/CANCELLED)
+      // pour que le frontend puisse distinguer un prêt en cours d'un prêt
+      // échu (OVERDUE) sans dupliquer la logique de calcul.
+      return {
+        ...object,
+        loans: withComputedStatuses(object.loans),
+      };
     }),
 
   /**
@@ -478,7 +488,7 @@ export const objectsRouter = router({
         });
 
         if (!qrStock) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "QR code non disponible" });
+          throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.qrCodeNotAvailable") });
         }
 
         // Marquer le QR comme utilisé

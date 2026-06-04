@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -13,6 +14,7 @@ import { trpc } from "../../../lib/trpc";
  * Must be wrapped in Suspense for static generation.
  */
 function AddObjectForm() {
+  const t = useTranslations();
   const searchParams = useSearchParams();
   const router = useRouter();
   const collectionId = searchParams.get("collectionId");
@@ -26,16 +28,16 @@ function AddObjectForm() {
         className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
-        Retour
+        {t("common.back")}
       </Link>
 
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-display text-3xl vhs-text-glow text-primary">
-          AJOUTER UN OBJET
+          {t("objects.addTitle")}
         </h1>
         <p className="font-mono text-sm text-muted-foreground mt-2">
-          Ajoutez un nouvel objet à votre collection
+          {t("objects.addDescription")}
         </p>
       </div>
 

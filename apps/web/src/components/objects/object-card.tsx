@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { BookOpen, Clock, User } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 import type { ObjectCondition } from "@brol/shared";
@@ -11,14 +12,6 @@ const conditionColors: Record<ObjectCondition, string> = {
   GOOD: "bg-primary/20 text-primary border-primary/50",
   FAIR: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
   POOR: "bg-red-500/20 text-red-400 border-red-500/50",
-};
-
-const conditionLabels: Record<ObjectCondition, string> = {
-  NEW: "Neuf",
-  LIKE_NEW: "Comme neuf",
-  GOOD: "Bon",
-  FAIR: "Correct",
-  POOR: "Mauvais",
 };
 
 interface ObjectCardProps {
@@ -45,6 +38,7 @@ export function ObjectCard({
   coverImage,
   currentLoan,
 }: ObjectCardProps) {
+  const t = useTranslations();
   const isLoaned = !!currentLoan;
 
   return (
@@ -85,7 +79,7 @@ export function ObjectCard({
                 <span
                   className={`px-2 py-0.5 text-xs font-mono border ${conditionColors[condition]} flex-shrink-0`}
                 >
-                  {conditionLabels[condition]}
+                  {t(`objects.conditions.${condition}`)}
                 </span>
               </div>
 
@@ -94,7 +88,7 @@ export function ObjectCard({
                 <div className="mt-2 flex items-center gap-2 text-secondary">
                   <User className="w-3 h-3" />
                   <span className="font-mono text-xs">
-                    Prêté à {currentLoan.borrower.name ?? "Inconnu"}
+                    {t("objects.lentTo", { borrower: currentLoan.borrower.name ?? "Inconnu" })}
                   </span>
                 </div>
               )}
@@ -102,7 +96,7 @@ export function ObjectCard({
               {!currentLoan && (
                 <div className="mt-2 flex items-center gap-2 text-muted-foreground/50">
                   <Clock className="w-3 h-3" />
-                  <span className="font-mono text-xs">Disponible</span>
+                  <span className="font-mono text-xs">{t("objects.available")}</span>
                 </div>
               )}
             </div>

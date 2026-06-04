@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { QrCode, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -31,6 +32,7 @@ export function AssignQrDialog({
   objectName,
   onAssigned,
 }: AssignQrDialogProps) {
+  const t = useTranslations();
   const utils = trpc.useUtils();
   const [error, setError] = useState<string | null>(null);
 
@@ -63,9 +65,9 @@ export function AssignQrDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>ASSigner un QR code</DialogTitle>
+          <DialogTitle>{t("qrCodes.assignDialogTitle")}</DialogTitle>
           <DialogDescription>
-            Choisissez un QR code libre pour taguer {objectName}.
+            {t("qrCodes.assignDialogDescription", { objectName })}
           </DialogDescription>
         </DialogHeader>
 
@@ -77,10 +79,10 @@ export function AssignQrDialog({
           <div className="py-6 text-center">
             <QrCode className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
             <p className="font-mono text-sm text-muted-foreground">
-              Aucun QR code libre disponible.
+              {t("qrCodes.noAvailableCodes")}
             </p>
             <p className="font-mono text-xs text-muted-foreground mt-1">
-              Générez-en de nouveaux depuis la page QR Codes.
+              {t("qrCodes.generateFromQrPage")}
             </p>
           </div>
         ) : (
@@ -95,11 +97,14 @@ export function AssignQrDialog({
                 <div>
                   <p className="font-mono text-xs text-primary">{qr.code}</p>
                   <p className="font-mono text-xs text-muted-foreground mt-0.5">
-                    Créé le{" "}
-                    {new Date(qr.createdAt).toLocaleDateString("fr-BE")}
+                    {t("qrCodes.createdOn", {
+                      date: new Date(qr.createdAt).toLocaleDateString("fr-BE"),
+                    })}
                   </p>
                 </div>
-                <span className="font-mono text-xs text-green-400">Libre</span>
+                <span className="font-mono text-xs text-green-400">
+                  {t("qrCodes.freeLabel")}
+                </span>
               </button>
             ))}
           </div>
@@ -115,7 +120,7 @@ export function AssignQrDialog({
             variant="ghost"
             onClick={() => onOpenChange(false)}
           >
-            Annuler
+            {t("common.cancel")}
           </Button>
         </DialogFooter>
       </DialogContent>
