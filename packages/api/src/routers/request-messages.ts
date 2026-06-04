@@ -218,21 +218,9 @@ export const requestMessagesRouter = router({
       const recipientLocale = (recipient?.locale ?? "fr") as Locale;
       const senderName = sender?.name ?? "Un voisin";
 
-      await ctx.prisma.notification.create({
-        data: {
-          userId: toUserId,
-          type: "COMMUNITY_REQUEST",
-          title: translate(recipientLocale, "notifications.requestMessageTitle", {
-            requestTitle: request.title,
-          }),
-          message: translate(recipientLocale, "notifications.requestMessageMessage", {
-            senderName,
-            preview,
-          }),
-          relatedId: input.requestId,
-          relatedType: "request",
-        },
-      });
+      // Pas de Notification ici : les messages de thread alimentent le badge
+      // Mail (cf. messages.unreadCount), pas la cloche transactionnelle. Le
+      // destinataire est prévenu par l'unread RequestMessage + l'email.
 
       // Email out-of-band : fire-and-forget. On `await` quand même pour que
       // les tests puissent stub Resend, mais toute erreur est swallow dans

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut, Bell, Menu } from "lucide-react";
+import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut, Bell, Mail, Menu } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { signOut } from "@/lib/auth-client";
 import { setSessionToken, sessionTokenStore, getSessionToken } from "@/lib/auth-store";
@@ -82,6 +82,15 @@ function useUnreadCount(enabled: boolean): number {
   return data?.count ?? 0;
 }
 
+function useMessagesUnread(enabled: boolean): number {
+  const { data } = trpc.messages.unreadCount.useQuery(undefined, {
+    enabled,
+    refetchInterval: 30_000,
+    staleTime: 10_000,
+  });
+  return data?.count ?? 0;
+}
+
 function NotifBadge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
@@ -100,8 +109,11 @@ export function Header() {
   const t = useTranslations();
   const isAuthenticated = !!token;
   const unreadCount = useUnreadCount(isAuthenticated);
+  const messagesUnread = useMessagesUnread(isAuthenticated);
   const notifAria =
     unreadCount > 0 ? `${t("nav.notifications")} (${unreadCount})` : t("nav.notifications");
+  const messagesAria =
+    messagesUnread > 0 ? `${t("nav.messages")} (${messagesUnread})` : t("nav.messages");
 
   async function handleLogout() {
     await signOut();
@@ -151,6 +163,15 @@ export function Header() {
                       {t("nav.notifications")}
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/messages" className="flex items-center gap-2">
+                      <span className="relative">
+                        <Mail className="w-4 h-4" />
+                        <NotifBadge count={messagesUnread} />
+                      </span>
+                      {t("nav.messages")}
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
               )}
@@ -197,6 +218,17 @@ export function Header() {
             >
               <Bell className="w-5 h-5" strokeWidth={1.5} />
               <NotifBadge count={unreadCount} />
+            </Link>
+          )}
+
+          {isAuthenticated && (
+            <Link
+              href="/messages"
+              className="relative p-2 text-muted-foreground hover:text-primary transition-colors"
+              aria-label={messagesAria}
+            >
+              <Mail className="w-5 h-5" strokeWidth={1.5} />
+              <NotifBadge count={messagesUnread} />
             </Link>
           )}
 

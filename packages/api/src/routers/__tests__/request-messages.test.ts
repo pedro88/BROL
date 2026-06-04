@@ -64,12 +64,17 @@ describe("requestMessagesRouter", () => {
       expect(msg.toUserId).toBe(alice.id);
       expect(msg.content).toContain("Bosch");
 
+      // Les messages n'alimentent plus la cloche (notif transactionnelle) :
+      // pas de Notification créée pour le destinataire.
       const notif = await prisma.notification.findFirst({
         where: { userId: alice.id, type: "COMMUNITY_REQUEST" },
         orderBy: { createdAt: "desc" },
       });
-      expect(notif?.relatedId).toBe(requestId);
-      expect(notif?.message).toContain("Bob");
+      expect(notif).toBeNull();
+
+      // Ils alimentent le badge Mail : le destinataire a un message non lu.
+      const unread = await callerFor(alice.id).messages.unreadCount();
+      expect(unread.count).toBe(1);
     });
 
     it("author cannot send the first message (no owner has replied yet)", async () => {

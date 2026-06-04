@@ -406,18 +406,19 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 ### Messaging & notifications
 
-- [ ] **Feat** — Distinguer **messages** vs **notifications**. Aujourd'hui
-  tout est mélangé sous `Notification` :
-  - **Notifications** = événements transactionnels (rappel retour,
-    retard, demande communauté matchée, contact ajouté).
-    Marquables comme lues, badge bell, pas de thread.
-  - **Messages** = conversations 1-1 (déjà partiellement via
-    `RequestMessage` sur `/requests/[id]`). Étendre à un router
-    `messages` générique avec `Conversation` + `Message`,
-    inbox dédiée `/messages`, badge séparé.
-  Cible : 2 icônes dans le header (Bell + Mail), 2 pages distinctes,
-  2 compteurs séparés. Migrer les `RequestMessage` existants
-  vers le nouveau modèle.
+- [x] **Feat** — ~~Distinguer **messages** vs **notifications**.~~ livré
+  2026-06-04 (approche incrémentale, **sans migration DB**) :
+  - Cloche dépolluée : `requestMessages.send` ne crée plus de
+    `Notification` — les messages alimentent désormais le badge Mail.
+  - Router `messages` étendu : `inbox` (threads `RequestMessage` agrégés
+    par demande + messages QR anonymes `Message` en lecture seule),
+    `unreadCount` (somme des 2 sources), `markQrRead`.
+  - Header : 2 icônes (Bell + Mail) avec compteurs séparés. Page dédiée
+    `/messages` (conversations → `/requests/[id]`, contacts QR → carte
+    lecture seule + `mailto`).
+  - Tests adaptés (`request-messages.test.ts` : plus de notif, unread Mail).
+  - Évolution future possible : modèle `Conversation`/`Message` générique
+    si besoin de threads hors-demande (pas nécessaire pour l'instant).
 
 ### Self-service
 

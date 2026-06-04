@@ -73,6 +73,7 @@ export const nav = {
   profile: { fr: "Profil", nl: "Profiel", en: "Profile" },
   qrCodes: { fr: "QR Codes", nl: "QR Codes", en: "QR Codes" },
   notifications: { fr: "Notifications", nl: "Meldingen", en: "Notifications" },
+  messages: { fr: "Messages", nl: "Berichten", en: "Messages" },
 };
 
 /**
@@ -184,6 +185,26 @@ export const theme = {
   cyan: { fr: "Néon cyan", nl: "Cyaan neon", en: "Cyan Neon" },
   crtAmber: { fr: "CRT ambre", nl: "CRT amber", en: "Amber CRT" },
   boring: { fr: "Classique", nl: "Klassiek", en: "Classic" },
+};
+
+/**
+ * Traductions pour l'inbox Messages (conversations de demandes + contacts QR).
+ */
+export const messages = {
+  title: { fr: "MESSAGES", nl: "BERICHTEN", en: "MESSAGES" },
+  empty: { fr: "Aucun message", nl: "Geen berichten", en: "No messages" },
+  emptyDescription: {
+    fr: "Vos conversations et demandes de contact apparaîtront ici.",
+    nl: "Uw gesprekken en contactaanvragen verschijnen hier.",
+    en: "Your conversations and contact requests will appear here.",
+  },
+  conversationsSection: { fr: "Conversations", nl: "Gesprekken", en: "Conversations" },
+  qrSection: { fr: "Contacts via QR", nl: "Contacten via QR", en: "QR contacts" },
+  threadAbout: { fr: "À propos de : {title}", nl: "Over: {title}", en: "About: {title}" },
+  qrFromLabel: { fr: "De", nl: "Van", en: "From" },
+  qrObjectLabel: { fr: "Objet", nl: "Object", en: "Object" },
+  replyByEmail: { fr: "Répondre par email", nl: "Antwoord per e-mail", en: "Reply by email" },
+  noName: { fr: "Sans nom", nl: "Geen naam", en: "No name" },
 };
 
 /**
@@ -940,6 +961,7 @@ export const catalog = {
   dashboard,
   language,
   theme,
+  messages,
   collections,
   objects,
   loans,
