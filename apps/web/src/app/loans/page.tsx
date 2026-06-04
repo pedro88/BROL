@@ -116,6 +116,13 @@ interface LoanCardProps {
       name?: string | null;
       image?: string | null;
     } | null;
+    // Prêt à un contact sans compte Brol : le borrower (User) est null, le nom
+    // vit sur le Contact. On le lit en fallback pour ne pas afficher "Inconnu".
+    borrowerContact?: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+    } | null;
     status: string;
     computedStatus: string;
     returnDueDate: Date | string | null;
@@ -138,7 +145,7 @@ function LoanCard({ loan, viewAs, onReturn, onRemind }: LoanCardProps) {
   const isOverdue = loan.computedStatus === "OVERDUE";
   const contactName =
     viewAs === "owner"
-      ? (loan.borrower?.name ?? t("common.unknown"))
+      ? (loan.borrower?.name ?? loan.borrowerContact?.name ?? t("common.unknown"))
       : (loan.owner?.name ?? t("common.unknown"));
 
   return (

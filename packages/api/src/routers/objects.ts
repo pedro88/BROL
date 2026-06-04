@@ -283,6 +283,10 @@ export const objectsRouter = router({
               borrower: {
                 select: { id: true, name: true, image: true },
               },
+              // Prêt à un contact sans compte Brol : nom porté par le Contact.
+              borrowerContact: {
+                select: { id: true, name: true, email: true },
+              },
             },
             orderBy: { lentAt: "desc" },
           },

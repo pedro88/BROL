@@ -163,6 +163,7 @@ export default function ObjectDetailPage() {
       computedStatus: "ACTIVE" | "OVERDUE" | "RETURNED" | "CANCELLED";
       returnDueDate: Date | string | null;
       borrower: { id: string; name: string | null } | null;
+      borrowerContact: { id: string; name: string | null; email: string | null } | null;
     }>;
     qrStock: { code: string } | null;
     notes: string | null;
@@ -362,7 +363,9 @@ export default function ObjectDetailPage() {
               <div className="flex items-center gap-2 mb-2">
                 <User className="w-4 h-4 text-secondary" />
                 <span className="font-mono text-sm text-secondary">
-                  {currentLoan.borrower?.name}
+                  {currentLoan.borrower?.name ??
+                    currentLoan.borrowerContact?.name ??
+                    t("common.unknown")}
                 </span>
               </div>
               {currentLoan.returnDueDate && (
@@ -407,7 +410,9 @@ export default function ObjectDetailPage() {
                 <div key={loan.id} className="card-vhs p-3">
                   <div className="flex justify-between items-center">
                     <span className="font-mono text-sm">
-                      {loan.borrower?.name}
+                      {loan.borrower?.name ??
+                        loan.borrowerContact?.name ??
+                        t("common.unknown")}
                     </span>
                     <span
                       className={`font-mono text-xs px-2 py-0.5 ${
