@@ -89,7 +89,7 @@ function applyCorsHeaders(req: IncomingMessage, res: Res): void {
   }
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-locale");
   res.setHeader("Access-Control-Allow-Credentials", "true");
 }
 
