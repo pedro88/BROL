@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Header, Navigation } from "../../components/navigation";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -43,6 +44,7 @@ interface ContactCardProps {
 }
 
 function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
+  const t = useTranslations();
   return (
     <div className="card-vhs p-4 flex items-center gap-3">
       {/* Avatar */}
@@ -72,14 +74,14 @@ function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
         <button
           onClick={() => onEdit(contact)}
           className="p-2 text-muted-foreground hover:text-primary transition-colors"
-          aria-label="Modifier le contact"
+          aria-label={t("contacts.editAriaLabel")}
         >
           <Pencil className="w-4 h-4" />
         </button>
         <button
           onClick={() => onDelete(contact.id)}
           className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-          aria-label="Supprimer le contact"
+          aria-label={t("contacts.deleteAriaLabel")}
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -114,6 +116,7 @@ function ContactDialog({
   contact,
   onSuccess,
 }: ContactDialogProps) {
+  const t = useTranslations();
   const [form, setForm] = useState<ContactFormData>({
     name: contact?.name ?? "",
     email: contact?.email ?? "",
@@ -127,26 +130,26 @@ function ContactDialog({
   const createMutation = trpc.contacts.create.useMutation({
     onSuccess: () => {
       utils.contacts.list.invalidate();
-      toast.success("Contact créé");
+      toast.success(t("contacts.createdToast"));
       onSuccess();
       onOpenChange(false);
       setForm({ name: "", email: "", phone: "", note: "" });
     },
     onError: (error) => {
-      toast.error(error.message || "Erreur lors de la création");
+      toast.error(error.message || t("contacts.createErrorToast"));
     },
   });
 
   const updateMutation = trpc.contacts.update.useMutation({
     onSuccess: () => {
       utils.contacts.list.invalidate();
-      toast.success("Contact mis à jour");
+      toast.success(t("contacts.updatedToast"));
       onSuccess();
       onOpenChange(false);
       setForm({ name: "", email: "", phone: "", note: "" });
     },
     onError: (error) => {
-      toast.error(error.message || "Erreur lors de la mise à jour");
+      toast.error(error.message || t("contacts.updateErrorToast"));
     },
   });
 
@@ -155,7 +158,7 @@ function ContactDialog({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) {
-      toast.error("Le nom est requis");
+      toast.error(t("contacts.nameRequired"));
       return;
     }
 
@@ -194,47 +197,49 @@ function ContactDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Modifier le contact" : "Nouveau contact"}
+            {isEditing
+              ? t("contacts.dialogEditTitle")
+              : t("contacts.dialogCreateTitle")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nom *</Label>
+            <Label htmlFor="name">{t("contacts.nameLabel")}</Label>
             <Input
               id="name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Jean Dupont"
+              placeholder={t("contacts.namePlaceholder")}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("contacts.emailLabel")}</Label>
             <Input
               id="email"
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="jean@example.com"
+              placeholder={t("contacts.emailPlaceholder")}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">Téléphone</Label>
+            <Label htmlFor="phone">{t("contacts.phoneLabel")}</Label>
             <Input
               id="phone"
               type="tel"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              placeholder="+32 470 00 00 00"
+              placeholder={t("contacts.phonePlaceholder")}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="note">Note</Label>
+            <Label htmlFor="note">{t("contacts.noteLabel")}</Label>
             <Input
               id="note"
               value={form.note}
               onChange={(e) => setForm({ ...form, note: e.target.value })}
-              placeholder="Ami, collègue..."
+              placeholder={t("contacts.notePlaceholder")}
             />
           </div>
           <DialogFooter>
@@ -243,11 +248,13 @@ function ContactDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Annuler
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isEditing ? "Enregistrer" : "Créer"}
+              {isEditing
+                ? t("contacts.saveButtonLabel")
+                : t("contacts.createButtonLabel")}
             </Button>
           </DialogFooter>
         </form>
@@ -269,16 +276,17 @@ function DeleteDialog({
   contactName: string;
   onConfirm: () => void;
 }) {
+  const t = useTranslations();
   const utils = trpc.useUtils();
   const deleteMutation = trpc.contacts.delete.useMutation({
     onSuccess: () => {
       utils.contacts.list.invalidate();
-      toast.success("Contact supprimé");
+      toast.success(t("contacts.deletedToast"));
       onConfirm();
       onOpenChange(false);
     },
     onError: (error) => {
-      toast.error(error.message || "Erreur lors de la suppression");
+      toast.error(error.message || t("contacts.deleteErrorToast"));
     },
   });
 
@@ -286,15 +294,14 @@ function DeleteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Supprimer le contact ?</DialogTitle>
+          <DialogTitle>{t("contacts.deleteDialogTitle")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Voulez-vous vraiment supprimer <strong>{contactName}</strong> ? Cette
-          action est irréversible.
+          {t("contacts.deleteConfirmMessage", { contactName })}
         </p>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annuler
+            {t("common.cancel")}
           </Button>
           <Button
             variant="destructive"
@@ -313,6 +320,7 @@ function DeleteDialog({
 }
 
 export default function ContactsPage() {
+  const t = useTranslations();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editContact, setEditContact] = useState<
     (ContactFormData & { id: string }) | null
@@ -347,7 +355,7 @@ export default function ContactsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <h1 className="font-display text-3xl vhs-text-glow text-primary">
-              CONTACTS
+              {t("contacts.pageTitle")}
             </h1>
             <p className="font-mono text-xs text-muted-foreground mt-1">
               {contacts.length} contact{contacts.length !== 1 ? "s" : ""}
@@ -355,7 +363,7 @@ export default function ContactsPage() {
           </div>
           <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
-            Nouveau
+            {t("contacts.newButtonLabel")}
           </Button>
         </div>
 
@@ -371,14 +379,14 @@ export default function ContactsPage() {
           <div className="card-vhs p-8 text-center">
             <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
             <h2 className="font-display text-xl text-muted-foreground mb-2">
-              AUCUN CONTACT
+              {t("contacts.emptyTitle")}
             </h2>
             <p className="font-mono text-sm text-muted-foreground mb-4">
-              Ajoutez vos premiers contacts pour commencer à prêter
+              {t("contacts.emptyDescription")}
             </p>
             <Button onClick={() => setIsCreateOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Ajouter un contact
+              {t("contacts.addButtonLabel")}
             </Button>
           </div>
         )}

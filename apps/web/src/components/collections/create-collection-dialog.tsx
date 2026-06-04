@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
@@ -17,18 +18,6 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { trpc } from "../../lib/trpc";
 
-// Type labels
-const typeLabels: Record<string, string> = {
-  BOOK: "Livres",
-  BOARD_GAME: "Jeux de société",
-  TOOL: "Outils",
-  FILM: "Films / DVD",
-  MUSIC: "Musique / CD",
-  ELECTRONIC: "Électronique",
-  ELECTRIC: "Outillage électrique",
-  CLOTHING: "Vêtements",
-  CUSTOM: "Personnalisé",
-};
 
 interface CreateCollectionDialogProps {
   open: boolean;
@@ -90,6 +79,7 @@ export function CreateCollectionDialog({
   onOpenChange,
   onSuccess,
 }: CreateCollectionDialogProps) {
+  const t = useTranslations();
   const utils = trpc.useUtils();
   const [isPublic, setIsPublic] = useState(false);
 
@@ -146,7 +136,7 @@ export function CreateCollectionDialog({
       await createMutation.mutateAsync(data);
     } catch (err) {
       console.error("Failed to create collection:", err);
-      setError("Échec de la création. Veuillez réessayer.");
+      setError(t("collections.createError"));
     }
   };
 
@@ -154,9 +144,9 @@ export function CreateCollectionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>NOUVELLE COLLECTION</DialogTitle>
+          <DialogTitle>{t("collections.createTitle")}</DialogTitle>
           <DialogDescription>
-            Créez une collection pour organiser vos objets
+            {t("collections.createDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -168,7 +158,7 @@ export function CreateCollectionDialog({
             </Label>
             <Input
               id="name"
-              placeholder="Ma collection"
+              placeholder={t("collections.namePlaceholder")}
               {...register("name")}
               className={errors.name ? "border-destructive" : ""}
             />
@@ -189,7 +179,7 @@ export function CreateCollectionDialog({
             </Label>
             <Input
               id="description"
-              placeholder="Une courte description..."
+              placeholder={t("collections.descriptionPlaceholder")}
               {...register("description")}
               className={errors.description ? "border-destructive" : ""}
             />
@@ -216,9 +206,9 @@ export function CreateCollectionDialog({
               value={selectedType}
               className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
             >
-              {OBJECT_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {typeLabels[t] ?? t}
+              {OBJECT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {t(`collections.typeLabel.${type}`)}
                 </option>
               ))}
             </select>
@@ -264,7 +254,7 @@ export function CreateCollectionDialog({
                 Collection publique
               </Label>
               <p className="font-mono text-xs text-muted-foreground mt-1">
-                Permettre à tous de voir cette collection sans se connecter
+                {t("collections.publicToggleDescription")}
               </p>
             </div>
             <Toggle
@@ -280,13 +270,13 @@ export function CreateCollectionDialog({
               variant="ghost"
               onClick={() => onOpenChange(false)}
             >
-              Annuler
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting || createMutation.isPending}
             >
-              {createMutation.isPending ? "Création..." : "Créer"}
+              {createMutation.isPending ? t("common.creating") : t("common.create")}
             </Button>
           </DialogFooter>
         </form>

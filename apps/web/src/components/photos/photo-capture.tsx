@@ -15,6 +15,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Camera, Upload, X, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { usePresignedUrl, usePhotoAdd } from "../../lib/trpc-hooks/photos";
@@ -36,6 +37,7 @@ export function PhotoCapture({
   onError,
   disabled,
 }: PhotoCaptureProps) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const [activeSource, setActiveSource] = useState<"camera" | "file">("file");
   const [status, setStatus] = useState<Status>("idle");
@@ -74,14 +76,14 @@ export function PhotoCapture({
     // Valider le type
     if (!file.type.startsWith("image/")) {
       setStatus("error");
-      setErrorMessage("Le fichier doit être une image (JPEG, PNG, WebP, GIF)");
+      setErrorMessage(t("photos.invalidFileType"));
       return;
     }
 
     // Valider la taille (10MB max)
     if (file.size > 10 * 1024 * 1024) {
       setStatus("error");
-      setErrorMessage("Le fichier est trop volumineux. Maximum: 10 Mo.");
+      setErrorMessage(t("photos.fileTooLarge"));
       return;
     }
 
@@ -132,7 +134,7 @@ export function PhotoCapture({
         });
 
         if (!uploadResponse.ok) {
-          throw new Error(`Upload échoué: ${uploadResponse.status} ${uploadResponse.statusText}`);
+          throw new Error(t("photos.uploadFailed", { status: uploadResponse.status, statusText: uploadResponse.statusText }));
         }
 
         // 3. Enregistrer la photo en base
@@ -142,13 +144,13 @@ export function PhotoCapture({
           position: 0,
         });
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Erreur lors de l'upload";
+        const message = err instanceof Error ? err.message : t("photos.uploadError");
         setStatus("error");
         setErrorMessage(message);
         onError?.(err instanceof Error ? err : new Error(message));
       }
     },
-    [objectId, presignedMutation, addMutation, onError]
+    [objectId, presignedMutation, addMutation, onError, t]
   );
 
   const isWorking = status === "uploading" || status === "preview";
@@ -164,7 +166,7 @@ export function PhotoCapture({
         className="gap-2"
       >
         <Camera className="w-4 h-4" />
-        Ajouter une photo
+        {t("photos.addPhotoButton")}
       </Button>
 
       {/* Dialog */}
@@ -173,7 +175,7 @@ export function PhotoCapture({
           <div className="bg-background border border-border w-full max-w-md">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="font-mono text-sm font-medium">Ajouter une photo</h2>
+              <h2 className="font-mono text-sm font-medium">{t("photos.dialogTitle")}</h2>
               <button
                 onClick={() => {
                   reset();
@@ -201,7 +203,7 @@ export function PhotoCapture({
                   `}
                 >
                   <Upload className="w-4 h-4" />
-                  Fichier
+                  {t("photos.fileTab")}
                 </button>
                 <button
                   onClick={() => setActiveSource("camera")}
@@ -215,7 +217,7 @@ export function PhotoCapture({
                   `}
                 >
                   <Camera className="w-4 h-4" />
-                  Caméra
+                  {t("photos.cameraTab")}
                 </button>
               </div>
             )}
@@ -226,7 +228,7 @@ export function PhotoCapture({
               {activeSource === "file" && status === "idle" && (
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground font-mono">
-                    Sélectionnez une image depuis votre appareil.
+                    {t("photos.selectImageHint")}
                   </p>
                   <input
                     ref={fileInputRef}
@@ -241,10 +243,10 @@ export function PhotoCapture({
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="w-4 h-4" />
-                    Choisir un fichier
+                    {t("photos.chooseFileButton")}
                   </Button>
                   <p className="text-xs text-muted-foreground font-mono text-center">
-                    JPEG, PNG, WebP, GIF • Max 10 Mo
+                    {t("photos.fileSupportedFormats")}
                   </p>
                 </div>
               )}
@@ -253,7 +255,7 @@ export function PhotoCapture({
               {activeSource === "camera" && status === "idle" && (
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground font-mono">
-                    Prenez une photo avec votre appareil.
+                    {t("photos.takePictureHint")}
                   </p>
                   <input
                     ref={cameraInputRef}
@@ -269,10 +271,10 @@ export function PhotoCapture({
                     onClick={() => cameraInputRef.current?.click()}
                   >
                     <Camera className="w-4 h-4" />
-                    Ouvrir la caméra
+                    {t("photos.openCameraButton")}
                   </Button>
                   <p className="text-xs text-muted-foreground font-mono text-center">
-                    Caméra arrière sur mobile
+                    {t("photos.rearCameraHint")}
                   </p>
                 </div>
               )}
@@ -280,7 +282,7 @@ export function PhotoCapture({
               {/* === PREVIEW === */}
               {status === "preview" && previewUrl && (
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground font-mono">Aperçu</p>
+                  <p className="text-sm text-muted-foreground font-mono">{t("photos.previewLabel")}</p>
                   <div className="relative aspect-video bg-black overflow-hidden border border-border">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -294,7 +296,7 @@ export function PhotoCapture({
                     className="w-full"
                     onClick={reset}
                   >
-                    Annuler
+                    {t("common.cancel")}
                   </Button>
                 </div>
               )}
@@ -304,7 +306,7 @@ export function PhotoCapture({
                 <div className="space-y-4 py-8 text-center">
                   <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary" />
                   <p className="text-sm text-muted-foreground font-mono">
-                    Envoi en cours...
+                    {t("photos.uploading")}
                   </p>
                 </div>
               )}
@@ -313,7 +315,7 @@ export function PhotoCapture({
               {status === "success" && (
                 <div className="space-y-4 py-8 text-center">
                   <CheckCircle className="w-8 h-8 mx-auto text-green-500" />
-                  <p className="text-sm font-mono">Photo ajoutée !</p>
+                  <p className="text-sm font-mono">{t("photos.photoAddedSuccess")}</p>
                 </div>
               )}
 
@@ -329,7 +331,7 @@ export function PhotoCapture({
                     className="w-full"
                     onClick={reset}
                   >
-                    Réessayer
+                    {t("photos.retryButton")}
                   </Button>
                 </div>
               )}

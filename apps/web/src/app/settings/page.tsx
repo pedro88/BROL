@@ -10,6 +10,7 @@ import { Crown, Zap, User, ExternalLink, Copy, Check, QrCode, Loader2 } from "lu
 import { UserAvatar } from "@/components/profile/user-avatar";
 import { QrCodeImage } from "@/components/qr/qr-code-image";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 function ProgressBar({
   current,
@@ -45,24 +46,37 @@ const TIER_INFO = {
   FREE: {
     name: "Free",
     price: "0€",
-    features: ["5 collections", "50 objets", "10 prêts simultanés"],
+    featureKeys: [
+      "settings.tier.free.feature1",
+      "settings.tier.free.feature2",
+      "settings.tier.free.feature3",
+    ],
     color: "text-muted-foreground",
   },
   TIER_2: {
     name: "Tier 2",
-    price: "3€/mois",
-    features: ["10 collections", "500 objets", "50 prêts simultanés"],
+    price: "3€",
+    featureKeys: [
+      "settings.tier.tier2.feature1",
+      "settings.tier.tier2.feature2",
+      "settings.tier.tier2.feature3",
+    ],
     color: "text-blue-400",
   },
   TIER_3: {
     name: "Tier 3",
-    price: "20€/mois",
-    features: ["Collections illimitées", "Objets illimités", "Prêts illimités"],
+    price: "20€",
+    featureKeys: [
+      "settings.tier.tier3.feature1",
+      "settings.tier.tier3.feature2",
+      "settings.tier.tier3.feature3",
+    ],
     color: "text-amber-400",
   },
 };
 
 export default function SettingsPage() {
+  const t = useTranslations();
   const utils = trpc.useUtils();
   const { data, isLoading: tierLoading } = trpc.tier.getLimits.useQuery();
   const { data: sessionData, isLoading: sessionLoading } = trpc.auth.me.useQuery();
@@ -83,10 +97,10 @@ export default function SettingsPage() {
     try {
       await navigator.clipboard.writeText(`#${handle}`);
       setCopied(true);
-      toast.success("Handle copié");
+      toast.success(t("settings.copiedSuccess"));
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      toast.error("Impossible de copier");
+      toast.error(t("settings.copyError"));
     }
   }
 
@@ -111,7 +125,7 @@ export default function SettingsPage() {
 
       <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
         <h1 className="font-display text-3xl vhs-text-glow text-primary">
-          PARAMÈTRES
+          {t("settings.title")}
         </h1>
 
         {/* Mon Profil section */}
@@ -119,7 +133,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-2">
             <User className="w-5 h-5 text-primary" />
             <h2 className="font-display text-xl vhs-text-glow text-primary">
-              MON PROFIL
+              {t("settings.myProfileTitle")}
             </h2>
           </div>
 
@@ -131,7 +145,7 @@ export default function SettingsPage() {
             />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-lg truncate">
-                {user?.name || "Sans nom"}
+                {user?.name || t("settings.noName")}
               </p>
               <p className="text-sm text-muted-foreground truncate">
                 {user?.email || ""}
@@ -140,7 +154,7 @@ export default function SettingsPage() {
             <Link href={user?.id ? `/profile/${handle ?? user.id}` : "#"}>
               <Button variant="outline" size="sm">
                 <ExternalLink className="w-4 h-4 mr-1" />
-                Voir
+                {t("settings.viewButton")}
               </Button>
             </Link>
           </div>
@@ -151,7 +165,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                    Mon identifiant
+                    {t("settings.handleLabel")}
                   </p>
                   <p className="font-mono text-lg text-primary truncate">
                     #{handle}
@@ -162,7 +176,7 @@ export default function SettingsPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleCopyHandle}
-                  aria-label="Copier l'identifiant"
+                  aria-label={t("settings.copyHandleLabel")}
                 >
                   {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </Button>
@@ -171,21 +185,20 @@ export default function SettingsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowQr((v) => !v)}
-                  aria-label="Afficher le QR code"
+                  aria-label={t("settings.showQrLabel")}
                 >
                   <QrCode className="w-4 h-4" />
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Votre pseudo est définitif — il est utilisé dans les liens
-                partagés (URL de profil, QR code).
+                {t("settings.handleHint")}
               </p>
 
               {showQr && profileUrl && (
                 <div className="flex flex-col items-center gap-2 pt-2">
                   <QrCodeImage code={profileUrl} size={200} />
                   <p className="font-mono text-xs text-muted-foreground text-center">
-                    Scannez pour m'ajouter comme ami
+                    {t("settings.scanQrHint")}
                   </p>
                 </div>
               )}
@@ -201,7 +214,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-2">
             <Crown className={`w-5 h-5 ${TIER_INFO[currentTier as keyof typeof TIER_INFO]?.color ?? "text-muted-foreground"}`} />
             <h2 className="font-display text-xl vhs-text-glow text-primary">
-              MON PLAN
+              {t("settings.myPlanTitle")}
             </h2>
           </div>
 
@@ -212,13 +225,14 @@ export default function SettingsPage() {
               </p>
               <p className="font-mono text-xs text-muted-foreground">
                 {TIER_INFO[currentTier as keyof typeof TIER_INFO]?.price ?? ""}
+                {currentTier !== "FREE" ? t("settings.perMonth") : ""}
               </p>
             </div>
             {currentTier === "FREE" && (
               <Button size="sm" asChild>
                 <a href="#" className="flex items-center gap-1">
                   <Zap className="w-4 h-4" />
-                  Upgrade
+                  {t("settings.upgradeButton")}
                 </a>
               </Button>
             )}
@@ -227,17 +241,17 @@ export default function SettingsPage() {
           {limits && (
             <div className="space-y-4 pt-2">
               <ProgressBar
-                label="Collections"
+                label={t("settings.progressBarCollections")}
                 current={limits.collections.current}
                 max={limits.collections.max}
               />
               <ProgressBar
-                label="Objets"
+                label={t("settings.progressBarObjects")}
                 current={limits.objects.current}
                 max={limits.objects.max}
               />
               <ProgressBar
-                label="Prêts actifs"
+                label={t("settings.progressBarActiveLoans")}
                 current={limits.activeLoans.current}
                 max={limits.activeLoans.max}
               />
@@ -249,25 +263,25 @@ export default function SettingsPage() {
         {currentTier !== "TIER_3" && (
           <div className="card-vhs p-4 sm:p-6 space-y-3">
             <h2 className="font-display text-lg vhs-text-glow text-primary">
-              UPGRADE DISPONIBLE
+              {t("settings.upgradeTitleAvailable")}
             </h2>
             <div className="space-y-3">
               {currentTier === "FREE" && (
                 <div className="p-3 sm:p-4 border border-blue-500/30 rounded-lg bg-blue-500/5">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                     <span className="font-display text-blue-400">TIER 2</span>
-                    <span className="font-mono text-sm text-blue-400">3€/mois</span>
+                    <span className="font-mono text-sm text-blue-400">3€{t("settings.perMonth")}</span>
                   </div>
                   <ul className="space-y-1 mb-3">
-                    {TIER_INFO.TIER_2.features.map((f) => (
-                      <li key={f} className="text-sm text-muted-foreground flex items-center gap-2">
-                        <span className="text-blue-400">✓</span> {f}
+                    {TIER_INFO.TIER_2.featureKeys.map((k) => (
+                      <li key={k} className="text-sm text-muted-foreground flex items-center gap-2">
+                        <span className="text-blue-400">✓</span> {t(k)}
                       </li>
                     ))}
                   </ul>
                   <Button size="sm" className="w-full" variant="outline">
                     <Zap className="w-4 h-4 mr-1" />
-                    Choisir Tier 2
+                    {t("settings.chooseTier2Button")}
                   </Button>
                 </div>
               )}
@@ -275,18 +289,18 @@ export default function SettingsPage() {
                 <div className="p-3 sm:p-4 border border-amber-500/30 rounded-lg bg-amber-500/5">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                     <span className="font-display text-amber-400">TIER 3</span>
-                    <span className="font-mono text-sm text-amber-400">20€/mois</span>
+                    <span className="font-mono text-sm text-amber-400">20€{t("settings.perMonth")}</span>
                   </div>
                   <ul className="space-y-1 mb-3">
-                    {TIER_INFO.TIER_3.features.map((f) => (
-                      <li key={f} className="text-sm text-muted-foreground flex items-center gap-2">
-                        <span className="text-amber-400">✓</span> {f}
+                    {TIER_INFO.TIER_3.featureKeys.map((k) => (
+                      <li key={k} className="text-sm text-muted-foreground flex items-center gap-2">
+                        <span className="text-amber-400">✓</span> {t(k)}
                       </li>
                     ))}
                   </ul>
                   <Button size="sm" className="w-full" variant="outline">
                     <Zap className="w-4 h-4 mr-1" />
-                    Choisir Tier 3
+                    {t("settings.chooseTier3Button")}
                   </Button>
                 </div>
               )}
@@ -306,6 +320,7 @@ export default function SettingsPage() {
  * par défaut sauf la ville (déjà utilisée pour matching).
  */
 function PersonalInfoSection({ userId }: { userId: string | null }) {
+  const t = useTranslations();
   const { data, isLoading } = trpc.profile.get.useQuery(
     { userId: userId ?? "" },
     { enabled: !!userId },
@@ -314,10 +329,10 @@ function PersonalInfoSection({ userId }: { userId: string | null }) {
   const updateProfile = trpc.profile.update.useMutation({
     onSuccess: () => {
       if (userId) utils.profile.get.invalidate({ userId });
-      toast.success("Profil mis à jour");
+      toast.success(t("settings.profileUpdatedSuccess"));
     },
     onError: (err) => {
-      toast.error(err.message || "Erreur lors de la mise à jour");
+      toast.error(err.message || t("settings.profileUpdateError"));
     },
   });
 
@@ -363,7 +378,7 @@ function PersonalInfoSection({ userId }: { userId: string | null }) {
         parsedYear < 1900 ||
         parsedYear > currentYear
       ) {
-        toast.error(`Année invalide (1900 - ${currentYear}).`);
+        toast.error(t("settings.invalidYear", { year: currentYear }));
         return;
       }
     }
@@ -384,36 +399,35 @@ function PersonalInfoSection({ userId }: { userId: string | null }) {
       <div className="flex items-center gap-2">
         <User className="w-5 h-5 text-primary" />
         <h2 className="font-display text-xl vhs-text-glow text-primary">
-          INFORMATIONS PERSONNELLES
+          {t("settings.personalInfoTitle")}
         </h2>
       </div>
       <p className="text-xs text-muted-foreground">
-        Tout est optionnel et privé par défaut. Cochez "Public" pour rendre un
-        champ visible sur votre profil.
+        {t("settings.personalInfoHint")}
       </p>
 
       <div className="space-y-4">
-        <FieldRow label="Email" hint={data?.email ?? ""}>
+        <FieldRow label={t("settings.emailLabel")} hint={data?.email ?? ""}>
           <Toggle
             checked={visibility.publicEmail}
             onChange={() => toggle("publicEmail")}
           />
         </FieldRow>
 
-        <FieldRow label="Ville" hint={data?.city ?? "Non renseignée"}>
+        <FieldRow label={t("settings.cityLabel")} hint={data?.city ?? t("settings.cityNotSet")}>
           <Toggle
             checked={visibility.publicCity}
             onChange={() => toggle("publicCity")}
           />
         </FieldRow>
 
-        <FieldRow label="Année de naissance">
+        <FieldRow label={t("settings.birthYearLabel")}>
           <Input
             type="number"
             inputMode="numeric"
             value={birthYear}
             onChange={(e) => setBirthYear(e.target.value)}
-            placeholder="ex: 1985"
+            placeholder={t("settings.birthYearPlaceholder")}
             min={1900}
             max={currentYear}
             className="w-32"
@@ -424,11 +438,11 @@ function PersonalInfoSection({ userId }: { userId: string | null }) {
           />
         </FieldRow>
 
-        <FieldRow label="Genre">
+        <FieldRow label={t("settings.genderLabel")}>
           <Input
             value={gender}
             onChange={(e) => setGender(e.target.value)}
-            placeholder="ex: F, H, X, ou autre"
+            placeholder={t("settings.genderPlaceholder")}
             maxLength={32}
             className="w-40"
           />
@@ -438,12 +452,12 @@ function PersonalInfoSection({ userId }: { userId: string | null }) {
           />
         </FieldRow>
 
-        <FieldRow label="Téléphone">
+        <FieldRow label={t("settings.phoneLabel")}>
           <Input
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="+32 ..."
+            placeholder={t("settings.phonePlaceholder")}
             maxLength={40}
             className="w-48"
           />
@@ -459,7 +473,7 @@ function PersonalInfoSection({ userId }: { userId: string | null }) {
           {updateProfile.isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            "Enregistrer"
+            t("common.save")
           )}
         </Button>
       </div>
@@ -498,10 +512,11 @@ function Toggle({
   checked: boolean;
   onChange: () => void;
 }) {
+  const t = useTranslations();
   return (
     <label className="inline-flex items-center gap-2 cursor-pointer select-none">
       <span className="text-[10px] font-mono uppercase text-muted-foreground">
-        Public
+        {t("settings.publicToggle")}
       </span>
       <button
         type="button"

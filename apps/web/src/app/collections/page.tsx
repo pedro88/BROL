@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Plus, BookOpen } from "lucide-react";
 import { Header, Navigation } from "../../components/navigation";
@@ -14,6 +15,7 @@ import { trpc } from "../../lib/trpc";
  * Affiche la liste des collections de l'utilisateur.
  */
 export default function CollectionsPage() {
+  const t = useTranslations();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const utils = trpc.useUtils();
 
@@ -42,7 +44,7 @@ export default function CollectionsPage() {
 
           <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Nouvelle
+            {t("collections.new")}
           </Button>
         </div>
 
@@ -58,14 +60,14 @@ export default function CollectionsPage() {
           <div className="card-vhs p-8 text-center">
             <BookOpen className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
             <h2 className="font-display text-xl text-muted-foreground mb-2">
-              AUCUNE COLLECTION
+              {t("collections.empty")}
             </h2>
             <p className="font-mono text-sm text-muted-foreground mb-4">
-              Créez votre première collection pour commencer
+              {t("collections.emptyDescription")}
             </p>
             <Button onClick={() => setIsCreateOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Créer une collection
+              {t("collections.create")}
             </Button>
           </div>
         )}
@@ -94,7 +96,7 @@ export default function CollectionsPage() {
                 <Plus className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
               <span className="font-mono text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                Ajouter
+                {t("common.add")}
               </span>
             </button>
           </div>

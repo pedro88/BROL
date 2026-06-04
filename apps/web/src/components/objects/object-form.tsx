@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createObjectSchema, type CreateObjectInput, OBJECT_CONDITIONS, OBJECT_TYPES } from "@brol/shared";
@@ -14,52 +15,7 @@ import { QrScanner } from "../qr/qr-scanner";
 import { trpc } from "../../lib/trpc";
 import { compressImage } from "../../lib/image-compress";
 
-const conditionLabels: Record<string, string> = {
-  NEW: "Neuf",
-  LIKE_NEW: "Comme neuf",
-  GOOD: "Bon",
-  FAIR: "Correct",
-  POOR: "Mauvais",
-};
-
-// Labels and placeholders per object type
-const typeLabels: Record<string, string> = {
-  BOOK: "Livres",
-  BOARD_GAME: "Jeux de société",
-  TOOL: "Outils",
-  FILM: "Films / DVD",
-  MUSIC: "Musique / CD",
-  ELECTRONIC: "Électronique",
-  ELECTRIC: "Outillage électrique",
-  CLOTHING: "Vêtements",
-  CUSTOM: "Personnalisé",
-};
-
 type ObjectType = (typeof OBJECT_TYPES)[number];
-
-const authorLabels: Record<ObjectType, { label: string; placeholder: string }> = {
-  BOOK: { label: "Auteur", placeholder: "Antoine de Saint-Exupéry" },
-  BOARD_GAME: { label: "Auteur / Créateur", placeholder: "Créateur du jeu" },
-  TOOL: { label: "Marque / Fabricant", placeholder: "Makita, Bosch..." },
-  FILM: { label: "Réalisateur", placeholder: "Christopher Nolan" },
-  MUSIC: { label: "Artiste / Groupe", placeholder: "Daft Punk" },
-  ELECTRONIC: { label: "Marque", placeholder: "Apple, Sony..." },
-  ELECTRIC: { label: "Marque", placeholder: "Makita, DeWalt..." },
-  CLOTHING: { label: "Marque", placeholder: "Nike, Zara..." },
-  CUSTOM: { label: "Marque / Auteur", placeholder: "Marque ou auteur" },
-};
-
-const namePlaceholders: Record<ObjectType, string> = {
-  BOOK: "Le Petit Prince",
-  BOARD_GAME: "Catan",
-  TOOL: "Tournevis cruciforme",
-  FILM: "Inception",
-  MUSIC: "Discovery",
-  ELECTRONIC: "iPhone 13",
-  ELECTRIC: "Perceuse sans fil 18V",
-  CLOTHING: "Veste en cuir",
-  CUSTOM: "Mon objet",
-};
 
 interface ObjectFormProps {
   collectionId?: string;
@@ -72,6 +28,7 @@ interface ObjectFormProps {
  * Les champs affichés s'adaptent au type de la collection cible.
  */
 export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProps) {
+  const t = useTranslations();
   const utils = trpc.useUtils();
 
   const {
@@ -290,8 +247,8 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           console.error("Photo upload failed:", uploadErr);
           toast.error(
             uploadErr instanceof Error
-              ? `Photo non uploadée : ${uploadErr.message}`
-              : "Photo non uploadée",
+              ? t("objects.photoUploadError", { error: uploadErr.message })
+              : t("objects.photoUploadErrorGeneric"),
           );
         } finally {
           setUploadingPhoto(false);
@@ -303,20 +260,23 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       onSuccess?.(newObject);
 
       // Toast de succès
-      toast.success("Objet créé avec succès !");
+      toast.success(t("objects.createSuccess"));
 
       // Reset form
       reset();
     } catch (err) {
       setCreatingQr(false);
       setUploadingPhoto(false);
-      toast.error("Erreur lors de la création de l'objet");
+      toast.error(t("objects.createError"));
       throw err; // Rethrow to prevent form reset
     }
   };
 
-  const authorInfo = authorLabels[objectType];
-  const namePlaceholder = namePlaceholders[objectType];
+  const authorInfo = {
+    label: objectType === "BOOK" ? t("objects.author") : t(`objects.authorLabel.${objectType}`),
+    placeholder: t(`objects.authorPlaceholder.${objectType}`),
+  };
+  const namePlaceholder = t(`objects.namePlaceholder.${objectType}`);
   const showIsbn = objectType === "BOOK" || objectType === "FILM";
   const showBoardGameFields = objectType === "BOARD_GAME";
   const showElectricFields = objectType === "ELECTRIC";
@@ -349,11 +309,11 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             {...register("collectionId")}
             className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
           >
-            <option value="">Sélectionner une collection</option>
+            <option value="">{t("objects.selectCollection")}</option>
             {collections?.items.map((collection) => (
               <option key={collection.id} value={collection.id}>
                 {collection.name}
-                {collection.type ? ` (${typeLabels[collection.type] ?? collection.type})` : ""}
+                {collection.type ? ` (${t(`collections.typeLabel.${collection.type}`)})` : ""}
               </option>
             ))}
           </select>
@@ -365,15 +325,15 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
 
       {/* Type indicator */}
       <div className="flex items-center gap-2">
-        <span className="font-mono text-xs text-muted-foreground uppercase">Type</span>
+        <span className="font-mono text-xs text-muted-foreground uppercase">{t("objects.type")}</span>
         <span className="font-mono text-xs bg-secondary/20 text-secondary border border-secondary/30 px-2 py-1">
-          {typeLabels[objectType] ?? objectType}
+          {t(`collections.typeLabel.${objectType}`)}
         </span>
       </div>
 
       {/* Photo picker */}
       <div className="space-y-2">
-        <Label className="font-mono text-xs uppercase">Photo</Label>
+        <Label className="font-mono text-xs uppercase">{t("objects.photo")}</Label>
         <PhotoPicker
           onPhotoSelected={(file) => {
             setSelectedPhoto(file);
@@ -417,17 +377,17 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       <div className="space-y-2">
         <Label htmlFor="edition" className="font-mono text-xs uppercase">
           {objectType === "BOARD_GAME" ? "Édition" :
-           objectType === "ELECTRIC" ? "Modèle / Référence" : "Édition / Modèle"}
+           objectType === "ELECTRIC" ? t("objects.editionLabel.ELECTRIC") : t("objects.editionLabel")}
         </Label>
         <Input
           id="edition"
           placeholder={
-            objectType === "BOOK" ? "Gallimard, 1943" :
-            objectType === "BOARD_GAME" ? "Édition française" :
-            objectType === "FILM" ? "Director's Cut" :
-            objectType === "MUSIC" ? "Virgin Records, 1997" :
-            objectType === "ELECTRIC" ? "DFD453, 18V" :
-            "Modèle, référence..."
+            objectType === "BOOK" ? t("objects.editionPlaceholder.BOOK") :
+            objectType === "BOARD_GAME" ? t("objects.editionPlaceholder.BOARD_GAME") :
+            objectType === "FILM" ? t("objects.editionPlaceholder.FILM") :
+            objectType === "MUSIC" ? t("objects.editionPlaceholder.MUSIC") :
+            objectType === "ELECTRIC" ? t("objects.editionPlaceholder.ELECTRIC") :
+            t("objects.editionPlaceholder.DEFAULT")
           }
           {...register("edition")}
         />
@@ -439,7 +399,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="playersMin" className="font-mono text-xs uppercase">
-                Joueurs min.
+                {t("objects.playersMin")}
               </Label>
               <Input
                 id="playersMin"
@@ -451,7 +411,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             </div>
             <div className="space-y-2">
               <Label htmlFor="playersMax" className="font-mono text-xs uppercase">
-                Joueurs max.
+                {t("objects.playersMax")}
               </Label>
               <Input
                 id="playersMax"
@@ -465,7 +425,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="playingTimeMinutes" className="font-mono text-xs uppercase">
-                Durée (min.)
+                {t("objects.playingTimeMinutes")}
               </Label>
               <Input
                 id="playingTimeMinutes"
@@ -477,7 +437,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             </div>
             <div className="space-y-2">
               <Label htmlFor="ageMin" className="font-mono text-xs uppercase">
-                Âge min.
+                {t("objects.ageMin")}
               </Label>
               <Input
                 id="ageMin"
@@ -495,7 +455,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       {showElectricFields && (
         <div className="space-y-2">
           <Label htmlFor="powerWatts" className="font-mono text-xs uppercase">
-            Puissance (W)
+            {t("objects.powerWatts")}
           </Label>
           <Input
             id="powerWatts"
@@ -516,7 +476,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           <div className="relative">
             <Input
               id="isbn"
-              placeholder="978-2-07-040850-4"
+              placeholder={t("objects.isbnPlaceholder")}
               value={isbnQuery}
               onChange={(e) => handleIsbnChange(e.target.value)}
               className="pr-20"
@@ -535,17 +495,17 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           </div>
           {isbnStatus === "found" && (
             <p className="font-mono text-xs text-green-400">
-              ✓ Métadonnées récupérées — vérifiez et ajustez si nécessaire
+              {t("objects.isbnFound")}
             </p>
           )}
           {isbnStatus === "not_found" && isbnQuery.length >= 10 && (
             <p className="font-mono text-xs text-orange-400">
-              ISBN non trouvé — remplissez manuellement
+              {t("objects.isbnNotFound")}
             </p>
           )}
           {isbnStatus === "idle" && isbnQuery.length === 0 && (
             <p className="font-mono text-xs text-muted-foreground">
-              Saisie automatique via Open Library
+              {t("objects.isbnAutoFill")}
             </p>
           )}
         </div>
@@ -554,11 +514,11 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       {/* Barcode — all types */}
       <div className="space-y-2">
         <Label htmlFor="barcode" className="font-mono text-xs uppercase">
-          Code-barres
+          {t("objects.barcode")}
         </Label>
         <Input
           id="barcode"
-          placeholder="1234567890123"
+          placeholder={t("objects.barcodePlaceholder")}
           {...register("barcode")}
         />
       </div>
@@ -595,7 +555,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="clothingSize" className="font-mono text-xs uppercase">
-                Taille
+                {t("objects.gender.clothing.size")}
               </Label>
               <select
                 id="clothingSize"
@@ -622,13 +582,13 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
                 <option value="52">52</option>
                 <option value="54">54</option>
                 <option value="56">56</option>
-                <option value="Enfant">Enfant</option>
-                <option value="Autre">Autre</option>
+                <option value="Enfant">{t("objects.size.CHILD")}</option>
+                <option value="Autre">{t("common.other")}</option>
               </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="clothingGender" className="font-mono text-xs uppercase">
-                Genre
+                {t("objects.gender.clothing.gender")}
               </Label>
               <select
                 id="clothingGender"
@@ -636,17 +596,17 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
                 className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="">Sélectionner</option>
-                <option value="Homme">Homme</option>
-                <option value="Femme">Femme</option>
-                <option value="Unisexe">Unisexe</option>
-                <option value="Enfant">Enfant</option>
+                <option value="Homme">{t("objects.gender.MALE")}</option>
+                <option value="Femme">{t("objects.gender.FEMALE")}</option>
+                <option value="Unisexe">{t("objects.gender.UNISEX")}</option>
+                <option value="Enfant">{t("objects.size.CHILD")}</option>
               </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="clothingColor" className="font-mono text-xs uppercase">
-                Couleur
+                {t("objects.color")}
               </Label>
               <Input
                 id="clothingColor"
@@ -656,7 +616,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             </div>
             <div className="space-y-2">
               <Label htmlFor="clothingMaterial" className="font-mono text-xs uppercase">
-                Matière
+                {t("objects.material")}
               </Label>
               <Input
                 id="clothingMaterial"
@@ -667,11 +627,11 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           </div>
           <div className="space-y-2">
             <Label htmlFor="brand" className="font-mono text-xs uppercase">
-              Marque
+              {t("objects.authorLabel.CLOTHING")}
             </Label>
             <Input
               id="brand"
-              placeholder="Nike, Levi's..."
+              placeholder={t("objects.brandPlaceholder.CLOTHING")}
               {...register("brand")}
             />
           </div>
@@ -684,7 +644,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="toolSector" className="font-mono text-xs uppercase">
-                Secteur / Usage
+                {t("objects.toolSector.label")}
               </Label>
               <select
                 id="toolSector"
@@ -692,20 +652,20 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
                 className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="">Sélectionner</option>
-                <option value="Bricolage">Bricolage</option>
-                <option value="Jardinage">Jardinage</option>
-                <option value="Automobile">Automobile</option>
-                <option value="Plomberie">Plomberie</option>
-                <option value="Électricité">Électricité</option>
-                <option value="Construction">Construction</option>
-                <option value="Menuiserie">Menuiserie</option>
-                <option value="Peinture">Peinture</option>
-                <option value="Autre">Autre</option>
+                <option value="Bricolage">{t("objects.toolSector.DIY")}</option>
+                <option value="Jardinage">{t("objects.toolSector.GARDENING")}</option>
+                <option value="Automobile">{t("objects.toolSector.AUTOMOTIVE")}</option>
+                <option value="Plomberie">{t("objects.toolSector.PLUMBING")}</option>
+                <option value="Électricité">{t("objects.toolSector.ELECTRICAL")}</option>
+                <option value="Construction">{t("objects.toolSector.CONSTRUCTION")}</option>
+                <option value="Menuiserie">{t("objects.toolSector.CARPENTRY")}</option>
+                <option value="Peinture">{t("objects.toolSector.PAINTING")}</option>
+                <option value="Autre">{t("common.other")}</option>
               </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="toolPowerSource" className="font-mono text-xs uppercase">
-                Alimentation
+                {t("objects.powerSource.label")}
               </Label>
               <select
                 id="toolPowerSource"
@@ -713,19 +673,19 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
                 className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="">Sélectionner</option>
-                <option value="MANUAL">Manuel (non alimenté)</option>
-                <option value="MAINS">Secteur (filaire)</option>
-                <option value="BATTERY">Sur batterie</option>
+                <option value="MANUAL">{t("objects.powerSource.MANUAL")}</option>
+                <option value="MAINS">{t("objects.powerSource.MAINS")}</option>
+                <option value="BATTERY">{t("objects.powerSource.BATTERY")}</option>
               </select>
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="brand" className="font-mono text-xs uppercase">
-              Marque
+              {t("objects.authorLabel.CLOTHING")}
             </Label>
             <Input
               id="brand"
-              placeholder="Bosch, Makita..."
+              placeholder={t("objects.brandPlaceholder.TOOL")}
               {...register("brand")}
             />
           </div>
@@ -734,7 +694,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
 
       {/* Condition */}
       <div className="space-y-2">
-        <Label className="font-mono text-xs uppercase">État</Label>
+        <Label className="font-mono text-xs uppercase">{t("objects.conditionLabel")}</Label>
         <div className="grid grid-cols-5 gap-2">
           {OBJECT_CONDITIONS.map((condition) => (
             <label
@@ -751,7 +711,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
                 {...register("condition")}
                 className="sr-only"
               />
-              <span className="font-mono text-xs">{conditionLabels[condition]}</span>
+              <span className="font-mono text-xs">{t(`objects.conditions.${condition}`)}</span>
             </label>
           ))}
         </div>
@@ -769,10 +729,10 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           `}
         >
           <span className="font-mono text-xs uppercase">
-            {pricingEnabled ? "▼ Tarification activée" : "▶ Activer la tarification"}
+            {pricingEnabled ? t("objects.pricingEnabled") : t("objects.pricingDisabled")}
           </span>
           <span className="font-mono text-xs text-muted-foreground">
-            {pricingEnabled ? "Désactiver" : "Optionnel"}
+            {pricingEnabled ? t("common.disable") : t("common.optional")}
           </span>
         </button>
 
@@ -782,27 +742,27 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="cautionAmount" className="font-mono text-xs uppercase">
-                  Caution (€)
+                  {t("objects.cautionAmount")}
                 </Label>
                 <Input
                   id="cautionAmount"
                   type="number"
                   min={0}
                   step="0.01"
-                  placeholder="50.00"
+                  placeholder={t("objects.cautionAmountPlaceholder")}
                   {...register("cautionAmount", { valueAsNumber: true })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="rentalPriceDay" className="font-mono text-xs uppercase">
-                  Prix / jour (€)
+                  {t("objects.rentalPriceDay")}
                 </Label>
                 <Input
                   id="rentalPriceDay"
                   type="number"
                   min={0}
                   step="0.01"
-                  placeholder="5.00"
+                  placeholder={t("objects.rentalPriceDayPlaceholder")}
                   {...register("rentalPriceDay", { valueAsNumber: true })}
                 />
               </div>
@@ -810,40 +770,40 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="rentalPriceHour" className="font-mono text-xs uppercase">
-                  Prix / heure (€)
+                  {t("objects.rentalPriceHour")}
                 </Label>
                 <Input
                   id="rentalPriceHour"
                   type="number"
                   min={0}
                   step="0.01"
-                  placeholder="1.00"
+                  placeholder={t("objects.rentalPriceHourPlaceholder")}
                   {...register("rentalPriceHour", { valueAsNumber: true })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="rentalPriceWeek" className="font-mono text-xs uppercase">
-                  Prix / semaine (€)
+                  {t("objects.rentalPriceWeek")}
                 </Label>
                 <Input
                   id="rentalPriceWeek"
                   type="number"
                   min={0}
                   step="0.01"
-                  placeholder="25.00"
+                  placeholder={t("objects.rentalPriceWeekPlaceholder")}
                   {...register("rentalPriceWeek", { valueAsNumber: true })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="rentalPriceKm" className="font-mono text-xs uppercase">
-                  Prix / km (€)
+                  {t("objects.rentalPriceKm")}
                 </Label>
                 <Input
                   id="rentalPriceKm"
                   type="number"
                   min={0}
                   step="0.01"
-                  placeholder="0.50"
+                  placeholder={t("objects.rentalPriceKmPlaceholder")}
                   {...register("rentalPriceKm", { valueAsNumber: true })}
                 />
               </div>
@@ -860,7 +820,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         <textarea
           id="notes"
           rows={3}
-          placeholder="Notes ou remarques sur l'objet..."
+          placeholder={t("objects.notesPlaceholder")}
           {...register("notes")}
           className="flex w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary resize-none"
         />
@@ -872,10 +832,10 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           <Label className="font-mono text-xs uppercase">QR Code</Label>
           <div className="space-y-2">
             {[
-              { value: "none", label: "Aucun QR code" },
-              { value: "scan", label: "Scanner un QR code" },
-              { value: "existing", label: "Sélectionner un QR existant" },
-              { value: "create", label: "Créer un nouveau QR" },
+              { value: "none", label: t("qrCodes.none") },
+              { value: "scan", label: t("qrCodes.scan") },
+              { value: "existing", label: t("qrCodes.selectExisting") },
+              { value: "create", label: t("qrCodes.createNew") },
             ].map((option) => (
               <label
                 key={option.value}
@@ -909,7 +869,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
 
           {scannedQrCode && (
             <p className="font-mono text-xs text-green-400">
-              ✓ QR scanné : {scannedQrCode}
+              {t("qrCodes.scanned", { code: scannedQrCode })}
             </p>
           )}
 
@@ -919,7 +879,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
               onChange={(e) => setSelectedQrId(e.target.value)}
               className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
             >
-              <option value="">Sélectionner un QR code</option>
+              <option value="">{t("qrCodes.selectLabel")}</option>
               {qrCodes?.items.map((qr) => (
                 <option key={qr.id} value={qr.id}>
                   {qr.code}
@@ -930,13 +890,13 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
 
           {qrSelection === "existing" && selectedQrId && (
             <p className="font-mono text-xs text-green-400">
-              QR sélectionné : {qrCodes?.items.find((q) => q.id === selectedQrId)?.code}
+              {t("qrCodes.selected", { code: qrCodes?.items.find((q) => q.id === selectedQrId)?.code ?? "" })}
             </p>
           )}
 
           {qrSelection === "create" && (
             <p className="font-mono text-xs text-muted-foreground">
-              Un nouveau QR code sera généré automatiquement à la création de l&apos;objet.
+              {t("qrCodes.createAutomatically")}
             </p>
           )}
         </div>
@@ -965,12 +925,12 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         {createMutation.isPending || creatingQr || uploadingPhoto ? (
           <>
             <BookOpen className="w-4 h-4 mr-2 animate-spin" />
-            {uploadingPhoto ? "Upload photo..." : creatingQr ? "Génération du QR..." : "Création..."}
+            {uploadingPhoto ? t("objects.uploadingPhoto") : creatingQr ? t("qrCodes.generatingQr") : t("objects.creating")}
           </>
         ) : (
           <>
             <BookOpen className="w-4 h-4 mr-2" />
-            Ajouter l&apos;objet
+            {t("objects.addObject")}
           </>
         )}
       </Button>

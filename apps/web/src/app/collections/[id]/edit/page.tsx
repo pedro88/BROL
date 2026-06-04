@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowLeft } from "lucide-react";
 import { Header, Navigation } from "../../../../components/navigation";
 import { Button } from "../../../../components/ui/button";
@@ -12,25 +13,13 @@ import { Switch } from "../../../../components/ui/switch";
 import { trpc } from "../../../../lib/trpc";
 import { OBJECT_TYPES } from "@brol/shared";
 
-// Type labels
-const typeLabels: Record<string, string> = {
-  BOOK: "Livres",
-  BOARD_GAME: "Jeux de société",
-  TOOL: "Outils",
-  FILM: "Films / DVD",
-  MUSIC: "Musique / CD",
-  ELECTRONIC: "Électronique",
-  ELECTRIC: "Outillage électrique",
-  CLOTHING: "Vêtements",
-  CUSTOM: "Personnalisé",
-};
-
 type ObjectType = "BOOK" | "BOARD_GAME" | "TOOL" | "FILM" | "MUSIC" | "ELECTRONIC" | "ELECTRIC" | "CLOTHING" | "CUSTOM";
 
 /**
  * Page d'édition d'une collection.
  */
 export default function EditCollectionPage() {
+  const t = useTranslations();
   const params = useParams();
   const router = useRouter();
   const collectionId = params.id as string;
@@ -44,18 +33,18 @@ export default function EditCollectionPage() {
   // Local state for isPublic (initialized from collection data)
   const [isPublic, setIsPublic] = useState(false);
   const [collectionType, setCollectionType] = useState<ObjectType>("BOOK");
-  const [customField1Label, setCustomField1Label] = useState("Champ libre 1");
-  const [customField2Label, setCustomField2Label] = useState("Champ libre 2");
+  const [customField1Label, setCustomField1Label] = useState(t("collections.customField1Label"));
+  const [customField2Label, setCustomField2Label] = useState(t("collections.customField2Label"));
 
   // Sync state when collection loads
   useEffect(() => {
     if (collection) {
       setIsPublic(collection.isPublic ?? false);
       setCollectionType((collection.type as ObjectType) ?? "BOOK");
-      setCustomField1Label(collection.customField1Label ?? "Champ libre 1");
-      setCustomField2Label(collection.customField2Label ?? "Champ libre 2");
+      setCustomField1Label(collection.customField1Label ?? t("collections.customField1Label"));
+      setCustomField2Label(collection.customField2Label ?? t("collections.customField2Label"));
     }
-  }, [collection]);
+  }, [collection, t]);
 
   // Update mutation
   const updateMutation = trpc.collections.update.useMutation({
@@ -91,16 +80,16 @@ export default function EditCollectionPage() {
           className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Collection
+          {t("collections.label")}
         </Link>
 
         {/* Header */}
         <div className="mb-6">
           <h1 className="font-display text-3xl vhs-text-glow text-primary">
-            MODIFIER
+            {t("common.editLabel")}
           </h1>
           <p className="font-mono text-sm text-muted-foreground mt-2">
-            Modifier les informations de la collection
+            {t("collections.editDescription")}
           </p>
         </div>
 
@@ -113,7 +102,7 @@ export default function EditCollectionPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name" className="font-mono text-xs uppercase">
-                Nom *
+                {t("common.nameRequired")}
               </Label>
               <Input
                 id="name"
@@ -125,7 +114,7 @@ export default function EditCollectionPage() {
 
             <div className="space-y-2">
               <Label htmlFor="description" className="font-mono text-xs uppercase">
-                Description
+                {t("collections.description")}
               </Label>
               <Input
                 id="description"
@@ -137,7 +126,7 @@ export default function EditCollectionPage() {
             {/* Type selector */}
             <div className="space-y-2">
               <Label htmlFor="type" className="font-mono text-xs uppercase">
-                Type d&apos;objets
+                {t("collections.typeOfObjects")}
               </Label>
               <select
                 id="type"
@@ -145,9 +134,9 @@ export default function EditCollectionPage() {
                 onChange={(e) => setCollectionType(e.target.value as ObjectType)}
                 className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
               >
-                {OBJECT_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {typeLabels[t] ?? t}
+                {OBJECT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {t(`collections.typeLabel.${type}`)}
                   </option>
                 ))}
               </select>
@@ -157,29 +146,29 @@ export default function EditCollectionPage() {
             {collectionType === "CUSTOM" && (
               <div className="space-y-2 border border-dashed border-border p-3">
                 <p className="font-mono text-xs text-muted-foreground">
-                  Définissez les labels pour les champs libres
+                  {t("collections.customFieldsHint")}
                 </p>
                 <div className="space-y-2">
                   <div className="space-y-1">
                     <Label htmlFor="customField1Label" className="font-mono text-xs uppercase">
-                      Champ libre 1
+                      {t("collections.customField1Label")}
                     </Label>
                     <Input
                       id="customField1Label"
                       value={customField1Label}
                       onChange={(e) => setCustomField1Label(e.target.value)}
-                      placeholder="Champ libre 1"
+                      placeholder={t("collections.customField1Label")}
                     />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="customField2Label" className="font-mono text-xs uppercase">
-                      Champ libre 2
+                      {t("collections.customField2Label")}
                     </Label>
                     <Input
                       id="customField2Label"
                       value={customField2Label}
                       onChange={(e) => setCustomField2Label(e.target.value)}
-                      placeholder="Champ libre 2"
+                      placeholder={t("collections.customField2Label")}
                     />
                   </div>
                 </div>
@@ -190,10 +179,10 @@ export default function EditCollectionPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label htmlFor="isPublic" className="font-mono text-xs uppercase">
-                  Collection publique
+                  {t("collections.isPublic")}
                 </Label>
                 <p className="font-mono text-xs text-muted-foreground">
-                  Visible par tous sans connexion
+                  {t("collections.publicDescription")}
                 </p>
               </div>
               <Switch
@@ -208,11 +197,11 @@ export default function EditCollectionPage() {
               className="w-full"
               disabled={updateMutation.isPending}
             >
-              {updateMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+              {updateMutation.isPending ? t("common.saving") : t("common.save")}
             </Button>
           </form>
         ) : (
-          <p className="font-mono text-muted-foreground">Collection non trouvée</p>
+          <p className="font-mono text-muted-foreground">{t("collections.notFoundShort")}</p>
         )}
       </main>
 

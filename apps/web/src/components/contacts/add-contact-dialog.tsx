@@ -11,6 +11,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ export function AddContactDialog({
   onOpenChange,
   onCreated,
 }: AddContactDialogProps) {
+  const t = useTranslations();
   const [tab, setTab] = useState<Tab>("manual");
   const [showQrScanner, setShowQrScanner] = useState(false);
 
@@ -63,7 +65,7 @@ export function AddContactDialog({
   const createMutation = trpc.contacts.create.useMutation({
     onSuccess: (contact) => {
       utils.contacts.list.invalidate();
-      toast.success("Contact créé");
+      toast.success(t("contacts.createdFromScanToast"));
       onCreated?.(contact.id);
       handleClose();
     },
@@ -75,12 +77,12 @@ export function AddContactDialog({
   const addFromScanMutation = trpc.contacts.addFromScan.useMutation({
     onSuccess: (contact) => {
       utils.contacts.list.invalidate();
-      toast.success(`Contact "${contact.name}" ajouté`);
+      toast.success(t("contacts.contactAddedToast", { contactName: contact.name }));
       onCreated?.(contact.id);
       handleClose();
     },
     onError: (error) => {
-      toast.error(error.message || "Impossible d'ajouter ce contact");
+      toast.error(error.message || t("contacts.addContactErrorToast"));
     },
   });
 
@@ -122,14 +124,14 @@ export function AddContactDialog({
     if (code.includes("/profile/")) {
       extractedId = code.split("/profile/").pop() ?? null;
     } else if (code.includes("/qr/")) {
-      toast.error("Ce QR code n'est pas un profil utilisateur");
+      toast.error(t("contacts.invalidQrErrorToast"));
       setShowQrScanner(false);
       return;
     } else {
       extractedId = code;
     }
     if (!extractedId) {
-      toast.error("QR code invalide");
+      toast.error(t("contacts.invalidQrCodeToast"));
       setShowQrScanner(false);
       return;
     }
@@ -144,25 +146,25 @@ export function AddContactDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Nouveau contact</DialogTitle>
+            <DialogTitle>{t("contacts.newContactDialogTitle")}</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Ajoutez manuellement, par identifiant Brol ou via QR code.
+              {t("contacts.addContactDescription")}
             </DialogDescription>
           </DialogHeader>
 
           {/* Tabs */}
           <div className="flex border-b border-border">
             <TabButton active={tab === "manual"} onClick={() => setTab("manual")}>
-              Manuel
+              {t("contacts.manualTab")}
             </TabButton>
             <TabButton
               active={tab === "id-handle"}
               onClick={() => setTab("id-handle")}
             >
-              ID / Handle
+              {t("contacts.idHandleTab")}
             </TabButton>
             <TabButton active={tab === "qr"} onClick={() => setTab("qr")}>
-              QR code
+              {t("contacts.qrCodeTab")}
             </TabButton>
           </div>
 
@@ -170,43 +172,43 @@ export function AddContactDialog({
             {tab === "manual" && (
               <form onSubmit={handleManualSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nom *</Label>
+                  <Label htmlFor="name">{t("contacts.manualNameLabel")}</Label>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Marie Dupont"
+                    placeholder={t("contacts.manualNamePlaceholder")}
                     maxLength={100}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t("contacts.manualEmailLabel")}</Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="marie@example.com"
+                    placeholder={t("contacts.manualEmailPlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Téléphone</Label>
+                  <Label htmlFor="phone">{t("contacts.manualPhoneLabel")}</Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+32 470 00 00 00"
+                    placeholder={t("contacts.manualPhonePlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="note">Note</Label>
+                  <Label htmlFor="note">{t("contacts.manualNoteLabel")}</Label>
                   <Input
                     id="note"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="Ami, collègue..."
+                    placeholder={t("contacts.manualNotePlaceholder")}
                     maxLength={500}
                   />
                 </div>
@@ -218,12 +220,12 @@ export function AddContactDialog({
                   {createMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Création...
+                      {t("contacts.creatingLabel")}
                     </>
                   ) : (
                     <>
                       <UserPlus className="w-4 h-4 mr-2" />
-                      Créer le contact
+                      {t("contacts.createContactButtonLabel")}
                     </>
                   )}
                 </Button>
@@ -233,13 +235,13 @@ export function AddContactDialog({
             {tab === "id-handle" && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="userIdInput">Identifiant ou handle</Label>
+                  <Label htmlFor="userIdInput">{t("contacts.idHandleLabel")}</Label>
                   <div className="relative">
                     <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
                       id="userIdInput"
                       type="text"
-                      placeholder="#piet1234 ou ID brut"
+                      placeholder={t("contacts.idHandlePlaceholder")}
                       value={userIdInput}
                       onChange={(e) => setUserIdInput(e.target.value)}
                       className="w-full bg-input border-2 border-border pl-10 pr-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
@@ -262,7 +264,7 @@ export function AddContactDialog({
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-mono text-sm font-medium">
-                          {userById.name ?? "Sans nom"}
+                          {userById.name ?? t("contacts.noNameMessage")}
                         </p>
                         <p className="font-mono text-xs text-muted-foreground">
                           {userById.email}
@@ -280,14 +282,14 @@ export function AddContactDialog({
                       ) : (
                         <UserPlus className="w-4 h-4 mr-2" />
                       )}
-                      Ajouter ce contact
+                      {t("contacts.addThisContactButton")}
                     </Button>
                   </div>
                 )}
 
                 {userIdInput.length > 0 && !userById && !isLookingUpById && (
                   <p className="text-center font-mono text-sm text-muted-foreground">
-                    Aucun utilisateur trouvé pour cet identifiant.
+                    {t("contacts.noUserFoundForIdMessage")}
                   </p>
                 )}
               </div>
@@ -296,8 +298,7 @@ export function AddContactDialog({
             {tab === "qr" && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Scannez le QR code d'un profil Brol pour l'ajouter à vos
-                  contacts.
+                  {t("contacts.qrInstructions")}
                 </p>
                 <Button
                   type="button"
@@ -307,7 +308,7 @@ export function AddContactDialog({
                   disabled={isPending}
                 >
                   <QrCode className="w-4 h-4" />
-                  Ouvrir le scanner
+                  {t("contacts.openScannerButton")}
                 </Button>
                 {addFromScanMutation.isPending && (
                   <div className="flex items-center justify-center py-2">

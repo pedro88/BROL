@@ -5,6 +5,11 @@
  * @package @brol/shared
  */
 
+// LOCALES / Locale sont déjà la source de vérité dans schemas/types — on les
+// réutilise (pas de redéfinition pour éviter les collisions de barrel export).
+import { LOCALES } from "../schemas";
+import type { Locale } from "../types";
+
 /**
  * Clés de traduction principales.
  * Usage: t('common.submit') dans les composants.
@@ -24,6 +29,7 @@ export const common = {
   back: { fr: "Retour", nl: "Terug", en: "Back" },
   next: { fr: "Suivant", nl: "Volgende", en: "Next" },
   confirm: { fr: "Confirmer", nl: "Bevestigen", en: "Confirm" },
+  menu: { fr: "Menu", nl: "Menu", en: "Menu" },
 
   // États
   loading: { fr: "Chargement...", nl: "Laden...", en: "Loading..." },
@@ -35,6 +41,21 @@ export const common = {
   required: { fr: "Ce champ est requis", nl: "Dit veld is verplicht", en: "This field is required" },
   invalidEmail: { fr: "Email invalide", nl: "Ongeldig e-mail", en: "Invalid email" },
   tooLong: { fr: "Trop long", nl: "Te lang", en: "Too long" },
+
+  // Ajouts
+  add: { fr: "Ajouter", nl: "Toevoegen", en: "Add" },
+  editLabel: { fr: "MODIFIER", nl: "Bewerk", en: "Edit" },
+  nameRequired: { fr: "Nom *", nl: "Naam *", en: "Name *" },
+  saving: { fr: "Enregistrement...", nl: "Opslaan...", en: "Saving..." },
+  name: { fr: "Nom", nl: "Naam", en: "Name" },
+  unknown: { fr: "Inconnu", nl: "Onbekend", en: "Unknown" },
+  view: { fr: "Voir", nl: "Bekijken", en: "View" },
+  creating: { fr: "Création...", nl: "Aanmaken...", en: "Creating..." },
+  disable: { fr: "Désactiver", nl: "Uitschakelen", en: "Disable" },
+  optional: { fr: "Optionnel", nl: "Optioneel", en: "Optional" },
+  other: { fr: "Autre", nl: "Ander", en: "Other" },
+  sending: { fr: "Envoi...", nl: "Verzenden...", en: "Sending..." },
+  send: { fr: "Envoyer", nl: "Verzenden", en: "Send" },
 };
 
 /**
@@ -51,6 +72,7 @@ export const nav = {
   settings: { fr: "Paramètres", nl: "Instellingen", en: "Settings" },
   profile: { fr: "Profil", nl: "Profiel", en: "Profile" },
   qrCodes: { fr: "QR Codes", nl: "QR Codes", en: "QR Codes" },
+  notifications: { fr: "Notifications", nl: "Meldingen", en: "Notifications" },
 };
 
 /**
@@ -66,6 +88,91 @@ export const auth = {
   noAccount: { fr: "Pas encore de compte ?", nl: "Nog geen account?", en: "Don't have an account?" },
   hasAccount: { fr: "Déjà un compte ?", nl: "Reeds een account?", en: "Already have an account?" },
   orContinueWith: { fr: "Ou continuer avec", nl: "Of ga verder met", en: "Or continue with" },
+
+  // Titres + sous-titres
+  signInTitle: { fr: "Connexion", nl: "Aanmelden", en: "Sign in" },
+  signUpTitle: { fr: "Créer un compte", nl: "Account aanmaken", en: "Create account" },
+  signInSubtitle: { fr: "> Accédez à votre espace Brol_", nl: "> Open je Brol-ruimte_", en: "> Access your Brol space_" },
+  signUpSubtitle: { fr: "> Rejoignez Brol_", nl: "> Word lid van Brol_", en: "> Join Brol_" },
+
+  // Champs
+  name: { fr: "Nom", nl: "Naam", en: "Name" },
+  namePlaceholder: { fr: "Jean Dupont", nl: "Jan Jansen", en: "John Doe" },
+  emailPlaceholder: { fr: "jean@example.com", nl: "jan@example.com", en: "john@example.com" },
+  passwordPlaceholderSignup: { fr: "Min. 8 caractères", nl: "Min. 8 tekens", en: "Min. 8 characters" },
+  confirmPassword: { fr: "Confirmer le mot de passe", nl: "Bevestig wachtwoord", en: "Confirm password" },
+  confirmPlaceholder: { fr: "Retapez votre mot de passe", nl: "Herhaal je wachtwoord", en: "Re-enter your password" },
+  showPassword: { fr: "Afficher le mot de passe", nl: "Toon wachtwoord", en: "Show password" },
+  hidePassword: { fr: "Masquer le mot de passe", nl: "Verberg wachtwoord", en: "Hide password" },
+
+  // Force du mot de passe
+  strengthShort: { fr: "Trop court", nl: "Te kort", en: "Too short" },
+  strengthWeak: { fr: "Faible", nl: "Zwak", en: "Weak" },
+  strengthFair: { fr: "Correct", nl: "Redelijk", en: "Fair" },
+  strengthStrong: { fr: "Fort", nl: "Sterk", en: "Strong" },
+  strengthWeakHint: { fr: " — ajoutez une majuscule, un chiffre ou un caractère spécial", nl: " — voeg een hoofdletter, cijfer of speciaal teken toe", en: " — add an uppercase letter, a digit or a special character" },
+
+  // Validation + erreurs
+  fillAllFields: { fr: "Veuillez remplir tous les champs", nl: "Vul alle velden in", en: "Please fill in all fields" },
+  passwordTooShort: { fr: "Le mot de passe doit contenir au moins 8 caractères.", nl: "Het wachtwoord moet minstens 8 tekens bevatten.", en: "Password must be at least 8 characters." },
+  passwordMismatch: { fr: "Les mots de passe ne correspondent pas.", nl: "De wachtwoorden komen niet overeen.", en: "Passwords do not match." },
+  passwordMismatchShort: { fr: "Les mots de passe ne correspondent pas", nl: "Wachtwoorden komen niet overeen", en: "Passwords do not match" },
+
+  // Boutons + bascule
+  submitSignIn: { fr: "Se connecter", nl: "Aanmelden", en: "Sign in" },
+  submitSignUp: { fr: "Créer mon compte", nl: "Account aanmaken", en: "Create my account" },
+  toggleToSignUp: { fr: "Pas encore de compte ? Créez-en un.", nl: "Nog geen account? Maak er een aan.", en: "No account yet? Create one." },
+  toggleToSignIn: { fr: "Déjà un compte ? Connectez-vous.", nl: "Al een account? Meld je aan.", en: "Already have an account? Sign in." },
+  loadingShort: { fr: "...", nl: "...", en: "..." },
+};
+
+/**
+ * Traductions pour le dashboard (page d'accueil connectée).
+ */
+export const dashboard = {
+  welcome: { fr: "BIENVENUE", nl: "WELKOM", en: "WELCOME" },
+  subtitle: { fr: "> Gestion de prêt simplifiée_", nl: "> Uitlenen, vereenvoudigd_", en: "> Lending made simple_" },
+
+  // Cartes stats
+  statObjects: { fr: "Objets", nl: "Objecten", en: "Items" },
+  statLent: { fr: "Prêtés", nl: "Uitgeleend", en: "Lent out" },
+  statLentOverdue: { fr: "Prêtés ({count} en retard)", nl: "Uitgeleend ({count} te laat)", en: "Lent out ({count} overdue)" },
+  statBorrowed: { fr: "Empruntés", nl: "Geleend", en: "Borrowed" },
+  statContacts: { fr: "Contacts", nl: "Contacten", en: "Contacts" },
+  collectionsCount: { fr: "{count} collections", nl: "{count} collecties", en: "{count} collections" },
+
+  // Actions rapides
+  quickActions: { fr: "// ACTIONS RAPIDES", nl: "// SNELLE ACTIES", en: "// QUICK ACTIONS" },
+  newLoan: { fr: "NOUVEAU PRÊT", nl: "NIEUWE LENING", en: "NEW LOAN" },
+  newLoanDesc: { fr: "Prêter un objet à un contact", nl: "Leen een object uit aan een contact", en: "Lend an item to a contact" },
+  addObject: { fr: "AJOUTER UN OBJET", nl: "OBJECT TOEVOEGEN", en: "ADD AN ITEM" },
+  addObjectDesc: { fr: "Encoder un nouvel item", nl: "Een nieuw item invoeren", en: "Register a new item" },
+  askCommunity: { fr: "DEMANDER À LA COMMUNAUTÉ", nl: "VRAAG DE COMMUNITY", en: "ASK THE COMMUNITY" },
+  askCommunityDesc: { fr: "Trouver un objet auprès des voisins", nl: "Vind een object bij buren", en: "Find an item from neighbors" },
+  scan: { fr: "SCANNER", nl: "SCANNEN", en: "SCAN" },
+  scanDesc: { fr: "Scanner un QR code", nl: "Scan een QR-code", en: "Scan a QR code" },
+
+  // Prêts récents
+  recentLoans: { fr: "// PRÊTS RÉCENTS", nl: "// RECENTE LENINGEN", en: "// RECENT LOANS" },
+  noActiveLoan: { fr: "Aucun prêt en cours", nl: "Geen lopende leningen", en: "No active loans" },
+  loading: { fr: "Chargement...", nl: "Laden...", en: "Loading..." },
+
+  // Mes demandes
+  myRequests: { fr: "// MES DEMANDES", nl: "// MIJN AANVRAGEN", en: "// MY REQUESTS" },
+  requestOpen: { fr: "Ouverte", nl: "Open", en: "Open" },
+  requestFulfilled: { fr: "Pourvue", nl: "Vervuld", en: "Fulfilled" },
+  requestCancelled: { fr: "Annulée", nl: "Geannuleerd", en: "Cancelled" },
+  requestExpired: { fr: "Expirée", nl: "Verlopen", en: "Expired" },
+};
+
+/**
+ * Traductions pour le sélecteur de langue.
+ */
+export const language = {
+  label: { fr: "Langue", nl: "Taal", en: "Language" },
+  fr: { fr: "Français", nl: "Frans", en: "French" },
+  nl: { fr: "Néerlandais", nl: "Nederlands", en: "Dutch" },
+  en: { fr: "Anglais", nl: "Engels", en: "English" },
 };
 
 /**
@@ -82,6 +189,44 @@ export const collections = {
   lentOut: { fr: "{{count}} prêté", fr_plural: "{{count}} prêtés", nl: "{{count}} uitgeleend", nl_plural: "{{count}} uitgeleend", en: "{{count}} lent out", en_plural: "{{count}} lent out" },
   empty: { fr: "Aucune collection", nl: "Geen collecties", en: "No collections" },
   emptyDescription: { fr: "Créez votre première collection pour commencer", nl: "Maak je eerste collectie om te beginnen", en: "Create your first collection to get started" },
+
+  // Ajouts
+  new: { fr: "Nouvelle", nl: "Nieuw", en: "New" },
+  notFound: { fr: "COLLECTION NON TROUVÉE", nl: "Collectie niet gevonden", en: "Collection not found" },
+  notFoundDescription: { fr: "Cette collection n'existe pas ou n'est pas accessible.", nl: "Deze collectie bestaat niet of is niet toegankelijk.", en: "This collection does not exist or is not accessible." },
+  viewPublic: { fr: "Voir les collections publiques", nl: "Bekijk openbare collecties", en: "View public collections" },
+  publicCollections: { fr: "Collections publiques", nl: "Openbare collecties", en: "Public collections" },
+  public: { fr: "COLLECTION PUBLIQUE", nl: "Openbare collectie", en: "Public collection" },
+  publicSignInPrompt: { fr: "Connectez-vous pour voir le contenu et gérer vos prêts.", nl: "Meld je aan om inhoud te bekijken en je leningen te beheren.", en: "Sign in to view content and manage your loans." },
+  emptyNoAuth: { fr: "Cette collection est vide.", nl: "Deze collectie is leeg.", en: "This collection is empty." },
+  byOwner: { fr: "par {name}", nl: "door {name}", en: "by {name}" },
+  editDescription: { fr: "Modifier les informations de la collection", nl: "Bewerk collectie-informatie", en: "Edit collection information" },
+  label: { fr: "Collection", nl: "Collectie", en: "Collection" },
+  typeOfObjects: { fr: "Type d'objets", nl: "Type objecten", en: "Type of objects" },
+  typeLabel: {
+    BOOK: { fr: "Livres", nl: "Boeken", en: "Books" },
+    BOARD_GAME: { fr: "Jeux de société", nl: "Bordspellen", en: "Board games" },
+    TOOL: { fr: "Outils", nl: "Gereedschap", en: "Tools" },
+    FILM: { fr: "Films / DVD", nl: "Films / DVD", en: "Films / DVD" },
+    MUSIC: { fr: "Musique / CD", nl: "Muziek / CD", en: "Music / CD" },
+    ELECTRONIC: { fr: "Électronique", nl: "Elektronica", en: "Electronics" },
+    ELECTRIC: { fr: "Outillage électrique", nl: "Elektrisch gereedschap", en: "Power tools" },
+    CLOTHING: { fr: "Vêtements", nl: "Kleding", en: "Clothing" },
+    CUSTOM: { fr: "Personnalisé", nl: "Aangepast", en: "Custom" },
+  },
+  customFieldsHint: { fr: "Définissez les labels pour les champs libres", nl: "Definieer labels voor aangepaste velden", en: "Define labels for custom fields" },
+  customField1Label: { fr: "Champ libre 1", nl: "Aangepast veld 1", en: "Custom field 1" },
+  customField2Label: { fr: "Champ libre 2", nl: "Aangepast veld 2", en: "Custom field 2" },
+  isPublic: { fr: "Collection publique", nl: "Openbare collectie", en: "Public collection" },
+  publicDescription: { fr: "Visible par tous sans connexion", nl: "Zichtbaar voor iedereen zonder aanmelden", en: "Visible to everyone without login" },
+  notFoundShort: { fr: "Collection non trouvée", nl: "Collectie niet gevonden", en: "Collection not found" },
+  viewCollection: { fr: "Voir la collection {name}", nl: "Bekijk collectie {name}", en: "View collection {name}" },
+  createTitle: { fr: "NOUVELLE COLLECTION", nl: "Nieuwe collectie", en: "New collection" },
+  createDescription: { fr: "Créez une collection pour organiser vos objets", nl: "Maak een collectie om uw objecten in te ordenen", en: "Create a collection to organize your objects" },
+  namePlaceholder: { fr: "Ma collection", nl: "Mijn collectie", en: "My collection" },
+  descriptionPlaceholder: { fr: "Une courte description...", nl: "Een korte beschrijving...", en: "A short description..." },
+  publicToggleDescription: { fr: "Permettre à tous de voir cette collection sans se connecter", nl: "Sta iedereen toe deze collectie zonder aanmelding in te zien", en: "Allow everyone to view this collection without signing in" },
+  createError: { fr: "Échec de la création. Veuillez réessayer.", nl: "Aanmaken mislukt. Probeer het opnieuw.", en: "Creation failed. Please try again." },
 };
 
 /**
@@ -110,6 +255,185 @@ export const objects = {
   },
   empty: { fr: "Aucun objet", nl: "Geen objecten", en: "No objects" },
   emptyDescription: { fr: "Ajoutez votre premier objet à cette collection", nl: "Voeg je eerste object toe aan deze collectie", en: "Add your first object to this collection" },
+
+  // Ajouts
+  labelPlural: { fr: "objets", nl: "objecten", en: "objects" },
+  labelSingular: { fr: "objet", nl: "object", en: "object" },
+  searchPlaceholder: { fr: "Rechercher un objet...", nl: "Zoek naar een object...", en: "Search for an object..." },
+  filterAllCollections: { fr: "Toutes les collections", nl: "Alle collecties", en: "All collections" },
+  filterStatus: { fr: "Status", nl: "Status", en: "Status" },
+  filterStatusAll: { fr: "Tous", nl: "Alle", en: "All" },
+  statusAvailable: { fr: "Disponible", nl: "Beschikbaar", en: "Available" },
+  statusLent: { fr: "Prêté", nl: "Uitgeleend", en: "Lent" },
+  statusBorrowed: { fr: "Emprunté", nl: "Geleend", en: "Borrowed" },
+  statusOverdue: { fr: "En retard", nl: "Te laat", en: "Overdue" },
+  clearFilters: { fr: "Effacer les filtres", nl: "Filters wissen", en: "Clear filters" },
+  noResultsWithFilters: { fr: "Aucun objet ne correspond aux filtres.", nl: "Geen objecten die aan de filters voldoen.", en: "No objects match the filters." },
+  noObjectsPrompt: { fr: "Ajoutez votre premier objet dans une collection.", nl: "Voeg uw eerste object toe aan een collectie.", en: "Add your first object to a collection." },
+  addTitle: { fr: "AJOUTER UN OBJET", nl: "Een object toevoegen", en: "Add an object" },
+  addDescription: { fr: "Ajoutez un nouvel objet à votre collection", nl: "Voeg een nieuw object toe aan uw collectie", en: "Add a new object to your collection" },
+  notFound: { fr: "OBJET NON TROUVÉ", nl: "Object niet gevonden", en: "Object not found" },
+  notFoundDescription: { fr: "Cet objet n'existe pas ou ne vous appartient pas.", nl: "Dit object bestaat niet of behoort niet aan u.", en: "This object does not exist or does not belong to you." },
+  youBorrowedThisObject: { fr: "Vous avez emprunté cet objet", nl: "U hebt dit object geleend", en: "You borrowed this object" },
+  loanDateRange: { fr: "Depuis le {lentAt} — retour prévu le {returnDueDate}", nl: "Sinds {lentAt} — terugbrenging verwacht op {returnDueDate}", en: "Since {lentAt} — return expected by {returnDueDate}" },
+  owner: { fr: "Propriétaire : {owner}", nl: "Eigenaar: {owner}", en: "Owner: {owner}" },
+  viaContact: { fr: "Via votre contact", nl: "Via uw contactpersoon", en: "Via your contact" },
+  sharedObject: { fr: "Objet partagé", nl: "Gedeeld object", en: "Shared object" },
+  brand: { fr: "Marque", nl: "Merk", en: "Brand" },
+  deleteConfirm: { fr: "Êtes-vous sûr de vouloir supprimer cet objet ?", nl: "Weet u zeker dat u dit object wilt verwijderen?", en: "Are you sure you want to delete this object?" },
+  activeLoanStatus: { fr: "Prêt en cours", nl: "Actieve lening", en: "Active loan" },
+  lendThisObject: { fr: "Prêter cet objet", nl: "Leen dit object uit", en: "Lend this object" },
+  detail: { fr: "Détail de l'objet", nl: "Object detail", en: "Object detail" },
+  editDescription: { fr: "Modifier les informations de l'objet", nl: "Bewerk objectinformatie", en: "Edit object information" },
+  photosSection: { fr: "// PHOTOS", nl: "// FOTO'S", en: "// PHOTOS" },
+  notFoundShort: { fr: "Objet non trouvé.", nl: "Object niet gevonden.", en: "Object not found." },
+  selectCollection: { fr: "Sélectionner une collection", nl: "Selecteer een collectie", en: "Select a collection" },
+  type: { fr: "Type", nl: "Type", en: "Type" },
+  photo: { fr: "Photo", nl: "Foto", en: "Photo" },
+  authorLabel: {
+    BOARD_GAME: { fr: "Auteur / Créateur", nl: "Auteur / Maker", en: "Author / Creator" },
+    TOOL: { fr: "Marque / Fabricant", nl: "Merk / Fabrikant", en: "Brand / Manufacturer" },
+    FILM: { fr: "Réalisateur", nl: "Regisseur", en: "Director" },
+    MUSIC: { fr: "Artiste / Groupe", nl: "Artiest / Groep", en: "Artist / Band" },
+    ELECTRONIC: { fr: "Marque", nl: "Merk", en: "Brand" },
+    ELECTRIC: { fr: "Marque", nl: "Merk", en: "Brand" },
+    CLOTHING: { fr: "Marque", nl: "Merk", en: "Brand" },
+    CUSTOM: { fr: "Marque / Auteur", nl: "Merk / Auteur", en: "Brand / Author" },
+  },
+  authorPlaceholder: {
+    BOOK: { fr: "Antoine de Saint-Exupéry", nl: "Antoine de Saint-Exupéry", en: "Antoine de Saint-Exupéry" },
+    BOARD_GAME: { fr: "Créateur du jeu", nl: "Gamecreator", en: "Game creator" },
+    TOOL: { fr: "Makita, Bosch...", nl: "Makita, Bosch...", en: "Makita, Bosch..." },
+    FILM: { fr: "Christopher Nolan", nl: "Christopher Nolan", en: "Christopher Nolan" },
+    MUSIC: { fr: "Daft Punk", nl: "Daft Punk", en: "Daft Punk" },
+    ELECTRONIC: { fr: "Apple, Sony...", nl: "Apple, Sony...", en: "Apple, Sony..." },
+    ELECTRIC: { fr: "Makita, DeWalt...", nl: "Makita, DeWalt...", en: "Makita, DeWalt..." },
+    CLOTHING: { fr: "Nike, Zara...", nl: "Nike, Zara...", en: "Nike, Zara..." },
+    CUSTOM: { fr: "Marque ou auteur", nl: "Merk of auteur", en: "Brand or author" },
+  },
+  namePlaceholder: {
+    BOOK: { fr: "Le Petit Prince", nl: "De kleine prins", en: "The Little Prince" },
+    BOARD_GAME: { fr: "Catan", nl: "Catan", en: "Catan" },
+    TOOL: { fr: "Tournevis cruciforme", nl: "Kruiskopschroevendraaier", en: "Cross-head screwdriver" },
+    FILM: { fr: "Inception", nl: "Inception", en: "Inception" },
+    MUSIC: { fr: "Discovery", nl: "Discovery", en: "Discovery" },
+    ELECTRONIC: { fr: "iPhone 13", nl: "iPhone 13", en: "iPhone 13" },
+    ELECTRIC: { fr: "Perceuse sans fil 18V", nl: "Snoerloze boor 18V", en: "Cordless drill 18V" },
+    CLOTHING: { fr: "Veste en cuir", nl: "Lederen jas", en: "Leather jacket" },
+    CUSTOM: { fr: "Mon objet", nl: "Mijn object", en: "My object" },
+  },
+  editionLabel: {
+    fr: "Édition / Modèle", nl: "Editie / Model", en: "Edition / Model",
+    ELECTRIC: { fr: "Modèle / Référence", nl: "Model / Referentie", en: "Model / Reference" },
+  },
+  editionPlaceholder: {
+    BOOK: { fr: "Gallimard, 1943", nl: "Gallimard, 1943", en: "Gallimard, 1943" },
+    BOARD_GAME: { fr: "Édition française", nl: "Franse editie", en: "French edition" },
+    FILM: { fr: "Director's Cut", nl: "Director's Cut", en: "Director's Cut" },
+    MUSIC: { fr: "Virgin Records, 1997", nl: "Virgin Records, 1997", en: "Virgin Records, 1997" },
+    ELECTRIC: { fr: "DFD453, 18V", nl: "DFD453, 18V", en: "DFD453, 18V" },
+    DEFAULT: { fr: "Modèle, référence...", nl: "Model, referentie...", en: "Model, reference..." },
+  },
+  playersMin: { fr: "Joueurs min.", nl: "Min. spelers", en: "Min. players" },
+  playersMax: { fr: "Joueurs max.", nl: "Max. spelers", en: "Max. players" },
+  playingTimeMinutes: { fr: "Durée (min.)", nl: "Duur (min.)", en: "Duration (min.)" },
+  ageMin: { fr: "Âge min.", nl: "Min. leeftijd", en: "Min. age" },
+  powerWatts: { fr: "Puissance (W)", nl: "Vermogen (W)", en: "Power (W)" },
+  isbnPlaceholder: { fr: "978-2-07-040850-4", nl: "978-2-07-040850-4", en: "978-2-07-040850-4" },
+  isbnFound: { fr: "✓ Métadonnées récupérées — vérifiez et ajustez si nécessaire", nl: "✓ Metagegevens opgehaald — controleer en pas zo nodig aan", en: "✓ Metadata retrieved — verify and adjust if needed" },
+  isbnNotFound: { fr: "ISBN non trouvé — remplissez manuellement", nl: "ISBN niet gevonden — vul handmatig in", en: "ISBN not found — fill in manually" },
+  isbnAutoFill: { fr: "Saisie automatique via Open Library", nl: "Automatisch invullen via Open Library", en: "Auto-fill via Open Library" },
+  barcodePlaceholder: { fr: "1234567890123", nl: "1234567890123", en: "1234567890123" },
+  gender: {
+    clothing: {
+      size: { fr: "Taille", nl: "Maat", en: "Size" },
+      gender: { fr: "Genre", nl: "Geslacht", en: "Gender" },
+    },
+    MALE: { fr: "Homme", nl: "Man", en: "Male" },
+    FEMALE: { fr: "Femme", nl: "Vrouw", en: "Female" },
+    UNISEX: { fr: "Unisexe", nl: "Unisex", en: "Unisex" },
+  },
+  color: { fr: "Couleur", nl: "Kleur", en: "Color" },
+  material: { fr: "Matière", nl: "Materiaal", en: "Material" },
+  size: {
+    CHILD: { fr: "Enfant", nl: "Kind", en: "Child" },
+  },
+  toolSector: {
+    label: { fr: "Secteur / Usage", nl: "Sector / Gebruik", en: "Sector / Use" },
+    DIY: { fr: "Bricolage", nl: "DIY", en: "DIY" },
+    GARDENING: { fr: "Jardinage", nl: "Tuinieren", en: "Gardening" },
+    AUTOMOTIVE: { fr: "Automobile", nl: "Automechanica", en: "Automotive" },
+    PLUMBING: { fr: "Plomberie", nl: "Loodgieterswerk", en: "Plumbing" },
+    ELECTRICAL: { fr: "Électricité", nl: "Elektriciteit", en: "Electrical" },
+    CONSTRUCTION: { fr: "Construction", nl: "Bouw", en: "Construction" },
+    CARPENTRY: { fr: "Menuiserie", nl: "Timmerwerk", en: "Carpentry" },
+    PAINTING: { fr: "Peinture", nl: "Schilderen", en: "Painting" },
+  },
+  powerSource: {
+    label: { fr: "Alimentation", nl: "Stroombron", en: "Power source" },
+    MANUAL: { fr: "Manuel (non alimenté)", nl: "Handmatig (niet aangedreven)", en: "Manual (non-powered)" },
+    MAINS: { fr: "Secteur (filaire)", nl: "Netspanning (bedraad)", en: "Mains (wired)" },
+    BATTERY: { fr: "Sur batterie", nl: "Batterij", en: "Battery-powered" },
+  },
+  brandPlaceholder: {
+    TOOL: { fr: "Bosch, Makita...", nl: "Bosch, Makita...", en: "Bosch, Makita..." },
+    CLOTHING: { fr: "Nike, Levi's...", nl: "Nike, Levi's...", en: "Nike, Levi's..." },
+  },
+  conditionLabel: { fr: "État", nl: "Conditie", en: "Condition" },
+  pricingEnabled: { fr: "▼ Tarification activée", nl: "Prijsstelling ingeschakeld", en: "Pricing enabled" },
+  pricingDisabled: { fr: "▶ Activer la tarification", nl: "Prijsstelling inschakelen", en: "Enable pricing" },
+  cautionAmount: { fr: "Caution (€)", nl: "Borg (€)", en: "Deposit (€)" },
+  rentalPriceDay: { fr: "Prix / jour (€)", nl: "Prijs / dag (€)", en: "Price / day (€)" },
+  rentalPriceHour: { fr: "Prix / heure (€)", nl: "Prijs / uur (€)", en: "Price / hour (€)" },
+  rentalPriceWeek: { fr: "Prix / semaine (€)", nl: "Prijs / week (€)", en: "Price / week (€)" },
+  rentalPriceKm: { fr: "Prix / km (€)", nl: "Prijs / km (€)", en: "Price / km (€)" },
+  cautionAmountPlaceholder: { fr: "50.00", nl: "50.00", en: "50.00" },
+  rentalPriceDayPlaceholder: { fr: "5.00", nl: "5.00", en: "5.00" },
+  rentalPriceHourPlaceholder: { fr: "1.00", nl: "1.00", en: "1.00" },
+  rentalPriceWeekPlaceholder: { fr: "25.00", nl: "25.00", en: "25.00" },
+  rentalPriceKmPlaceholder: { fr: "0.50", nl: "0.50", en: "0.50" },
+  notesPlaceholder: { fr: "Notes ou remarques sur l'objet...", nl: "Notities of opmerkingen over het object...", en: "Notes or remarks about the object..." },
+  uploadingPhoto: { fr: "Upload photo...", nl: "Foto uploaden...", en: "Uploading photo..." },
+  creating: { fr: "Création...", nl: "Aanmaken...", en: "Creating..." },
+  addObject: { fr: "Ajouter l'objet", nl: "Object toevoegen", en: "Add object" },
+  createSuccess: { fr: "Objet créé avec succès !", nl: "Object succesvol aangemaakt!", en: "Object created successfully!" },
+  createError: { fr: "Erreur lors de la création de l'objet", nl: "Fout bij het aanmaken van object", en: "Error creating object" },
+  photoUploadError: { fr: "Photo non uploadée : {error}", nl: "Foto niet geüpload: {error}", en: "Photo not uploaded: {error}" },
+  photoUploadErrorGeneric: { fr: "Photo non uploadée", nl: "Foto niet geüpload", en: "Photo not uploaded" },
+  lentTo: { fr: "Prêté à {borrower}", nl: "Uitgeleend aan {borrower}", en: "Lent to {borrower}" },
+  available: { fr: "Disponible", nl: "Beschikbaar", en: "Available" },
+  editDialogTitle: { fr: "MODIFIER L'OBJET", nl: "Object bewerken", en: "Edit object" },
+  editDialogDescription: { fr: "Modifier les informations de {objectName}", nl: "Bewerk informatie voor {objectName}", en: "Edit information for {objectName}" },
+  nameLabel: { fr: "Nom de l'objet", nl: "Objectnaam", en: "Object name" },
+  authorOrBrand: { fr: "Auteur / Marque", nl: "Auteur / Merk", en: "Author / Brand" },
+  editionOrModel: { fr: "Édition / Modèle", nl: "Editie / Model", en: "Edition / Model" },
+  savingChanges: { fr: "Enregistrement...", nl: "Wijzigingen opslaan...", en: "Saving changes..." },
+  contactOwnerTitle: { fr: "Contacter le propriétaire", nl: "Neem contact op met de eigenaar", en: "Contact the owner" },
+  contactOwnerDescription: { fr: "Envoyez un message à {ownerName} pour l'objet \"{objectName}\"", nl: "Stuur een bericht naar {ownerName} voor het object \"{objectName}\"", en: "Send a message to {ownerName} for the object \"{objectName}\"" },
+  contactOwnerSuccess: { fr: "Votre message a été envoyé à {ownerName}.\nVous recevrez une réponse par email.", nl: "Uw bericht is verzonden aan {ownerName}.\nU ontvangt een antwoord per e-mail.", en: "Your message has been sent to {ownerName}.\nYou will receive a reply by email." },
+  contactOwner: {
+    fr: "Contacter le propriétaire", nl: "Neem contact op met de eigenaar", en: "Contact the owner",
+    yourName: { fr: "Votre nom", nl: "Uw naam", en: "Your name" },
+    namePlaceholder: { fr: "Jean Dupont", nl: "Jan Jansen", en: "John Doe" },
+    yourEmail: { fr: "Votre email", nl: "Uw e-mailadres", en: "Your email" },
+    emailPlaceholder: { fr: "jean@example.com", nl: "jan@example.com", en: "john@example.com" },
+    emailNote: { fr: "Votre email ne sera utilisé que pour vous contacter.", nl: "Uw e-mailadres wordt alleen gebruikt om u te bereiken.", en: "Your email will only be used to contact you." },
+    messageLabel: { fr: "Message", nl: "Bericht", en: "Message" },
+    messagePlaceholder: { fr: "Bonjour {ownerName},\n\nJe suis intéressé par votre objet \"{objectName}\"...", nl: "Hallo {ownerName},\n\nIk ben geïnteresseerd in uw object \"{objectName}\"...", en: "Hello {ownerName},\n\nI am interested in your object \"{objectName}\"..." },
+  },
+  addPhoto: { fr: "Ajouter une photo", nl: "Voeg een foto toe", en: "Add a photo" },
+  photoPickerTitle: { fr: "Ajouter une photo", nl: "Voeg een foto toe", en: "Add a photo" },
+  photoSource: {
+    file: { fr: "Fichier", nl: "Bestand", en: "File" },
+    camera: { fr: "Caméra", nl: "Camera", en: "Camera" },
+  },
+  photoFileDescription: { fr: "Sélectionnez une image depuis votre appareil.", nl: "Selecteer een afbeelding van uw apparaat.", en: "Select an image from your device." },
+  photoChooseFile: { fr: "Choisir un fichier", nl: "Kies een bestand", en: "Choose a file" },
+  photoFileFormats: { fr: "JPEG, PNG, WebP, GIF • Max 10 Mo", nl: "JPEG, PNG, WebP, GIF • Max 10 MB", en: "JPEG, PNG, WebP, GIF • Max 10 MB" },
+  photoCameraDescription: { fr: "Prenez une photo avec votre appareil.", nl: "Maak een foto met uw apparaat.", en: "Take a photo with your device." },
+  photoOpenCamera: { fr: "Ouvrir la caméra", nl: "Camera openen", en: "Open camera" },
+  photoCameraHint: { fr: "Caméra arrière sur mobile", nl: "Achteraanzicht op mobiel", en: "Rear camera on mobile" },
+  photoPreview: { fr: "Aperçu", nl: "Voorbeeld", en: "Preview" },
 };
 
 /**
@@ -135,6 +459,87 @@ export const loans = {
   empty: { fr: "Aucun prêt", nl: "Geen leningen", en: "No loans" },
   emptyLent: { fr: "Aucun objet prêté", nl: "Geen objecten uitgeleend", en: "Nothing lent out" },
   emptyBorrowed: { fr: "Aucun objet emprunté", nl: "Geen objecten geleend", en: "Nothing borrowed" },
+
+  // Ajouts
+  returnDueDateLabel: { fr: "Retour prévu le {returnDueDate}", nl: "Terugbrenging verwacht op {returnDueDate}", en: "Return due by {returnDueDate}" },
+  markReturned: { fr: "Marquer rendu", nl: "Markeer als teruggebracht", en: "Mark returned" },
+  closedSuccess: { fr: "Prêt clôturé", nl: "Lening gesloten", en: "Loan closed" },
+  closeError: { fr: "Impossible de clôturer le prêt", nl: "Kan lening niet sluiten", en: "Unable to close loan" },
+  history: { fr: "Historique", nl: "Geschiedenis", en: "History" },
+  cancelled: { fr: "Annulé", nl: "Geannuleerd", en: "Cancelled" },
+  lent: { fr: "Prêté", nl: "Uitgeleend", en: "Lent" },
+  markReturnedAriaLabel: { fr: "Marquer comme retourné", nl: "Markeer als teruggebracht", en: "Mark as returned" },
+  pageTitle: { fr: "PRÊTS", nl: "LENINGEN", en: "LOANS" },
+  pageSubtitle: { fr: "Suivez vos prêts et emprunts", nl: "Volg je leningen en uitleningen", en: "Track your loans and borrowings" },
+  newLoan: { fr: "NOUVEAU PRÊT", nl: "NIEUWE LENING", en: "NEW LOAN" },
+  overdueFilter: { fr: "Filtre : en retard ({count})", nl: "Filter: te laat ({count})", en: "Filter: overdue ({count})" },
+  clearFilter: { fr: "Effacer", nl: "Wissen", en: "Clear" },
+  removeOverdueFilterAriaLabel: { fr: "Retirer le filtre en retard", nl: "Verwijder te laat filter", en: "Remove overdue filter" },
+  // NOTE: loans.emptyLent / loans.emptyBorrowed already exist above (different
+  // values) — skipped per the no-duplicate rule.
+  emptyHistory: { fr: "AUCUN HISTORIQUE", nl: "GEEN GESCHIEDENIS", en: "NO HISTORY" },
+  emptyLentDesc: { fr: "Vos objets prêtés apparaîtront ici", nl: "Je uitgeleende objecten verschijnen hier", en: "Your lent items will appear here" },
+  emptyBorrowedDesc: { fr: "Les objets que vous avez empruntés apparaîtront ici", nl: "Objecten die je hebt geleend verschijnen hier", en: "Items you borrowed will appear here" },
+  emptyHistoryDesc: { fr: "Votre historique de prêts apparaîtra ici", nl: "Je geschiedems van leningen verschijnt hier", en: "Your loan history will appear here" },
+  selectObjectTitle: { fr: "Sélectionner un objet à prêter", nl: "Selecteer een object om uit te lenen", en: "Select an object to lend" },
+  searchObjectPlaceholder: { fr: "Rechercher un objet...", nl: "Zoek een object...", en: "Search for an object..." },
+  noMatchingObjects: { fr: "Aucun objet disponible ne correspond", nl: "Geen beschikbare objecten gevonden", en: "No matching available objects" },
+  noAvailableObjects: { fr: "Aucun objet disponible — tous sont déjà prêtés ou vous n'avez pas d'objets", nl: "Geen beschikbare objecten — allemaal zijn al uitgeleend of je hebt geen", en: "No available objects — all are already lent or you have none" },
+  returnedSuccessToast: { fr: "Prêt marqué comme rendu", nl: "Lening gemarkeerd als teruggebracht", en: "Loan marked as returned" },
+  returnErrorToast: { fr: "Erreur lors du retour", nl: "Fout bij terugbrengen lening", en: "Error returning loan" },
+  reminderSentToast: { fr: "Rappel envoyé", nl: "Herinnering verzonden", en: "Reminder sent" },
+  reminderErrorToast: { fr: "Erreur lors du rappel", nl: "Fout bij verzenden herinnering", en: "Error sending reminder" },
+  overdueInDays: { fr: "En retard de {days} jour{days, plural, one {} other {s}}", nl: "{days} dag{days, plural, one {} other {en}} te laat", en: "Overdue by {days} day{days, plural, one {} other {s}}" },
+  overdueOneDay: { fr: "En retard d'un jour", nl: "Een dag te laat", en: "Overdue by one day" },
+  today: { fr: "Aujourd'hui", nl: "Vandaag", en: "Today" },
+  tomorrow: { fr: "Demain", nl: "Morgen", en: "Tomorrow" },
+  inDays: { fr: "Dans {days} jours", nl: "Over {days} dagen", en: "In {days} days" },
+  selectBorrowerDialogTitle: { fr: "Ajouter un emprunteur", nl: "Voeg een lener toe", en: "Add a borrower" },
+  selectBorrowerDescription: { fr: "Recherchez un contact, ajoutez par ID, ou créez un nouveau contact.", nl: "Zoek een contact, voeg toe met ID, of maak een nieuw contact.", en: "Search for a contact, add by ID, or create a new contact." },
+  myContactsTab: { fr: "Mes contacts", nl: "Mijn contacten", en: "My contacts" },
+  idQrTab: { fr: "ID / QR", nl: "ID / QR", en: "ID / QR" },
+  newTab: { fr: "Nouveau", nl: "Nieuw", en: "New" },
+  searchContactPlaceholder: { fr: "Rechercher un contact...", nl: "Zoek een contact...", en: "Search for a contact..." },
+  brolUsersLabel: { fr: "Utilisateurs Brol", nl: "Brol gebruikers", en: "Brol users" },
+  noContactsMessage: { fr: "Aucun contact enregistré", nl: "Geen contacten geregistreerd", en: "No contacts registered" },
+  createContactLabel: { fr: "Créer un contact", nl: "Maak een contact", en: "Create a contact" },
+  noEmailLabel: { fr: "sans email", nl: "geen e-mail", en: "no email" },
+  brolAccountLabel: { fr: "compte Brol", nl: "Brol account", en: "Brol account" },
+  userIdLabel: { fr: "Identifiant ou ID", nl: "Identificatie of ID", en: "Identifier or ID" },
+  userIdPlaceholder: { fr: "#piet1234 ou ID brut", nl: "#piet1234 of raw ID", en: "#piet1234 or raw ID" },
+  noUserFoundMessage: { fr: "Aucun utilisateur trouvé avec cet ID", nl: "Geen gebruiker gevonden met deze ID", en: "No user found with this ID" },
+  orDivider: { fr: "ou", nl: "of", en: "or" },
+  scanQrButtonLabel: { fr: "Scanner un QR code", nl: "Scan een QR-code", en: "Scan a QR code" },
+  invalidQrErrorToast: { fr: "Ce QR code n'est pas un profil utilisateur", nl: "Deze QR-code is geen gebruikersprofiel", en: "This QR code is not a user profile" },
+  userFoundToast: { fr: "Utilisateur trouvé: {user}", nl: "Gebruiker gevonden: {user}", en: "User found: {user}" },
+  noUserForQrErrorToast: { fr: "Aucun utilisateur trouvé pour ce QR code", nl: "Geen gebruiker gevonden voor deze QR-code", en: "No user found for this QR code" },
+  noNameLabel: { fr: "Sans nom", nl: "Geen naam", en: "No name" },
+  selectThisUserButton: { fr: "Sélectionner cet utilisateur", nl: "Selecteer deze gebruiker", en: "Select this user" },
+  newContactNameLabel: { fr: "Nom *", nl: "Naam *", en: "Name *" },
+  newContactNamePlaceholder: { fr: "Marie Dupont", nl: "Maria Janssen", en: "Jane Doe" },
+  newContactEmailLabel: { fr: "Email (optionnel)", nl: "E-mail (optioneel)", en: "Email (optional)" },
+  newContactEmailPlaceholder: { fr: "marie@example.com", nl: "maria@example.com", en: "jane@example.com" },
+  newContactPhoneLabel: { fr: "Téléphone (optionnel)", nl: "Telefoon (optioneel)", en: "Phone (optional)" },
+  newContactPhonePlaceholder: { fr: "+32 xxx xx xx xx", nl: "+32 xxx xx xx xx", en: "+1 555 0000" },
+  newContactNoteLabel: { fr: "Note (optionnel)", nl: "Notitie (optioneel)", en: "Note (optional)" },
+  newContactNotePlaceholder: { fr: "Ami, collègue...", nl: "Vriend, collega...", en: "Friend, colleague..." },
+  creatingLabel: { fr: "Création...", nl: "Aanmaken...", en: "Creating..." },
+  createContactButton: { fr: "Créer le contact", nl: "Maak contact", en: "Create contact" },
+  contactCreatedToast: { fr: "Contact \"{contactName}\" créé", nl: "Contact \"{contactName}\" aangemaakt", en: "Contact \"{contactName}\" created" },
+  contactCreationErrorToast: { fr: "Erreur lors de la création du contact", nl: "Fout bij aanmaken contact", en: "Error creating contact" },
+  lendObjectDialogTitle: { fr: "Prêter cet objet", nl: "Leen dit object uit", en: "Lend this object" },
+  lendObjectDescription: { fr: "Vous prêtez {objectName} à un contact ou un utilisateur Brol.", nl: "Je leent {objectName} uit aan een contact of een Brol gebruiker.", en: "You are lending {objectName} to a contact or a Brol user." },
+  borrowerLabel: { fr: "Emprunteur", nl: "Lener", en: "Borrower" },
+  contactLabel: { fr: "Contact", nl: "Contact", en: "Contact" },
+  brolUserLabel: { fr: "Utilisateur Brol", nl: "Brol gebruiker", en: "Brol user" },
+  addBorrowerButtonLabel: { fr: "Ajouter un emprunteur", nl: "Voeg een lener toe", en: "Add a borrower" },
+  notesLabel: { fr: "Notes (optionnel)", nl: "Notities (optioneel)", en: "Notes (optional)" },
+  notesPlaceholder: { fr: "Rappel pour ce prêt...", nl: "Herinnering voor deze lening...", en: "Reminder for this loan..." },
+  cancelButtonLabel: { fr: "Annuler", nl: "Annuleren", en: "Cancel" },
+  confirmLoanButtonLabel: { fr: "Confirmer le prêt", nl: "Bevestig lening", en: "Confirm loan" },
+  selectBorrowerErrorToast: { fr: "Sélectionnez un emprunteur", nl: "Selecteer een lener", en: "Select a borrower" },
+  loanCreatedSuccessToast: { fr: "\"{objectName}\" prêté avec succès", nl: "\"{objectName}\" succesvol uitgeleend", en: "\"{objectName}\" lent successfully" },
+  loanCreationErrorToast: { fr: "Erreur lors du prêt", nl: "Fout bij aanmaken lening", en: "Error creating loan" },
 };
 
 /**
@@ -153,6 +558,78 @@ export const contacts = {
   invite: { fr: "Inviter", nl: "Uitnodigen", en: "Invite" },
   empty: { fr: "Aucun contact", nl: "Geen contacten", en: "No contacts" },
   emptyDescription: { fr: "Ajoutez des contacts pour leur prêter des objets", nl: "Voeg contacten toe om objecten uit te lenen", en: "Add contacts to lend them objects" },
+
+  // Ajouts
+  pageTitle: { fr: "CONTACTS", nl: "CONTACTEN", en: "CONTACTS" },
+  newButtonLabel: { fr: "Nouveau", nl: "Nieuw", en: "New" },
+  editAriaLabel: { fr: "Modifier le contact", nl: "Bewerk het contact", en: "Edit contact" },
+  deleteAriaLabel: { fr: "Supprimer le contact", nl: "Verwijder het contact", en: "Delete contact" },
+  emptyTitle: { fr: "AUCUN CONTACT", nl: "GEEN CONTACTEN", en: "NO CONTACTS" },
+  addButtonLabel: { fr: "Ajouter un contact", nl: "Voeg een contact toe", en: "Add a contact" },
+  dialogEditTitle: { fr: "Modifier le contact", nl: "Bewerk het contact", en: "Edit contact" },
+  dialogCreateTitle: { fr: "Nouveau contact", nl: "Nieuw contact", en: "New contact" },
+  nameLabel: { fr: "Nom *", nl: "Naam *", en: "Name *" },
+  namePlaceholder: { fr: "Jean Dupont", nl: "Jan Jansen", en: "John Doe" },
+  emailLabel: { fr: "Email", nl: "E-mail", en: "Email" },
+  emailPlaceholder: { fr: "jean@example.com", nl: "jan@example.com", en: "john@example.com" },
+  phoneLabel: { fr: "Téléphone", nl: "Telefoon", en: "Phone" },
+  phonePlaceholder: { fr: "+32 470 00 00 00", nl: "+32 470 00 00 00", en: "+1 555 0000" },
+  noteLabel: { fr: "Note", nl: "Notitie", en: "Note" },
+  notePlaceholder: { fr: "Ami, collègue...", nl: "Vriend, collega...", en: "Friend, colleague..." },
+  saveButtonLabel: { fr: "Enregistrer", nl: "Opslaan", en: "Save" },
+  createButtonLabel: { fr: "Créer", nl: "Maken", en: "Create" },
+  createdToast: { fr: "Contact créé", nl: "Contact aangemaakt", en: "Contact created" },
+  createErrorToast: { fr: "Erreur lors de la création", nl: "Fout bij aanmaken contact", en: "Error creating contact" },
+  updatedToast: { fr: "Contact mis à jour", nl: "Contact bijgewerkt", en: "Contact updated" },
+  updateErrorToast: { fr: "Erreur lors de la mise à jour", nl: "Fout bij bijwerken contact", en: "Error updating contact" },
+  nameRequired: { fr: "Le nom est requis", nl: "Naam is verplicht", en: "Name is required" },
+  deleteDialogTitle: { fr: "Supprimer le contact ?", nl: "Contact verwijderen?", en: "Delete contact?" },
+  deleteConfirmMessage: { fr: "Voulez-vous vraiment supprimer {contactName} ? Cette action est irréversible.", nl: "Weet je zeker dat je {contactName} wilt verwijderen? Deze actie kan niet ongedaan gemaakt worden.", en: "Are you sure you want to delete {contactName}? This action is irreversible." },
+  deletedToast: { fr: "Contact supprimé", nl: "Contact verwijderd", en: "Contact deleted" },
+  deleteErrorToast: { fr: "Erreur lors de la suppression", nl: "Fout bij verwijderen contact", en: "Error deleting contact" },
+  notFoundTitle: { fr: "CONTACT INTROUVABLE", nl: "CONTACT NIET GEVONDEN", en: "CONTACT NOT FOUND" },
+  backButtonLabel: { fr: "Retour aux contacts", nl: "Terug naar contacten", en: "Back to contacts" },
+  detailEditAriaLabel: { fr: "Modifier le contact", nl: "Bewerk het contact", en: "Edit contact" },
+  loanHistoryTitle: { fr: "HISTORIQUE DE PRÊTS", nl: "GESCHIEDEMS VAN LENINGEN", en: "LOAN HISTORY" },
+  loanCount: { fr: "{count} prêt{count, plural, one {} other {s}}", nl: "{count} lening{count, plural, one {} other {en}}", en: "{count} loan{count, plural, one {} other {s}}" },
+  noLoansMessage: { fr: "Aucun prêt avec ce contact", nl: "Geen leningen met dit contact", en: "No loans with this contact" },
+  lentOnDate: { fr: "Prêté le {date}", nl: "Uitgeleend op {date}", en: "Lent on {date}" },
+  returnDueDate: { fr: "retour prévu le {date}", nl: "terugbrengen voorzien op {date}", en: "return due on {date}" },
+  returnedOnDate: { fr: "Rendu le {date}", nl: "Teruggebracht op {date}", en: "Returned on {date}" },
+  unknownObject: { fr: "Objet inconnu", nl: "Onbekend object", en: "Unknown object" },
+  editDialogTitle: { fr: "Modifier le contact", nl: "Bewerk het contact", en: "Edit contact" },
+  editNameLabel: { fr: "Nom *", nl: "Naam *", en: "Name *" },
+  editEmailLabel: { fr: "Email", nl: "E-mail", en: "Email" },
+  editPhoneLabel: { fr: "Téléphone", nl: "Telefoon", en: "Phone" },
+  editNoteLabel: { fr: "Note", nl: "Notitie", en: "Note" },
+  editSaveButton: { fr: "Enregistrer", nl: "Opslaan", en: "Save" },
+  newContactDialogTitle: { fr: "Nouveau contact", nl: "Nieuw contact", en: "New contact" },
+  addContactDescription: { fr: "Ajoutez manuellement, par identifiant Brol ou via QR code.", nl: "Voeg handmatig toe, via Brol-identificatie of QR-code.", en: "Add manually, by Brol identifier or via QR code." },
+  manualTab: { fr: "Manuel", nl: "Handmatig", en: "Manual" },
+  idHandleTab: { fr: "ID / Handle", nl: "ID / Handle", en: "ID / Handle" },
+  qrCodeTab: { fr: "QR code", nl: "QR-code", en: "QR code" },
+  manualNameLabel: { fr: "Nom *", nl: "Naam *", en: "Name *" },
+  manualNamePlaceholder: { fr: "Marie Dupont", nl: "Maria Janssen", en: "Jane Doe" },
+  manualEmailLabel: { fr: "Email", nl: "E-mail", en: "Email" },
+  manualEmailPlaceholder: { fr: "marie@example.com", nl: "maria@example.com", en: "jane@example.com" },
+  manualPhoneLabel: { fr: "Téléphone", nl: "Telefoon", en: "Phone" },
+  manualPhonePlaceholder: { fr: "+32 470 00 00 00", nl: "+32 470 00 00 00", en: "+1 555 0000" },
+  manualNoteLabel: { fr: "Note", nl: "Notitie", en: "Note" },
+  manualNotePlaceholder: { fr: "Ami, collègue...", nl: "Vriend, collega...", en: "Friend, colleague..." },
+  creatingLabel: { fr: "Création...", nl: "Aanmaken...", en: "Creating..." },
+  createContactButtonLabel: { fr: "Créer le contact", nl: "Maak contact", en: "Create contact" },
+  idHandleLabel: { fr: "Identifiant ou handle", nl: "Identificatie of handle", en: "Identifier or handle" },
+  idHandlePlaceholder: { fr: "#piet1234 ou ID brut", nl: "#piet1234 of raw ID", en: "#piet1234 or raw ID" },
+  noUserFoundForIdMessage: { fr: "Aucun utilisateur trouvé pour cet identifiant.", nl: "Geen gebruiker gevonden voor deze identificatie.", en: "No user found for this identifier." },
+  noNameMessage: { fr: "Sans nom", nl: "Geen naam", en: "No name" },
+  addThisContactButton: { fr: "Ajouter ce contact", nl: "Voeg dit contact toe", en: "Add this contact" },
+  qrInstructions: { fr: "Scannez le QR code d'un profil Brol pour l'ajouter à vos contacts.", nl: "Scan de QR-code van een Brol-profiel om het aan je contacten toe te voegen.", en: "Scan the QR code of a Brol profile to add it to your contacts." },
+  openScannerButton: { fr: "Ouvrir le scanner", nl: "Open scanner", en: "Open scanner" },
+  invalidQrErrorToast: { fr: "Ce QR code n'est pas un profil utilisateur", nl: "Deze QR-code is geen gebruikersprofiel", en: "This QR code is not a user profile" },
+  invalidQrCodeToast: { fr: "QR code invalide", nl: "Ongeldige QR-code", en: "Invalid QR code" },
+  createdFromScanToast: { fr: "Contact créé", nl: "Contact aangemaakt", en: "Contact created" },
+  contactAddedToast: { fr: "Contact \"{contactName}\" ajouté", nl: "Contact \"{contactName}\" toegevoegd", en: "Contact \"{contactName}\" added" },
+  addContactErrorToast: { fr: "Impossible d'ajouter ce contact", nl: "Kan dit contact niet toevoegen", en: "Unable to add this contact" },
 };
 
 /**
@@ -169,6 +646,58 @@ export const qrCodes = {
   scanToAssign: { fr: "Scanner pour affecter", nl: "Scan om toe te wijzen", en: "Scan to assign" },
   scanToLend: { fr: "Scanner pour prêter", nl: "Scan om uit te lenen", en: "Scan to lend" },
   scanToReturn: { fr: "Scanner pour retourner", nl: "Scan om terug te brengen", en: "Scan to return" },
+
+  // Ajouts
+  assign: { fr: "Assigner un QR code", nl: "Wijs een QR-code toe", en: "Assign a QR code" },
+  downloadPng: { fr: "Télécharger PNG", nl: "Download PNG", en: "Download PNG" },
+  none: { fr: "Aucun QR code", nl: "Geen QR-code", en: "No QR code" },
+  selectExisting: { fr: "Sélectionner un QR existant", nl: "Selecteer een bestaande QR-code", en: "Select an existing QR code" },
+  createNew: { fr: "Créer un nouveau QR", nl: "Maak een nieuwe QR-code", en: "Create a new QR code" },
+  scanned: { fr: "✓ QR scanné : {code}", nl: "✓ QR gescand: {code}", en: "✓ QR scanned: {code}" },
+  selectLabel: { fr: "Sélectionner un QR code", nl: "Selecteer een QR-code", en: "Select a QR code" },
+  selected: { fr: "QR sélectionné : {code}", nl: "QR geselecteerd: {code}", en: "QR selected: {code}" },
+  createAutomatically: { fr: "Un nouveau QR code sera généré automatiquement à la création de l'objet.", nl: "Een nieuwe QR-code wordt automatisch gegenereerd wanneer het object wordt aangemaakt.", en: "A new QR code will be generated automatically when the object is created." },
+  generatingQr: { fr: "Génération du QR...", nl: "QR genereren...", en: "Generating QR..." },
+  pageDescription: { fr: "Gérez votre stock de QR codes à coller sur vos objets.", nl: "Beheer uw QR-codevoorraad om op uw objecten te plakken.", en: "Manage your QR code stock to stick on your items." },
+  countLabel: { fr: "Nombre de codes à générer", nl: "Aantal te genereren codes", en: "Number of codes to generate" },
+  generateButton: { fr: "Générer", nl: "Genereren", en: "Generate" },
+  generatedSuccess: { fr: "{count} code(s) généré(s) !", nl: "{count} code(s) gegenereerd!", en: "{count} code(s) generated!" },
+  selectionCount: { fr: "Sélection : {count} code(s)", nl: "Selectie: {count} code(s)", en: "Selection: {count} code(s)" },
+  selectAll: { fr: "Tout sélectionner", nl: "Alles selecteren", en: "Select all" },
+  clearSelection: { fr: "Effacer", nl: "Wissen", en: "Clear" },
+  sizeLabel: { fr: "Taille des QR", nl: "QR-grootte", en: "QR size" },
+  sizeRecommended: { fr: "30 mm (recommandé)", nl: "30 mm (aanbevolen)", en: "30 mm (recommended)" },
+  printButton: { fr: "Imprimer / PDF", nl: "Afdrukken / PDF", en: "Print / PDF" },
+  printInstructions: { fr: "L'impression ouvre une nouvelle fenêtre. Choisissez \"Enregistrer en PDF\" dans le dialog du navigateur pour obtenir un PDF.", nl: "Afdrukken opent een nieuw venster. Kies \"Opslaan als PDF\" in het browserdialoogvenster om een PDF te krijgen.", en: "Printing opens a new window. Choose \"Save as PDF\" in the browser dialog to get a PDF." },
+  codesLabel: { fr: "codes", nl: "codes", en: "codes" },
+  usedLabel: { fr: "utilisés", nl: "gebruikt", en: "used" },
+  availableLabel: { fr: "disponibles", nl: "beschikbaar", en: "available" },
+  emptyTitle: { fr: "AUCUN QR CODE", nl: "GEEN QR-CODE", en: "NO QR CODE" },
+  emptyDescription: { fr: "Générez votre premier batch de codes ci-dessus.", nl: "Genereer uw eerste batch codes hierboven.", en: "Generate your first batch of codes above." },
+  selectAriaLabel: { fr: "Sélectionner {code}", nl: "Selecteer {code}", en: "Select {code}" },
+  statusUsed: { fr: "Utilisé", nl: "Gebruikt", en: "Used" },
+  statusFree: { fr: "Libre", nl: "Vrij", en: "Free" },
+  confirmDelete: { fr: "Supprimer ce QR code ?", nl: "Deze QR-code verwijderen?", en: "Delete this QR code?" },
+  unknownTitle: { fr: "QR INCONNU", nl: "ONBEKENDE QR", en: "UNKNOWN QR" },
+  unknownDefault: { fr: "Aucun QR code ne correspond à ce lien.", nl: "Geen QR-code komt overeen met deze link.", en: "No QR code matches this link." },
+  unassignedTitle: { fr: "QR NON ASSIGNÉ", nl: "NIET-TOEGEWEZEN QR", en: "UNASSIGNED QR" },
+  unassignedDescription: { fr: "Ce QR code n'est associé à aucun objet pour l'instant. Scannez-le depuis votre app pour l'attribuer.", nl: "Deze QR-code is nog niet aan een object gekoppeld. Scan het vanuit uw app om het toe te wijzen.", en: "This QR code is not associated with any object yet. Scan it from your app to assign it." },
+  chooseObjectTitle: { fr: "CHOISISSEZ L'OBJET", nl: "KIES HET OBJECT", en: "CHOOSE THE OBJECT" },
+  assignDialogTitle: { fr: "ASSigner un QR code", nl: "Een QR-code toewijzen", en: "Assign a QR code" },
+  assignDialogDescription: { fr: "Choisissez un QR code libre pour taguer {objectName}.", nl: "Kies een vrije QR-code om {objectName} te labelen.", en: "Choose a free QR code to tag {objectName}." },
+  noAvailableCodes: { fr: "Aucun QR code libre disponible.", nl: "Geen beschikbare QR-codes.", en: "No available QR codes." },
+  generateFromQrPage: { fr: "Générez-en de nouveaux depuis la page QR Codes.", nl: "Genereer nieuwe vanuit de QR-codes-pagina.", en: "Generate new ones from the QR Codes page." },
+  createdOn: { fr: "Créé le {date}", nl: "Gemaakt op {date}", en: "Created on {date}" },
+  freeLabel: { fr: "Libre", nl: "Vrij", en: "Free" },
+  scannerTitle: { fr: "Scanner QR Code", nl: "QR-code scannen", en: "Scan QR Code" },
+  scannerPositionHint: { fr: "Positionnez le QR code dans le cadre", nl: "Plaats de QR-code in het frame", en: "Position the QR code in the frame" },
+  openCameraButton: { fr: "Ouvrir la caméra", nl: "Camera openen", en: "Open camera" },
+  scanning: { fr: "Recherche du QR...", nl: "Op zoek naar QR...", en: "Searching for QR..." },
+  detectedSuccess: { fr: "QR Code détecté !", nl: "QR-code gedetecteerd!", en: "QR Code detected!" },
+  cameraError: { fr: "Erreur caméra", nl: "Camerafout", en: "Camera error" },
+  retryButton: { fr: "Réessayer", nl: "Opnieuw proberen", en: "Retry" },
+  scannerDistanceHint: { fr: "Tenez le QR code à une distance de 15-30 cm de la caméra", nl: "Houd de QR-code 15-30 cm van de camera verwijderd", en: "Hold the QR code 15-30 cm away from the camera" },
+  popupAllowanceRequired: { fr: "Veuillez autoriser les popups pour l'impression.", nl: "Sta pop-ups toe voor afdrukken.", en: "Please allow popups for printing." },
 };
 
 /**
@@ -194,3 +723,177 @@ export const errors = {
   validationError: { fr: "Erreur de validation", nl: "Validatiefout", en: "Validation error" },
   networkError: { fr: "Erreur réseau", nl: "Netwerkfout", en: "Network error" },
 };
+
+/**
+ * Traductions pour les paramètres.
+ */
+export const settings = {
+  title: { fr: "PARAMÈTRES", nl: "INSTELLINGEN", en: "SETTINGS" },
+  myProfileTitle: { fr: "MON PROFIL", nl: "MIJN PROFIEL", en: "MY PROFILE" },
+  noName: { fr: "Sans nom", nl: "Geen naam", en: "No name" },
+  viewButton: { fr: "Voir", nl: "Bekijken", en: "View" },
+  handleLabel: { fr: "Mon identifiant", nl: "Mijn identificatie", en: "My identifier" },
+  copyHandleLabel: { fr: "Copier l'identifiant", nl: "Identificatie kopiëren", en: "Copy identifier" },
+  showQrLabel: { fr: "Afficher le QR code", nl: "QR-code weergeven", en: "Show QR code" },
+  handleHint: { fr: "Votre pseudo est définitif — il est utilisé dans les liens partagés (URL de profil, QR code).", nl: "Uw handle is permanent — deze wordt gebruikt in gedeelde links (profiel-URL, QR-code).", en: "Your handle is permanent — it is used in shared links (profile URL, QR code)." },
+  scanQrHint: { fr: "Scannez pour m'ajouter comme ami", nl: "Scan om mij als vriend toe te voegen", en: "Scan to add me as a friend" },
+  copiedSuccess: { fr: "Handle copié", nl: "Handle gekopieerd", en: "Handle copied" },
+  copyError: { fr: "Impossible de copier", nl: "Kan niet kopiëren", en: "Unable to copy" },
+  myPlanTitle: { fr: "MON PLAN", nl: "MIJN PLAN", en: "MY PLAN" },
+  tier: {
+    free: {
+      feature1: { fr: "5 collections", nl: "5 collecties", en: "5 collections" },
+      feature2: { fr: "50 objets", nl: "50 objecten", en: "50 objects" },
+      feature3: { fr: "10 prêts simultanés", nl: "10 gelijktijdige leningen", en: "10 simultaneous loans" },
+    },
+    tier2: {
+      feature1: { fr: "10 collections", nl: "10 collecties", en: "10 collections" },
+      feature2: { fr: "500 objets", nl: "500 objecten", en: "500 objects" },
+      feature3: { fr: "50 prêts simultanés", nl: "50 gelijktijdige leningen", en: "50 simultaneous loans" },
+    },
+    tier3: {
+      feature1: { fr: "Collections illimitées", nl: "Onbeperkte collecties", en: "Unlimited collections" },
+      feature2: { fr: "Objets illimités", nl: "Onbeperkte objecten", en: "Unlimited objects" },
+      feature3: { fr: "Prêts illimités", nl: "Onbeperkte leningen", en: "Unlimited loans" },
+    },
+  },
+  upgradeButton: { fr: "Upgrade", nl: "Upgrade", en: "Upgrade" },
+  upgradeTitleAvailable: { fr: "UPGRADE DISPONIBLE", nl: "BESCHIKBARE UPGRADES", en: "AVAILABLE UPGRADES" },
+  chooseTier2Button: { fr: "Choisir Tier 2", nl: "Kies Tier 2", en: "Choose Tier 2" },
+  chooseTier3Button: { fr: "Choisir Tier 3", nl: "Kies Tier 3", en: "Choose Tier 3" },
+  personalInfoTitle: { fr: "INFORMATIONS PERSONNELLES", nl: "PERSOONLIJKE INFORMATIE", en: "PERSONAL INFORMATION" },
+  personalInfoHint: { fr: "Tout est optionnel et privé par défaut. Cochez \"Public\" pour rendre un champ visible sur votre profil.", nl: "Alles is optioneel en standaard privé. Vink \"Openbaar\" aan om een veld zichtbaar te maken op uw profiel.", en: "Everything is optional and private by default. Check \"Public\" to make a field visible on your profile." },
+  birthYearLabel: { fr: "Année de naissance", nl: "Geboortejaar", en: "Birth year" },
+  birthYearPlaceholder: { fr: "ex: 1985", nl: "bijv. 1985", en: "e.g. 1985" },
+  genderLabel: { fr: "Genre", nl: "Geslacht", en: "Gender" },
+  genderPlaceholder: { fr: "ex: F, H, X, ou autre", nl: "bijv. V, M, X, of ander", en: "e.g. F, M, X, or other" },
+  phoneLabel: { fr: "Téléphone", nl: "Telefoon", en: "Phone" },
+  phonePlaceholder: { fr: "+32 ...", nl: "+32 ...", en: "+32 ..." },
+  cityNotSet: { fr: "Non renseignée", nl: "Niet ingesteld", en: "Not set" },
+  cityLabel: { fr: "Ville", nl: "Stad", en: "City" },
+  emailLabel: { fr: "Email", nl: "E-mail", en: "Email" },
+  publicToggle: { fr: "Public", nl: "Openbaar", en: "Public" },
+  perMonth: { fr: "/mois", nl: "/maand", en: "/month" },
+  invalidYear: { fr: "Année invalide (1900 - {year}).", nl: "Ongeldig jaar (1900 - {year}).", en: "Invalid year (1900 - {year})." },
+  profileUpdatedSuccess: { fr: "Profil mis à jour", nl: "Profiel bijgewerkt", en: "Profile updated" },
+  profileUpdateError: { fr: "Erreur lors de la mise à jour", nl: "Fout bij bijwerken van profiel", en: "Error updating profile" },
+  progressBarCollections: { fr: "Collections", nl: "Collecties", en: "Collections" },
+  progressBarObjects: { fr: "Objets", nl: "Objecten", en: "Objects" },
+  progressBarActiveLoans: { fr: "Prêts actifs", nl: "Actieve leningen", en: "Active loans" },
+};
+
+/**
+ * Traductions pour les photos.
+ */
+export const photos = {
+  invalidFileType: { fr: "Le fichier doit être une image (JPEG, PNG, WebP, GIF)", nl: "Bestand moet een afbeelding zijn (JPEG, PNG, WebP, GIF)", en: "File must be an image (JPEG, PNG, WebP, GIF)" },
+  fileTooLarge: { fr: "Le fichier est trop volumineux. Maximum: 10 Mo.", nl: "Bestand is te groot. Maximum: 10 MB.", en: "File is too large. Maximum: 10 MB." },
+  addPhotoButton: { fr: "Ajouter une photo", nl: "Voeg een foto toe", en: "Add a photo" },
+  uploadFailed: { fr: "Upload échoué: {status} {statusText}", nl: "Upload mislukt: {status} {statusText}", en: "Upload failed: {status} {statusText}" },
+  uploadError: { fr: "Erreur lors de l'upload", nl: "Uploadfout", en: "Upload error" },
+  dialogTitle: { fr: "Ajouter une photo", nl: "Voeg een foto toe", en: "Add a photo" },
+  fileTab: { fr: "Fichier", nl: "Bestand", en: "File" },
+  cameraTab: { fr: "Caméra", nl: "Camera", en: "Camera" },
+  selectImageHint: { fr: "Sélectionnez une image depuis votre appareil.", nl: "Selecteer een afbeelding van uw apparaat.", en: "Select an image from your device." },
+  chooseFileButton: { fr: "Choisir un fichier", nl: "Kies een bestand", en: "Choose a file" },
+  fileSupportedFormats: { fr: "JPEG, PNG, WebP, GIF • Max 10 Mo", nl: "JPEG, PNG, WebP, GIF • Max 10 MB", en: "JPEG, PNG, WebP, GIF • Max 10 MB" },
+  takePictureHint: { fr: "Prenez une photo avec votre appareil.", nl: "Maak een foto met uw apparaat.", en: "Take a picture with your device." },
+  openCameraButton: { fr: "Ouvrir la caméra", nl: "Camera openen", en: "Open camera" },
+  rearCameraHint: { fr: "Caméra arrière sur mobile", nl: "Achtercamera op mobiel", en: "Rear camera on mobile" },
+  previewLabel: { fr: "Aperçu", nl: "Voorbeeld", en: "Preview" },
+  uploading: { fr: "Envoi en cours...", nl: "Uploaden...", en: "Uploading..." },
+  photoAddedSuccess: { fr: "Photo ajoutée !", nl: "Foto toegevoegd!", en: "Photo added!" },
+  retryButton: { fr: "Réessayer", nl: "Opnieuw proberen", en: "Retry" },
+  galleryTitle: { fr: "Photos", nl: "Foto's", en: "Photos" },
+  loadingError: { fr: "Erreur de chargement des photos.", nl: "Fout bij laden van foto's.", en: "Error loading photos." },
+  emptyTitle: { fr: "Pas encore de photos", nl: "Nog geen foto's", en: "No photos yet" },
+  emptyDescription: { fr: "Ajoutez une photo depuis votre appareil, votre caméra ou une recherche web.", nl: "Voeg een foto toe van uw apparaat, uw camera of een websearch.", en: "Add a photo from your device, your camera or a web search." },
+  confirmDelete: { fr: "Confirmer ?", nl: "Bevestigen?", en: "Confirm?" },
+};
+
+// ===========================================================================
+// Adapter — source de vérité unique projetée vers next-intl (web), i18next
+// (mobile) et le backend. Chaque feuille du catalogue est un objet
+// { fr, nl, en } ; `project(locale)` aplatit l'arbre en ne gardant que la
+// chaîne de la locale demandée.
+// ===========================================================================
+
+/** Locale par défaut (cf. User.locale dans le schema). */
+export const DEFAULT_LOCALE: Locale = "fr";
+
+/** Catalogue agrégé — l'unique source de vérité multi-locale. */
+export const catalog = {
+  common,
+  nav,
+  auth,
+  dashboard,
+  language,
+  collections,
+  objects,
+  loans,
+  contacts,
+  qrCodes,
+  publicScan,
+  errors,
+  settings,
+  photos,
+} as const;
+
+/** Valide une string arbitraire comme Locale (fallback défaut sinon). */
+export function isLocale(value: unknown): value is Locale {
+  return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
+}
+
+type TranslationLeaf = { fr: string; nl?: string; en?: string } & Record<string, string>;
+type CatalogNode = TranslationLeaf | { [key: string]: CatalogNode };
+
+function isLeaf(node: CatalogNode): node is TranslationLeaf {
+  return (
+    typeof node === "object" &&
+    node !== null &&
+    "fr" in node &&
+    typeof (node as Record<string, unknown>).fr === "string"
+  );
+}
+
+/**
+ * Projette récursivement l'arbre `{ fr, nl, en }` en un catalogue plat pour
+ * une seule locale (chaînes feuilles). Les clés `*_plural` (héritage i18next)
+ * sont ignorées — next-intl gère les pluriels via ICU. Fallback sur `fr` si
+ * la traduction manque pour la locale.
+ */
+function projectNode(node: CatalogNode, locale: Locale): unknown {
+  if (isLeaf(node)) {
+    return node[locale] ?? node.fr;
+  }
+  const out: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(node)) {
+    if (key.endsWith("_plural")) continue;
+    out[key] = projectNode(child as CatalogNode, locale);
+  }
+  return out;
+}
+
+/**
+ * Catalogue de messages pour next-intl, projeté sur `locale`.
+ * Usage côté web : `getRequestConfig` → `{ messages: getMessages(locale) }`.
+ */
+export function getMessages(locale: Locale): Record<string, unknown> {
+  return projectNode(catalog as unknown as CatalogNode, locale) as Record<string, unknown>;
+}
+
+/**
+ * Ressources i18next pour mobile : `{ fr: { translation }, nl: {...}, en: {...} }`.
+ * Note : i18next doit être configuré avec des délimiteurs d'interpolation
+ * `{`/`}` (et non `{{`/`}}`) pour rester compatible avec les chaînes ICU
+ * single-brace utilisées ici. Cf. increment mobile.
+ */
+export function getI18nextResources(): Record<Locale, { translation: Record<string, unknown> }> {
+  return LOCALES.reduce(
+    (acc, locale) => {
+      acc[locale] = { translation: getMessages(locale) };
+      return acc;
+    },
+    {} as Record<Locale, { translation: Record<string, unknown> }>,
+  );
+}

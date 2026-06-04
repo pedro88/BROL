@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { BookOpen, MoreVertical } from "lucide-react";
 import { Button } from "../ui/button";
 import {
@@ -21,19 +22,6 @@ export interface CollectionCardProps {
   onDelete?: (id: string) => void;
 }
 
-// Type labels for display
-const typeLabels: Record<string, string> = {
-  BOOK: "Livres",
-  BOARD_GAME: "Jeux",
-  TOOL: "Outils",
-  FILM: "Films",
-  MUSIC: "Musique",
-  ELECTRONIC: "Électronique",
-  ELECTRIC: "Électrique",
-  CLOTHING: "Vêtements",
-  CUSTOM: "Custom",
-};
-
 /**
  * Carte de collection avec style VHS retro.
  */
@@ -46,6 +34,7 @@ export function CollectionCard({
   type,
   onDelete,
 }: CollectionCardProps) {
+  const t = useTranslations();
   return (
     <div className="card-vhs group relative overflow-hidden">
       {/* Cover image or placeholder */}
@@ -69,11 +58,11 @@ export function CollectionCard({
         <div className="absolute top-2 right-2 flex gap-1">
           {type && (
             <span className="bg-secondary/90 text-secondary-foreground px-2 py-1 font-mono text-xs">
-              {typeLabels[type] ?? type}
+              {t(`collections.typeLabel.${type}`)}
             </span>
           )}
           <span className="bg-primary/90 text-primary-foreground px-2 py-1 font-mono text-xs">
-            {objectCount} {objectCount === 1 ? "objet" : "objets"}
+            {objectCount} {objectCount === 1 ? t("objects.labelSingular") : t("objects.labelPlural")}
           </span>
         </div>
       </div>
@@ -105,17 +94,17 @@ export function CollectionCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem asChild>
-                <Link href={`/collections/${id}`}>Voir</Link>
+                <Link href={`/collections/${id}`}>{t("common.view")}</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/collections/${id}/edit`}>Modifier</Link>
+                <Link href={`/collections/${id}/edit`}>{t("common.edit")}</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
                 onClick={() => onDelete?.(id)}
               >
-                Supprimer
+                {t("common.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -126,7 +115,7 @@ export function CollectionCard({
       <Link
         href={`/collections/${id}`}
         className="absolute inset-0 z-10"
-        aria-label={`Voir la collection ${name}`}
+        aria-label={t("collections.viewCollection", { name })}
       />
     </div>
   );

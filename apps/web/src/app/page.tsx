@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Header, Navigation } from "../components/navigation";
 import { trpc } from "../lib/trpc";
 import { Package, User, Repeat, Download, MessagesSquare } from "lucide-react";
@@ -14,6 +15,7 @@ import { toast } from "sonner";
  * Affiche les stats réelles et les actions rapides.
  */
 export default function HomePage() {
+  const t = useTranslations("dashboard");
   // Stats réelles depuis la DB
   const collectionsQuery = trpc.collections.list.useQuery(undefined, {
     staleTime: 30_000,
@@ -77,10 +79,10 @@ export default function HomePage() {
         {/* Hero section */}
         <section className="mb-8 text-center">
           <h1 className="font-display text-5xl mb-2 vhs-text-glow text-primary">
-            BIENVENUE
+            {t("welcome")}
           </h1>
           <p className="font-mono text-sm text-muted-foreground">
-            &gt; Gestion de prêt simplifiée_
+            {t("subtitle")}
           </p>
         </section>
 
@@ -88,14 +90,14 @@ export default function HomePage() {
         <section className="grid grid-cols-2 gap-3 mb-8">
           <StatCard
             href="/objects"
-            label="Objets"
+            label={t("statObjects")}
             value={isLoading ? "..." : String(totalObjects)}
             icon={<Package className="w-4 h-4" />}
             trend={
               isLoading
                 ? undefined
                 : collectionsQuery.data
-                  ? `${collectionsQuery.data.items.length} collections`
+                  ? t("collectionsCount", { count: collectionsQuery.data.items.length })
                   : undefined
             }
           />
@@ -105,21 +107,21 @@ export default function HomePage() {
                 ? "/loans?tab=lent&status=overdue"
                 : "/loans?tab=lent"
             }
-            label={overdueLoans > 0 ? `Prêtés (${overdueLoans} en retard)` : "Prêtés"}
+            label={overdueLoans > 0 ? t("statLentOverdue", { count: overdueLoans }) : t("statLent")}
             value={isLoading ? "..." : String(activeLoans)}
             icon={<Repeat className="w-4 h-4" />}
             variant={overdueLoans > 0 ? "warning" : activeLoans > 0 ? "warning" : "default"}
           />
           <StatCard
             href="/objects?status=borrowed"
-            label="Empruntés"
+            label={t("statBorrowed")}
             value={borrowedQuery.isLoading ? "..." : String(borrowedCount)}
             icon={<Download className="w-4 h-4" />}
             variant={borrowedCount > 0 ? "success" : "default"}
           />
           <StatCard
             href="/contacts"
-            label="Contacts"
+            label={t("statContacts")}
             value={isLoading ? "..." : String(totalContacts)}
             icon={<User className="w-4 h-4" />}
           />
@@ -128,20 +130,20 @@ export default function HomePage() {
         {/* Actions rapides */}
         <section className="space-y-3">
           <h2 className="font-mono text-sm text-muted-foreground mb-3">
-            // ACTIONS RAPIDES
+            {t("quickActions")}
           </h2>
 
           <QuickAction
             href="/loans"
-            title="NOUVEAU PRÊT"
-            description="Prêter un objet à un contact"
+            title={t("newLoan")}
+            description={t("newLoanDesc")}
             variant="primary"
           />
 
           <QuickAction
             href="/objects/add"
-            title="AJOUTER UN OBJET"
-            description="Encoder un nouvel item"
+            title={t("addObject")}
+            description={t("addObjectDesc")}
             variant="secondary"
           />
 
@@ -152,9 +154,9 @@ export default function HomePage() {
           >
             <MessagesSquare className="w-5 h-5 text-primary" />
             <div>
-              <p className="font-display text-base">DEMANDER À LA COMMUNAUTÉ</p>
+              <p className="font-display text-base">{t("askCommunity")}</p>
               <p className="font-mono text-xs text-muted-foreground">
-                Trouver un objet auprès des voisins
+                {t("askCommunityDesc")}
               </p>
             </div>
           </button>
@@ -163,8 +165,8 @@ export default function HomePage() {
           {isMobile && (
             <QuickAction
               href="/scan"
-              title="SCANNER"
-              description="Scanner un QR code"
+              title={t("scan")}
+              description={t("scanDesc")}
               variant="accent"
             />
           )}
@@ -184,13 +186,13 @@ export default function HomePage() {
         {/* Prêts récents */}
         <section className="mt-8">
           <h2 className="font-mono text-sm text-muted-foreground mb-3">
-            // PRÊTS RÉCENTS
+            {t("recentLoans")}
           </h2>
 
           {isLoading ? (
             <div className="card-vhs p-4 text-center">
               <p className="font-mono text-muted-foreground text-sm">
-                Chargement...
+                {t("loading")}
               </p>
             </div>
           ) : loansQuery.data && loansQuery.data.items.length > 0 ? (
@@ -232,7 +234,7 @@ export default function HomePage() {
           ) : (
             <div className="card-vhs p-4 text-center">
               <p className="font-mono text-muted-foreground text-sm">
-                Aucun prêt en cours
+                {t("noActiveLoan")}
               </p>
             </div>
           )}
@@ -339,6 +341,7 @@ function QuickAction({
  * avec badge sur celles qui ont des messages non-lus.
  */
 function MyRequestsSection() {
+  const t = useTranslations("dashboard");
   const { data, isLoading } = trpc.communityRequest.myRequests.useQuery(
     undefined,
     { staleTime: 30_000 },
@@ -357,7 +360,7 @@ function MyRequestsSection() {
   return (
     <section className="mt-8">
       <h2 className="font-mono text-sm text-muted-foreground mb-3">
-        // MES DEMANDES
+        {t("myRequests")}
       </h2>
       <div className="space-y-3">
         {data.slice(0, 5).map((req) => (
@@ -377,12 +380,12 @@ function MyRequestsSection() {
             <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
               <span>
                 {req.status === "OPEN"
-                  ? "Ouverte"
+                  ? t("requestOpen")
                   : req.status === "FULFILLED"
-                    ? "Pourvue"
+                    ? t("requestFulfilled")
                     : req.status === "CANCELLED"
-                      ? "Annulée"
-                      : "Expirée"}
+                      ? t("requestCancelled")
+                      : t("requestExpired")}
                 {req.messageCount > 0 && (
                   <span className="ml-2">
                     · {req.messageCount} message{req.messageCount > 1 ? "s" : ""}

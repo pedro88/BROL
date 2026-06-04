@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Camera } from "lucide-react";
@@ -14,6 +15,7 @@ import { trpc } from "../../../../lib/trpc";
  * Protégée — nécessite authentification (middleware).
  */
 export default function EditObjectPage() {
+  const t = useTranslations();
   const params = useParams();
   const router = useRouter();
   const objectId = params.id as string;
@@ -44,7 +46,7 @@ export default function EditObjectPage() {
           className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Détail de l&apos;objet
+          {t("objects.detail")}
         </Link>
 
         {/* Header */}
@@ -53,7 +55,7 @@ export default function EditObjectPage() {
             MODIFIER
           </h1>
           <p className="font-mono text-sm text-muted-foreground mt-2">
-            Modifier les informations de l&apos;objet
+            {t("objects.editDescription")}
           </p>
         </div>
 
@@ -68,7 +70,7 @@ export default function EditObjectPage() {
         {object && (
           <section className="mb-8">
             <h2 className="font-mono text-xs text-muted-foreground uppercase mb-3">
-              // PHOTOS
+              {t("objects.photosSection")}
             </h2>
             <PhotoCapture
               objectId={objectId}
@@ -151,7 +153,7 @@ export default function EditObjectPage() {
         {!isLoading && !object && (
           <div className="card-vhs p-8 text-center">
             <p className="font-mono text-sm text-muted-foreground">
-              Objet non trouvé.
+              {t("objects.notFoundShort")}
             </p>
           </div>
         )}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -36,13 +37,14 @@ export function CreateLoanDialog({
   const [notes, setNotes] = useState("");
   const [showBorrowerSelect, setShowBorrowerSelect] = useState(false);
 
+  const t = useTranslations();
   const router = useRouter();
   const utils = trpc.useUtils();
 
   const createMutation = trpc.loans.create.useMutation({
     onSuccess: () => {
       utils.objects.get.invalidate({ id: objectId });
-      toast.success(`"${objectName}" prêté avec succès`);
+      toast.success(t("loans.loanCreatedSuccessToast", { objectName }));
       onOpenChange(false);
       setBorrower(null);
       setReturnDueDate("");
@@ -50,15 +52,15 @@ export function CreateLoanDialog({
       router.push("/loans");
     },
     onError: (error) => {
-      toast.error(error.message || "Erreur lors du prêt");
+      toast.error(error.message || t("loans.loanCreationErrorToast"));
     },
   });
 
   function handleSelectBorrower(data: { type: "contact"; contactId: string } | { type: "user"; userId: string }) {
     if (data.type === "contact") {
-      setBorrower({ type: "contact", id: data.contactId, label: "Contact" });
+      setBorrower({ type: "contact", id: data.contactId, label: t("loans.contactLabel") });
     } else {
-      setBorrower({ type: "user", id: data.userId, label: "Utilisateur Brol" });
+      setBorrower({ type: "user", id: data.userId, label: t("loans.brolUserLabel") });
     }
     setShowBorrowerSelect(false);
   }
@@ -66,7 +68,7 @@ export function CreateLoanDialog({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!borrower) {
-      toast.error("Sélectionnez un emprunteur");
+      toast.error(t("loans.selectBorrowerErrorToast"));
       return;
     }
 
@@ -94,16 +96,16 @@ export function CreateLoanDialog({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Prêter cet objet</DialogTitle>
+            <DialogTitle>{t("loans.lendObjectDialogTitle")}</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Vous prêtez <strong>{objectName}</strong> à un contact ou un utilisateur Brol.
+              {t("loans.lendObjectDescription", { objectName })}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Borrower selection */}
             <div className="space-y-2">
-              <Label>Emprunteur</Label>
+              <Label>{t("loans.borrowerLabel")}</Label>
               {borrower ? (
                 <div className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/30 rounded-md">
                   <User className="w-5 h-5 text-primary flex-shrink-0" />
@@ -126,14 +128,14 @@ export function CreateLoanDialog({
                   className="w-full"
                 >
                   <User className="w-4 h-4 mr-2" />
-                  Ajouter un emprunteur
+                  {t("loans.addBorrowerButtonLabel")}
                 </Button>
               )}
             </div>
 
             {/* Date de retour */}
             <div className="space-y-2">
-              <Label htmlFor="returnDate">Date de retour prévue (optionnel)</Label>
+              <Label htmlFor="returnDate">{t("loans.returnDueDateLabel")}</Label>
               <Input
                 id="returnDate"
                 type="date"
@@ -145,12 +147,12 @@ export function CreateLoanDialog({
 
             {/* Notes */}
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optionnel)</Label>
+              <Label htmlFor="notes">{t("loans.notesLabel")}</Label>
               <Input
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Rappel pour ce prêt..."
+                placeholder={t("loans.notesPlaceholder")}
                 maxLength={1000}
               />
             </div>
@@ -162,7 +164,7 @@ export function CreateLoanDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={createMutation.isPending}
               >
-                Annuler
+                {t("loans.cancelButtonLabel")}
               </Button>
               <Button
                 type="submit"
@@ -171,7 +173,7 @@ export function CreateLoanDialog({
                 {createMutation.isPending && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
-                Confirmer le prêt
+                {t("loans.confirmLoanButtonLabel")}
               </Button>
             </DialogFooter>
           </form>

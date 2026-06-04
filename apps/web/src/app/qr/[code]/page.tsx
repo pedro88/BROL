@@ -14,6 +14,7 @@
 "use client";
 
 import { use, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Header } from "../../../components/navigation";
 import { trpc } from "../../../lib/trpc";
@@ -25,6 +26,7 @@ interface PageProps {
 
 export default function QrResolverPage({ params }: PageProps) {
   const { code } = use(params);
+  const t = useTranslations();
 
   const { data, isLoading, isError, error } = trpc.qr.getByCode.useQuery(
     { code },
@@ -57,17 +59,17 @@ export default function QrResolverPage({ params }: PageProps) {
           <div className="card-vhs p-6 text-center">
             <AlertCircle className="w-10 h-10 mx-auto text-destructive mb-3" />
             <h1 className="font-display text-xl vhs-text-glow text-primary mb-2">
-              QR INCONNU
+              {t("qrCodes.unknownTitle")}
             </h1>
             <p className="font-mono text-sm text-muted-foreground mb-4">
-              {error?.message ?? "Aucun QR code ne correspond à ce lien."}
+              {error?.message ?? t("qrCodes.unknownDefault")}
             </p>
             <Link
               href="/"
               className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Accueil
+              {t("common.home")}
             </Link>
           </div>
         )}
@@ -76,11 +78,10 @@ export default function QrResolverPage({ params }: PageProps) {
           <div className="card-vhs p-6 text-center">
             <QrCode className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
             <h1 className="font-display text-xl vhs-text-glow text-primary mb-2">
-              QR NON ASSIGNÉ
+              {t("qrCodes.unassignedTitle")}
             </h1>
             <p className="font-mono text-sm text-muted-foreground">
-              Ce QR code n&apos;est associé à aucun objet pour l&apos;instant.
-              Scannez-le depuis votre app pour l&apos;attribuer.
+              {t("qrCodes.unassignedDescription")}
             </p>
           </div>
         )}
@@ -97,7 +98,7 @@ export default function QrResolverPage({ params }: PageProps) {
         {!isLoading && !isError && objects.length > 1 && (
           <div>
             <h1 className="font-display text-2xl vhs-text-glow text-primary mb-4">
-              CHOISISSEZ L&apos;OBJET
+              {t("qrCodes.chooseObjectTitle")}
             </h1>
             <div className="space-y-3">
               {objects.map((obj) => (

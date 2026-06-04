@@ -6,6 +6,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Loader2, Trash2, ImageOff } from "lucide-react";
 import { Button } from "../ui/button";
 import { PhotoCapture } from "./photo-capture";
@@ -18,6 +19,7 @@ interface PhotoGalleryProps {
 }
 
 export function PhotoGallery({ objectId, coverImage }: PhotoGalleryProps) {
+  const t = useTranslations();
   const { data: photos, isLoading, error } = usePhotosList(objectId);
   const removeMutation = usePhotoRemove({
     onError: (err) => {
@@ -43,7 +45,7 @@ export function PhotoGallery({ objectId, coverImage }: PhotoGalleryProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-mono text-sm font-medium uppercase text-muted-foreground">
-          Photos
+          {t("photos.galleryTitle")}
           {photos && photos.length > 0 && (
             <span className="ml-2 text-xs">({photos.length})</span>
           )}
@@ -61,7 +63,7 @@ export function PhotoGallery({ objectId, coverImage }: PhotoGalleryProps) {
       {/* Error */}
       {error && (
         <p className="text-sm text-destructive font-mono py-4">
-          Erreur de chargement des photos.
+          {t("photos.loadingError")}
         </p>
       )}
 
@@ -70,10 +72,10 @@ export function PhotoGallery({ objectId, coverImage }: PhotoGalleryProps) {
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border">
           <ImageOff className="w-8 h-8 text-muted-foreground mb-3" />
           <p className="text-sm text-muted-foreground font-mono">
-            Pas encore de photos
+            {t("photos.emptyTitle")}
           </p>
           <p className="text-xs text-muted-foreground font-mono mt-1">
-            Ajoutez une photo depuis votre appareil, votre caméra ou une recherche web.
+            {t("photos.emptyDescription")}
           </p>
         </div>
       )}
@@ -114,7 +116,7 @@ export function PhotoGallery({ objectId, coverImage }: PhotoGalleryProps) {
 
               {confirmDelete === photo.id && (
                 <div className="absolute bottom-0 left-0 right-0 bg-red-500 text-white text-xs font-mono text-center py-1">
-                  Confirmer ?
+                  {t("photos.confirmDelete")}
                 </div>
               )}
             </div>

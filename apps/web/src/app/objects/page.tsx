@@ -4,18 +4,11 @@ import { useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Search, Filter, Package, User, Clock, ChevronRight } from "lucide-react";
 import { Header, Navigation } from "../../components/navigation";
 import { Input } from "../../components/ui/input";
 import { trpc } from "../../lib/trpc";
-
-const conditionLabels: Record<string, string> = {
-  NEW: "Neuf",
-  LIKE_NEW: "Comme neuf",
-  GOOD: "Bon",
-  FAIR: "Correct",
-  POOR: "Mauvais",
-};
 
 function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "—";
@@ -35,6 +28,7 @@ interface FilterState {
 }
 
 function ObjectsContent() {
+  const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -87,11 +81,11 @@ function ObjectsContent() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="font-display text-3xl vhs-text-glow text-primary">
-            MES OBJETS
+            {t("objects.title")}
           </h1>
           <p className="font-mono text-xs text-muted-foreground mt-1">
             {isLoading
-              ? "Chargement..."
+              ? t("common.loading")
               : `${objects.length} objet${objects.length !== 1 ? "s" : ""}`}
           </p>
         </div>
@@ -101,7 +95,7 @@ function ObjectsContent() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher un objet..."
+              placeholder={t("objects.searchPlaceholder")}
               value={filters.search}
               onChange={(e) => handleFilterChange("search", e.target.value)}
               className="pl-10"
@@ -117,7 +111,7 @@ function ObjectsContent() {
             }`}
           >
             <Filter className="w-4 h-4" />
-            Filtres
+            {t("common.filter")}
             {hasFilters && !showFilters && (
               <span className="ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground rounded-full text-xs">
                 •
@@ -137,7 +131,7 @@ function ObjectsContent() {
                   onChange={(e) => handleFilterChange("collectionId", e.target.value)}
                   className="w-full bg-input border-2 border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-primary"
                 >
-                  <option value="">Toutes les collections</option>
+                  <option value="">{t("objects.filterAllCollections")}</option>
                   {collections.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -148,7 +142,7 @@ function ObjectsContent() {
 
               <div className="space-y-1">
                 <label className="font-mono text-xs text-muted-foreground uppercase">
-                  Status
+                  {t("objects.filterStatus")}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {(["all", "available", "lent", "borrowed"] as const).map((status) => (
@@ -162,12 +156,12 @@ function ObjectsContent() {
                       }`}
                     >
                       {status === "all"
-                        ? "Tous"
+                        ? t("objects.filterStatusAll")
                         : status === "available"
-                          ? "Disponible"
+                          ? t("objects.statusAvailable")
                           : status === "lent"
-                            ? "Prêté"
-                            : "Emprunté"}
+                            ? t("objects.statusLent")
+                            : t("objects.statusBorrowed")}
                     </button>
                   ))}
                 </div>
@@ -178,7 +172,7 @@ function ObjectsContent() {
                   onClick={clearFilters}
                   className="w-full text-center text-xs font-mono text-muted-foreground hover:text-primary transition-colors"
                 >
-                  Effacer les filtres
+                  {t("objects.clearFilters")}
                 </button>
               )}
             </div>
@@ -193,20 +187,20 @@ function ObjectsContent() {
         ) : objects.length === 0 ? (
           <div className="card-vhs p-8 text-center">
             <Package className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <h2 className="font-display text-xl text-muted-foreground mb-2">
-              AUCUN OBJET
+            <h2 className="font-display text-xl text-muted-foreground mb-2 uppercase">
+              {t("objects.empty")}
             </h2>
             <p className="font-mono text-sm text-muted-foreground">
               {hasFilters
-                ? "Aucun objet ne correspond aux filtres."
-                : "Ajoutez votre premier objet dans une collection."}
+                ? t("objects.noResultsWithFilters")
+                : t("objects.noObjectsPrompt")}
             </p>
             {!hasFilters && (
               <Link
                 href="/objects/add"
                 className="inline-block mt-4 px-4 py-2 bg-primary text-primary-foreground font-mono text-sm"
               >
-                Ajouter un objet
+                {t("objects.add")}
               </Link>
             )}
           </div>
@@ -214,10 +208,10 @@ function ObjectsContent() {
           <div className="space-y-2">
             {/* Header du tableau */}
             <div className="hidden sm:grid grid-cols-12 gap-2 px-3 py-2 font-mono text-xs text-muted-foreground uppercase">
-              <div className="col-span-4">Nom</div>
-              <div className="col-span-3">Collection</div>
-              <div className="col-span-2">État</div>
-              <div className="col-span-3">Status</div>
+              <div className="col-span-4">{t("common.name")}</div>
+              <div className="col-span-3">{t("collections.label")}</div>
+              <div className="col-span-2">{t("objects.condition")}</div>
+              <div className="col-span-3">{t("objects.filterStatus")}</div>
             </div>
 
             {objects.map((obj) => {
@@ -270,24 +264,24 @@ function ObjectsContent() {
                       >
                         {isBorrowedView
                           ? isOverdue
-                            ? "En retard"
-                            : "Emprunté"
+                            ? t("objects.statusOverdue")
+                            : t("objects.statusBorrowed")
                           : isLent
                             ? isOverdue
-                              ? "En retard"
-                              : "Prêté"
-                            : "Disponible"}
+                              ? t("objects.statusOverdue")
+                              : t("objects.statusLent")
+                            : t("objects.statusAvailable")}
                       </span>
                       {isBorrowedView && obj.owner ? (
                         <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
                           <User className="w-3 h-3" />
-                          ← {obj.owner.name ?? "Inconnu"}
+                          ← {obj.owner.name ?? t("common.unknown")}
                           {obj.owner.handle ? ` #${obj.owner.handle}` : ""}
                         </span>
                       ) : obj.currentLoan ? (
                         <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
                           <User className="w-3 h-3" />
-                          {obj.currentLoan.borrower?.name ?? "Inconnu"}
+                          {obj.currentLoan.borrower?.name ?? t("common.unknown")}
                         </span>
                       ) : null}
                       {(isBorrowedView || isLent) && obj.currentLoan?.returnDueDate && (
@@ -297,7 +291,11 @@ function ObjectsContent() {
                         </span>
                       )}
                       <span className="font-mono text-xs text-muted-foreground">
-                        {conditionLabels[obj.condition] ?? obj.condition}
+                        {(["NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR"] as const).includes(
+                          obj.condition as never,
+                        )
+                          ? t(`objects.conditions.${obj.condition}`)
+                          : obj.condition}
                       </span>
                     </div>
                   </div>

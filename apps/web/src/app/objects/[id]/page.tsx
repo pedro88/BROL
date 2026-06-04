@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -34,6 +35,7 @@ import { toast } from "sonner";
  * Protégée — nécessite authentification (middleware).
  */
 export default function ObjectDetailPage() {
+  const t = useTranslations();
   const params = useParams();
   const router = useRouter();
   const objectId = params.id as string;
@@ -98,26 +100,19 @@ export default function ObjectDetailPage() {
     onSuccess: () => {
       utils.objects.get.invalidate({ id: objectId });
       utils.objects.getPublic.invalidate({ id: objectId });
-      toast.success("Prêt clôturé");
+      toast.success(t("loans.closedSuccess"));
     },
     onError: (err) => {
-      toast.error(err.message || "Impossible de clôturer le prêt");
+      toast.error(err.message || t("loans.closeError"));
     },
   });
 
   const handleDelete = () => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cet objet ?")) {
+    if (confirm(t("objects.deleteConfirm"))) {
       deleteMutation.mutate({ id: objectId });
     }
   };
 
-  const conditionLabels: Record<string, string> = {
-    NEW: "Neuf",
-    LIKE_NEW: "Comme neuf",
-    GOOD: "Bon",
-    FAIR: "Correct",
-    POOR: "Mauvais",
-  };
 
   if (isLoading) {
     return (
@@ -148,10 +143,10 @@ export default function ObjectDetailPage() {
           <div className="card-vhs p-8 text-center">
             <BookOpen className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
             <h2 className="font-display text-xl text-muted-foreground mb-2">
-              OBJET NON TROUVÉ
+              {t("objects.notFound")}
             </h2>
             <p className="font-mono text-sm text-muted-foreground">
-              Cet objet n&apos;existe pas ou ne vous appartient pas.
+              {t("objects.notFoundDescription")}
             </p>
           </div>
         </main>
@@ -188,7 +183,7 @@ export default function ObjectDetailPage() {
           className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          {isOwner ? (object.collection?.name ?? "Collection") : "Retour"}
+          {isOwner ? (object.collection?.name ?? t("collections.label")) : t("common.back")}
         </Link>
 
         {/* Bandeau borrower — caller a un prêt ACTIVE/OVERDUE sur cet objet */}
@@ -197,26 +192,28 @@ export default function ObjectDetailPage() {
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle2 className="w-4 h-4 text-primary" />
               <span className="font-mono text-xs uppercase text-primary tracking-wider">
-                Vous avez emprunté cet objet
+                {t("objects.youBorrowedThisObject")}
               </span>
             </div>
             <p className="font-mono text-sm text-muted-foreground">
-              Depuis le{" "}
-              {new Date(myActiveLoan.lentAt).toLocaleDateString("fr-BE")}
-              {myActiveLoan.returnDueDate && (
-                <>
-                  {" "}— retour prévu le{" "}
-                  {new Date(myActiveLoan.returnDueDate).toLocaleDateString(
-                    "fr-BE",
-                  )}
-                </>
-              )}
+              {t("objects.loanDateRange", {
+                lentAt: new Date(myActiveLoan.lentAt).toLocaleDateString(
+                  "fr-BE",
+                ),
+                returnDueDate: myActiveLoan.returnDueDate
+                  ? new Date(myActiveLoan.returnDueDate).toLocaleDateString(
+                      "fr-BE",
+                    )
+                  : "",
+              })}
             </p>
             <p className="font-mono text-xs text-muted-foreground mt-1">
-              Propriétaire :{" "}
               <span className="text-secondary">
-                {ownerName ?? "Inconnu"}
-                {ownerHandle ? ` #${ownerHandle}` : ""}
+                {t("objects.owner", {
+                  owner: `${ownerName ?? "Inconnu"}${
+                    ownerHandle ? ` #${ownerHandle}` : ""
+                  }`,
+                })}
               </span>
             </p>
           </div>
@@ -228,7 +225,7 @@ export default function ObjectDetailPage() {
           <div className="card-vhs border-secondary/30 p-3 mb-4 flex items-center gap-2">
             <User className="w-4 h-4 text-secondary" />
             <span className="font-mono text-xs text-muted-foreground">
-              {viaContact ? "Via votre contact" : "Objet partagé"}
+              {viaContact ? t("objects.viaContact") : t("objects.sharedObject")}
             </span>
             <span className="font-mono text-sm text-secondary">
               {ownerName ?? "Inconnu"}
@@ -274,7 +271,7 @@ export default function ObjectDetailPage() {
           {/* Condition badge */}
           <div className="mt-4">
             <span className="px-3 py-1 text-sm font-mono border border-primary/50 bg-primary/20 text-primary">
-              {conditionLabels[object.condition] ?? object.condition}
+              {t(`objects.conditions.${object.condition}`)}
             </span>
           </div>
         </div>
@@ -289,7 +286,7 @@ export default function ObjectDetailPage() {
           {object.edition && (
             <div>
               <p className="font-mono text-xs text-muted-foreground uppercase">
-                Édition
+                {t("objects.edition")}
               </p>
               <p className="font-mono text-sm">{object.edition}</p>
             </div>
@@ -298,7 +295,7 @@ export default function ObjectDetailPage() {
           {object.isbn && (
             <div>
               <p className="font-mono text-xs text-muted-foreground uppercase">
-                ISBN
+                {t("objects.isbn")}
               </p>
               <p className="font-mono text-sm">{object.isbn}</p>
             </div>
@@ -307,7 +304,7 @@ export default function ObjectDetailPage() {
           {ownerView.notes && (
             <div>
               <p className="font-mono text-xs text-muted-foreground uppercase">
-                Notes
+                {t("objects.notes")}
               </p>
               <p className="font-mono text-sm">{ownerView.notes}</p>
             </div>
@@ -316,7 +313,7 @@ export default function ObjectDetailPage() {
           {ownerView.brand && (
             <div>
               <p className="font-mono text-xs text-muted-foreground uppercase">
-                Marque
+                {t("objects.brand")}
               </p>
               <p className="font-mono text-sm">{ownerView.brand}</p>
             </div>
@@ -325,7 +322,7 @@ export default function ObjectDetailPage() {
           {qrStock && (
             <div>
               <p className="font-mono text-xs text-muted-foreground uppercase">
-                QR Code
+                {t("qrCodes.title")}
               </p>
               <p className="font-mono text-sm text-secondary">
                 {qrStock.code}
@@ -338,7 +335,7 @@ export default function ObjectDetailPage() {
         {isOwner && hasActiveLoan && currentLoan && (
           <div className="mt-6">
             <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
-              PRÊT EN COURS
+              {t("loans.active")}
             </h2>
             <div className="card-vhs border-secondary/50 p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -351,10 +348,11 @@ export default function ObjectDetailPage() {
                 <div className="flex items-center gap-2 mb-3">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span className="font-mono text-xs text-muted-foreground">
-                    Retour prévu le{" "}
-                    {new Date(currentLoan.returnDueDate).toLocaleDateString(
-                      "fr-BE",
-                    )}
+                    {t("loans.returnDueDateLabel", {
+                      returnDueDate: new Date(
+                        currentLoan.returnDueDate,
+                      ).toLocaleDateString("fr-BE"),
+                    })}
                   </span>
                 </div>
               )}
@@ -367,7 +365,7 @@ export default function ObjectDetailPage() {
                 aria-label="Marquer comme retourné"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Marquer rendu
+                {t("loans.markReturned")}
               </Button>
             </div>
           </div>
@@ -393,7 +391,9 @@ export default function ObjectDetailPage() {
                           : "bg-red-500/20 text-red-400"
                       }`}
                     >
-                      {loan.status === "RETURNED" ? "Retourné" : loan.status}
+                      {loan.status === "RETURNED"
+                        ? t("loans.returned")
+                        : loan.status}
                     </span>
                   </div>
                 </div>
@@ -406,7 +406,7 @@ export default function ObjectDetailPage() {
         {isOwner && (qrStock ? (
           <div className="mt-6">
             <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
-              QR Code
+              {t("qrCodes.title")}
             </h2>
             <div className="card-vhs p-4 flex flex-col items-center gap-4">
               <QrCodeImage
@@ -425,7 +425,7 @@ export default function ObjectDetailPage() {
                     }
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Télécharger PNG
+                    {t("qrCodes.downloadPng")}
                   </Button>
                   <Button
                     variant="outline"
@@ -436,7 +436,7 @@ export default function ObjectDetailPage() {
                     }
                   >
                     <Printer className="w-4 h-4 mr-2" />
-                    Imprimer
+                    {t("qrCodes.print")}
                   </Button>
                 </div>
                 <p className="font-mono text-xs text-muted-foreground text-center">
@@ -448,7 +448,7 @@ export default function ObjectDetailPage() {
         ) : (
           <div className="mt-6">
             <h2 className="font-mono text-sm text-muted-foreground uppercase mb-3">
-              QR Code
+              {t("qrCodes.title")}
             </h2>
             <Button
               variant="outline"
@@ -456,7 +456,7 @@ export default function ObjectDetailPage() {
               onClick={() => setAssignQrOpen(true)}
             >
               <QrCode className="w-4 h-4 mr-2" />
-              Assigner un QR code
+              {t("qrCodes.assign")}
             </Button>
           </div>
         ))}
@@ -470,7 +470,9 @@ export default function ObjectDetailPage() {
               onClick={() => setLoanDialogOpen(true)}
             >
               <User className="w-4 h-4 mr-2" />
-              {hasActiveLoan ? "Prêt en cours" : "Prêter cet objet"}
+              {hasActiveLoan
+                ? t("objects.activeLoanStatus")
+                : t("objects.lendThisObject")}
             </Button>
           </div>
         )}
@@ -489,7 +491,7 @@ export default function ObjectDetailPage() {
               trigger={
                 <Button variant="outline" className="w-full gap-2">
                   <Mail className="w-4 h-4" />
-                  Contacter le propriétaire
+                  {t("objects.contactOwner")}
                 </Button>
               }
             />

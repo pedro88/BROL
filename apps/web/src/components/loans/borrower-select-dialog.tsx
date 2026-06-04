@@ -14,6 +14,7 @@ import { Button } from "../../components/ui/button";
 import { trpc } from "../../lib/trpc";
 import { Loader2, Search, User, UserPlus, QrCode, Hash, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { QrScanner } from "../qr/qr-scanner";
 
 type Tab = "contacts" | "id-qr" | "new-contact";
@@ -36,6 +37,7 @@ export function BorrowerSelectDialog({
   onOpenChange,
   onSelect,
 }: BorrowerSelectDialogProps) {
+  const t = useTranslations();
   const [tab, setTab] = useState<Tab>("contacts");
   const [contactSearch, setContactSearch] = useState("");
   const [userIdInput, setUserIdInput] = useState("");
@@ -67,12 +69,12 @@ export function BorrowerSelectDialog({
   const createContactMutation = trpc.contacts.create.useMutation({
     onSuccess: (newContact) => {
       utils.contacts.list.invalidate();
-      toast.success(`Contact "${newContact.name}" créé`);
+      toast.success(t("loans.contactCreatedToast", { contactName: newContact.name }));
       onSelect({ type: "contact", contactId: newContact.id });
       handleClose();
     },
     onError: (error) => {
-      toast.error(error.message || "Erreur lors de la création du contact");
+      toast.error(error.message || t("loans.contactCreationErrorToast"));
     },
   });
 
@@ -115,7 +117,7 @@ export function BorrowerSelectDialog({
     if (code.includes("/profile/")) {
       extractedId = code.split("/profile/").pop()!;
     } else if (code.includes("/qr/")) {
-      toast.error("Ce QR code n'est pas un profil utilisateur");
+      toast.error(t("loans.invalidQrErrorToast"));
       setShowQrScanner(false);
       return;
     } else {
@@ -124,11 +126,11 @@ export function BorrowerSelectDialog({
 
     const user = await utils.users.getById.fetch({ id: extractedId });
     if (user) {
-      toast.success(`Utilisateur trouvé: ${user.name ?? user.email}`);
+      toast.success(t("loans.userFoundToast", { user: user.name ?? user.email }));
       onSelect({ type: "user", userId: user.id });
       handleClose();
     } else {
-      toast.error("Aucun utilisateur trouvé pour ce QR code");
+      toast.error(t("loans.noUserForQrErrorToast"));
       setShowQrScanner(false);
     }
   }
@@ -138,9 +140,9 @@ export function BorrowerSelectDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Ajouter un emprunteur</DialogTitle>
+          <DialogTitle>{t("loans.selectBorrowerDialogTitle")}</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Recherchez un contact, ajoutez par ID, ou créez un nouveau contact.
+            {t("loans.selectBorrowerDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -155,7 +157,7 @@ export function BorrowerSelectDialog({
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            Mes contacts
+            {t("loans.myContactsTab")}
           </button>
           <button
             type="button"
@@ -166,7 +168,7 @@ export function BorrowerSelectDialog({
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            ID / QR
+            {t("loans.idQrTab")}
           </button>
           <button
             type="button"
@@ -177,7 +179,7 @@ export function BorrowerSelectDialog({
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            Nouveau
+            {t("loans.newTab")}
           </button>
         </div>
 
@@ -190,7 +192,7 @@ export function BorrowerSelectDialog({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Rechercher un contact..."
+                  placeholder={t("loans.searchContactPlaceholder")}
                   value={contactSearch}
                   onChange={(e) => setContactSearch(e.target.value)}
                   className="w-full bg-input border-2 border-border pl-10 pr-10 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
@@ -210,7 +212,7 @@ export function BorrowerSelectDialog({
               {contactSearch.length > 0 && userResults && userResults.length > 0 && (
                 <div className="space-y-1">
                   <p className="font-mono text-xs text-muted-foreground uppercase mb-1">
-                    Utilisateurs Brol
+                    {t("loans.brolUsersLabel")}
                   </p>
                   {userResults.map((user) => (
                     <button
@@ -241,7 +243,7 @@ export function BorrowerSelectDialog({
                 <div className="text-center py-8">
                   <User className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
                   <p className="font-mono text-sm text-muted-foreground">
-                    Aucun contact enregistré
+                    {t("loans.noContactsMessage")}
                   </p>
                   <Button
                     type="button"
@@ -251,7 +253,7 @@ export function BorrowerSelectDialog({
                     className="mt-3"
                   >
                     <UserPlus className="w-4 h-4 mr-1" />
-                    Créer un contact
+                    {t("loans.createContactLabel")}
                   </Button>
                 </div>
               ) : (
@@ -267,9 +269,9 @@ export function BorrowerSelectDialog({
                       <div className="flex-1 min-w-0">
                         <p className="font-mono text-sm truncate">{contact.name}</p>
                         <p className="font-mono text-xs text-muted-foreground truncate">
-                          {contact.email ?? "sans email"}
+                          {contact.email ?? t("loans.noEmailLabel")}
                           {contact.borrowerId && (
-                            <span className="ml-2 text-primary">✓ compte Brol</span>
+                            <span className="ml-2 text-primary">✓ {t("loans.brolAccountLabel")}</span>
                           )}
                         </p>
                       </div>
@@ -283,13 +285,13 @@ export function BorrowerSelectDialog({
           {tab === "id-qr" && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="userIdInput">Identifiant ou ID</Label>
+                <Label htmlFor="userIdInput">{t("loans.userIdLabel")}</Label>
                 <div className="relative">
                   <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     id="userIdInput"
                     type="text"
-                    placeholder="#piet1234 ou ID brut"
+                    placeholder={t("loans.userIdPlaceholder")}
                     value={userIdInput}
                     onChange={(e) => setUserIdInput(e.target.value)}
                     className="w-full bg-input border-2 border-border pl-10 pr-10 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
@@ -320,7 +322,7 @@ export function BorrowerSelectDialog({
                       {userById.name?.[0]?.toUpperCase() ?? userById.email[0].toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-mono text-sm font-medium">{userById.name ?? "Sans nom"}</p>
+                      <p className="font-mono text-sm font-medium">{userById.name ?? t("loans.noNameLabel")}</p>
                       <p className="font-mono text-xs text-muted-foreground">{userById.email}</p>
                     </div>
                   </div>
@@ -329,14 +331,14 @@ export function BorrowerSelectDialog({
                     onClick={() => handleSelectUser(userById)}
                     className="w-full"
                   >
-                    Sélectionner cet utilisateur
+                    {t("loans.selectThisUserButton")}
                   </Button>
                 </div>
               )}
 
               {userIdInput.length > 0 && !userById && !isLookingUpById && (
                 <p className="text-center font-mono text-sm text-muted-foreground">
-                  Aucun utilisateur trouvé avec cet ID
+                  {t("loans.noUserFoundMessage")}
                 </p>
               )}
 
@@ -346,7 +348,7 @@ export function BorrowerSelectDialog({
                   <div className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">ou</span>
+                  <span className="bg-background px-2 text-muted-foreground">{t("loans.orDivider")}</span>
                 </div>
               </div>
 
@@ -357,7 +359,7 @@ export function BorrowerSelectDialog({
                 onClick={() => setShowQrScanner(true)}
               >
                 <QrCode className="w-4 h-4" />
-                Scanner un QR code
+                {t("loans.scanQrButtonLabel")}
               </Button>
             </div>
           )}
@@ -365,45 +367,45 @@ export function BorrowerSelectDialog({
           {tab === "new-contact" && (
             <form onSubmit={handleCreateContact} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="newContactName">Nom *</Label>
+                <Label htmlFor="newContactName">{t("loans.newContactNameLabel")}</Label>
                 <Input
                   id="newContactName"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Marie Dupont"
+                  placeholder={t("loans.newContactNamePlaceholder")}
                   maxLength={100}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="newContactEmail">Email (optionnel)</Label>
+                <Label htmlFor="newContactEmail">{t("loans.newContactEmailLabel")}</Label>
                 <Input
                   id="newContactEmail"
                   type="email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="marie@example.com"
+                  placeholder={t("loans.newContactEmailPlaceholder")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="newContactPhone">Téléphone (optionnel)</Label>
+                <Label htmlFor="newContactPhone">{t("loans.newContactPhoneLabel")}</Label>
                 <Input
                   id="newContactPhone"
                   type="tel"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
-                  placeholder="+32 xxx xx xx xx"
+                  placeholder={t("loans.newContactPhonePlaceholder")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="newContactNote">Note (optionnel)</Label>
+                <Label htmlFor="newContactNote">{t("loans.newContactNoteLabel")}</Label>
                 <Input
                   id="newContactNote"
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Ami, collègue..."
+                  placeholder={t("loans.newContactNotePlaceholder")}
                   maxLength={500}
                 />
               </div>
@@ -416,12 +418,12 @@ export function BorrowerSelectDialog({
                 {createContactMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Création...
+                    {t("loans.creatingLabel")}
                   </>
                 ) : (
                   <>
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Créer le contact
+                    {t("loans.createContactButton")}
                   </>
                 )}
               </Button>

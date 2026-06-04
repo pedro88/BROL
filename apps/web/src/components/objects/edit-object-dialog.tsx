@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { updateObjectSchema, type UpdateObjectInput, OBJECT_CONDITIONS } from "@brol/shared";
 import {
   Dialog,
@@ -18,13 +19,6 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { trpc } from "../../lib/trpc";
 
-const conditionLabels: Record<string, string> = {
-  NEW: "Neuf",
-  LIKE_NEW: "Comme neuf",
-  GOOD: "Bon",
-  FAIR: "Correct",
-  POOR: "Mauvais",
-};
 
 interface EditObjectDialogProps {
   open: boolean;
@@ -85,6 +79,7 @@ export function EditObjectDialog({
   onSuccess,
 }: EditObjectDialogProps) {
   const utils = trpc.useUtils();
+  const t = useTranslations();
 
   // Determine type for field visibility based on collection type
   const type = collectionType as string ?? "BOOK";
@@ -191,9 +186,9 @@ export function EditObjectDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>MODIFIER L&apos;OBJET</DialogTitle>
+          <DialogTitle>{t("objects.editDialogTitle")}</DialogTitle>
           <DialogDescription>
-            Modifier les informations de {objectName}
+            {t("objects.editDialogDescription", { objectName })}
           </DialogDescription>
         </DialogHeader>
 
@@ -205,7 +200,7 @@ export function EditObjectDialog({
             </Label>
             <Input
               id="edit-name"
-              placeholder="Nom de l'objet"
+              placeholder={t("objects.nameLabel")}
               {...register("name")}
               className={errors.name ? "border-destructive" : ""}
             />
@@ -215,7 +210,7 @@ export function EditObjectDialog({
           {!showClothingFields && !showToolFields && (
             <div className="space-y-2">
               <Label htmlFor="edit-author" className="font-mono text-xs uppercase">
-                Auteur / Marque
+                {t("objects.authorOrBrand")}
               </Label>
               <Input
                 id="edit-author"
@@ -228,7 +223,7 @@ export function EditObjectDialog({
           {/* Edition */}
           <div className="space-y-2">
             <Label htmlFor="edit-edition" className="font-mono text-xs uppercase">
-              Édition / Modèle
+              {t("objects.editionOrModel")}
             </Label>
             <Input
               id="edit-edition"
@@ -256,7 +251,7 @@ export function EditObjectDialog({
                     {...register("condition")}
                     className="sr-only"
                   />
-                  <span className="font-mono text-xs">{conditionLabels[condition]}</span>
+                  <span className="font-mono text-xs">{t(`objects.conditions.${condition}`)}</span>
                 </label>
               ))}
             </div>
@@ -639,7 +634,7 @@ export function EditObjectDialog({
               type="submit"
               disabled={isSubmitting || updateMutation.isPending}
             >
-              {updateMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+              {updateMutation.isPending ? t("objects.savingChanges") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>

@@ -9,6 +9,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { ArrowLeft, Plus, BookOpen, Pencil, Trash2, Globe } from "lucide-react";
 import { Header, Navigation } from "../../../components/navigation";
@@ -69,6 +70,7 @@ function transformPublicObject(obj: {
  * Page de détail d'une collection.
  */
 export default function CollectionDetailPage() {
+  const t = useTranslations();
   const params = useParams();
   const collectionId = params.id as string;
 
@@ -129,27 +131,27 @@ export default function CollectionDetailPage() {
             className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            Collections
+            {t("nav.collections")}
           </Link>
 
           <div className="card-vhs p-8 text-center">
             <BookOpen className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
             <h2 className="font-display text-xl text-muted-foreground mb-2">
-              COLLECTION NON TROUVÉE
+              {t("collections.notFound")}
             </h2>
             <p className="font-mono text-sm text-muted-foreground mb-4">
-              Cette collection n&apos;existe pas ou n&apos;est pas accessible.
+              {t("collections.notFoundDescription")}
             </p>
             <div className="flex flex-col gap-2">
               <Button asChild>
                 <Link href="/browse">
                   <Globe className="w-4 h-4 mr-2" />
-                  Voir les collections publiques
+                  {t("collections.viewPublic")}
                 </Link>
               </Button>
               <Button asChild variant="outline">
                 <Link href="/sign-in?callbackUrl=/collections">
-                  Se connecter
+                  {t("auth.submitSignIn")}
                 </Link>
               </Button>
             </div>
@@ -171,19 +173,19 @@ export default function CollectionDetailPage() {
             className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            Collections publiques
+            {t("collections.publicCollections")}
           </Link>
 
           <div className="card-vhs p-8 text-center">
             <Globe className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
             <h2 className="font-display text-xl text-muted-foreground mb-2">
-              COLLECTION PUBLIQUE
+              {t("collections.public")}
             </h2>
             <p className="font-mono text-sm text-muted-foreground mb-4">
-              Connectez-vous pour voir le contenu et gérer vos prêts.
+              {t("collections.publicSignInPrompt")}
             </p>
             <Button asChild>
-              <Link href="/sign-in?callbackUrl=/collections">Se connecter</Link>
+              <Link href="/sign-in?callbackUrl=/collections">{t("auth.submitSignIn")}</Link>
             </Button>
           </div>
         </main>
@@ -203,7 +205,7 @@ export default function CollectionDetailPage() {
           className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          {isAuthenticated ? "Collections" : "Collections publiques"}
+          {isAuthenticated ? t("nav.collections") : t("collections.publicCollections")}
         </Link>
 
         {/* Loading state */}
@@ -235,7 +237,7 @@ export default function CollectionDetailPage() {
                   )}
                   {ownerName && (
                     <p className="font-mono text-xs text-muted-foreground mt-1">
-                      par {ownerName}
+                      {t("collections.byOwner", { name: ownerName })}
                     </p>
                   )}
                 </div>
@@ -258,7 +260,7 @@ export default function CollectionDetailPage() {
                     {objects.length}
                   </span>
                   <span className="font-mono text-xs text-muted-foreground ml-2">
-                    objets
+                    {t("objects.labelPlural")}
                   </span>
                 </div>
                 {isAuthenticated && loanedCount > 0 && (
@@ -267,7 +269,7 @@ export default function CollectionDetailPage() {
                       {loanedCount}
                     </span>
                     <span className="font-mono text-xs text-muted-foreground ml-2">
-                      prêtés
+                      {t("collections.lentOut")}
                     </span>
                   </div>
                 )}
@@ -280,7 +282,7 @@ export default function CollectionDetailPage() {
                 <Button asChild className="w-full">
                   <Link href={`/objects/add?collectionId=${collectionId}`}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Ajouter un objet
+                    {t("objects.add")}
                   </Link>
                 </Button>
               </div>
@@ -291,12 +293,12 @@ export default function CollectionDetailPage() {
               <div className="card-vhs p-8 text-center">
                 <BookOpen className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
                 <h2 className="font-display text-xl text-muted-foreground mb-2">
-                  AUCUN OBJET
+                  {t("objects.empty")}
                 </h2>
                 <p className="font-mono text-sm text-muted-foreground">
                   {isAuthenticated
-                    ? "Ajoutez votre premier objet à cette collection"
-                    : "Cette collection est vide."}
+                    ? t("objects.emptyDescription")
+                    : t("collections.emptyNoAuth")}
                 </p>
               </div>
             )}
