@@ -354,7 +354,7 @@ export default function ContactsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
-            <h1 className="font-display text-3xl vhs-text-glow text-primary">
+            <h1 className="font-display text-3xl vhs-text-glow text-primary uppercase">
               {t("contacts.pageTitle")}
             </h1>
             <p className="font-mono text-xs text-muted-foreground mt-1">
@@ -378,7 +378,7 @@ export default function ContactsPage() {
         {!isLoading && contacts.length === 0 && (
           <div className="card-vhs p-8 text-center">
             <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <h2 className="font-display text-xl text-muted-foreground mb-2">
+            <h2 className="font-display text-xl text-muted-foreground mb-2 uppercase">
               {t("contacts.emptyTitle")}
             </h2>
             <p className="font-mono text-sm text-muted-foreground mb-4">

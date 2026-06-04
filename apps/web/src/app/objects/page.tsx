@@ -80,7 +80,7 @@ function ObjectsContent() {
       <main className="px-4 py-6 max-w-lg mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-display text-3xl vhs-text-glow text-primary">
+          <h1 className="font-display text-3xl vhs-text-glow text-primary uppercase">
             {t("objects.title")}
           </h1>
           <p className="font-mono text-xs text-muted-foreground mt-1">

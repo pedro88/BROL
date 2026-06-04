@@ -144,7 +144,7 @@ export default function QrStockPage() {
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-display text-3xl vhs-text-glow text-primary">
+          <h1 className="font-display text-3xl vhs-text-glow text-primary uppercase">
             QR CODES
           </h1>
           <p className="font-mono text-sm text-muted-foreground mt-2">
@@ -301,7 +301,7 @@ export default function QrStockPage() {
         ) : data?.items.length === 0 ? (
           <div className="card-vhs p-8 text-center">
             <QrCode className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <h2 className="font-display text-xl text-muted-foreground mb-2">
+            <h2 className="font-display text-xl text-muted-foreground mb-2 uppercase">
               {t("qrCodes.emptyTitle")}
             </h2>
             <p className="font-mono text-sm text-muted-foreground">
