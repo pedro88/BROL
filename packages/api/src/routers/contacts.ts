@@ -172,10 +172,22 @@ export const contactsRouter = router({
   create: protectedProcedure
     .input(createContactSchema)
     .mutation(async ({ ctx, input }) => {
+      // Si l'email correspond à un compte Brol, lier le contact à ce compte
+      // (borrowerId). Ainsi les prêts via ce contact pointent vers le vrai
+      // user → vue emprunteur, badge Mail et notifs côté borrower.
+      let borrowerId: string | null = null;
+      if (input.email) {
+        const account = await ctx.prisma.user.findUnique({
+          where: { email: input.email },
+          select: { id: true },
+        });
+        if (account && account.id !== ctx.userId) borrowerId = account.id;
+      }
       return ctx.prisma.contact.create({
         data: {
           ...input,
           userId: ctx.userId,
+          borrowerId,
         },
       });
     }),
@@ -251,13 +263,21 @@ export const contactsRouter = router({
       });
 
       if (existingContact) {
+        // Rattrape un contact pré-existant non lié (créé avant ce fix).
+        if (!existingContact.borrowerId) {
+          return ctx.prisma.contact.update({
+            where: { id: existingContact.id },
+            data: { borrowerId: scannedUser.id },
+          });
+        }
         return existingContact;
       }
 
-      // Créer le contact
+      // Créer le contact — le profil scanné EST un compte Brol, on le lie.
       return ctx.prisma.contact.create({
         data: {
           userId: ctx.userId,
+          borrowerId: scannedUser.id,
           name: scannedUser.name || scannedUser.email,
           email: scannedUser.email,
         },
