@@ -59,3 +59,9 @@ packages/*/src/**/*.d.ts.map
 
 # ── DB backups (scripts/db-backup.sh) ──
 backups/
+
+# ── graphify : on versionne les livrables (GRAPH_REPORT.md, graph.json/html,
+#    manifest, cost) mais pas le cache AST ni l'état interne (régénérables
+#    via `graphify update .`, churn à chaque run) ──
+graphify-out/cache/
+graphify-out/.graphify_*

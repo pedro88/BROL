@@ -1,0 +1,68 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk find *)",
+      "Bash(rtk wc *)",
+      "Bash(/home/piet/.local/bin/pnpm --filter @brol/api exec vitest run)",
+      "Bash(/home/piet/.local/bin/pnpm --filter @brol/web exec tsc --noEmit)",
+      "Bash(/home/piet/.local/bin/pnpm --filter @brol/db exec prisma db execute --schema=prisma/schema.prisma --stdin)",
+      "Bash(rtk read *)",
+      "Bash(PGPASSWORD=password rtk psql -h localhost -U postgres -d brol -c \"SELECT \\\\\"id\\\\\", \\\\\"email\\\\\", \\\\\"country\\\\\", \\\\\"postalCode\\\\\", \\\\\"city\\\\\", \\\\\"lat\\\\\", \\\\\"lng\\\\\" FROM \\\\\"users\\\\\" WHERE \\\\\"postalCode\\\\\" = '4960' OR \\\\\"city\\\\\" ILIKE '%malmedy%' ORDER BY \\\\\"createdAt\\\\\" DESC;\")",
+      "Bash(PGPASSWORD=password rtk psql -h localhost -U postgres -d brol -c \"SELECT o.\\\\\"id\\\\\", o.\\\\\"name\\\\\", o.\\\\\"author\\\\\", o.\\\\\"objectType\\\\\", c.\\\\\"userId\\\\\", u.\\\\\"email\\\\\", u.\\\\\"lat\\\\\", u.\\\\\"lng\\\\\" FROM \\\\\"objects\\\\\" o JOIN \\\\\"collections\\\\\" c ON o.\\\\\"collectionId\\\\\" = c.\\\\\"id\\\\\" JOIN \\\\\"users\\\\\" u ON c.\\\\\"userId\\\\\" = u.\\\\\"id\\\\\" WHERE o.\\\\\"name\\\\\" ILIKE '%donjon%';\")",
+      "Bash(PGPASSWORD=password rtk psql -h localhost -U postgres -d brol -c \"SELECT email, country, \\\\\"postalCode\\\\\", city, lat, lng FROM users WHERE lat IS NULL OR lng IS NULL ORDER BY \\\\\"createdAt\\\\\" DESC;\")",
+      "Bash(PGPASSWORD=password rtk psql -h localhost -U postgres -d brol -c \"SELECT email, \\\\\"postalCode\\\\\", lat, lng FROM users WHERE email IN \\('sandrep_85@hotmail.com','aze@aze.aze','boubouloup@live.fr'\\);\")",
+      "Bash(PGPASSWORD=password rtk psql -h localhost -U postgres -d brol -c \"SELECT n.\\\\\"userId\\\\\", u.email, n.type, n.title, n.\\\\\"relatedId\\\\\", n.\\\\\"createdAt\\\\\" FROM notifications n JOIN users u ON n.\\\\\"userId\\\\\" = u.id WHERE n.type='COMMUNITY_REQUEST' ORDER BY n.\\\\\"createdAt\\\\\" DESC LIMIT 5;\")",
+      "Bash(/home/piet/.local/bin/pnpm --filter @brol/db exec prisma format)",
+      "Bash(/home/piet/.local/bin/pnpm --filter @brol/db exec prisma validate)",
+      "Bash(bash scripts/db-backup.sh)",
+      "Bash(/home/piet/.local/bin/pnpm --filter @brol/db exec prisma migrate deploy)",
+      "Bash(/home/piet/.local/bin/pnpm --filter @brol/db exec prisma generate)",
+      "Bash(/home/piet/.local/bin/pnpm --filter @brol/api exec vitest run src/routers/__tests__/request-messages.test.ts)",
+      "Bash(/usr/bin/find /home/piet/Projets/webDev/BROL -maxdepth 2 -name \"*.md\" -not -path \"*/node_modules/*\")",
+      "Bash(rtk ls *)",
+      "Read(//tmp/**)",
+      "Bash(/bin/ls /home/piet/Projets/webDev/BROL/apps/web/)",
+      "Bash(/bin/ls /home/piet/Projets/webDev/BROL/apps/web/public/)",
+      "Bash(/bin/ls /home/piet/Projets/webDev/BROL/apps/mobile/)",
+      "Bash(/bin/ls /home/piet/Projets/webDev/BROL/apps/mobile/assets/)",
+      "Bash(/bin/ls /home/piet/Projets/webDev/BROL/apps/web/src/components/)",
+      "Bash(/bin/ls /home/piet/Projets/webDev/BROL/apps/web/src/app/navigation.tsx /home/piet/Projets/webDev/BROL/apps/web/src/app/)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(NEXT_PUBLIC_API_URL=https://api.brol.dev NEXT_PUBLIC_APP_URL=https://app.brol.dev NODE_ENV=production rtk pnpm run build)",
+      "Bash(ssh piet@91.98.87.65 ' *)",
+      "Bash(rtk curl *)",
+      "Bash(ssh piet@91.98.87.65 's3cmd info s3://brol-storage 2>&1 | grep -A20 Policy')",
+      "Bash(rsync -az --delete --exclude=node_modules --exclude=/apps/web/.next/cache --exclude=/apps/web/.next/types --exclude=/apps/web/.next/server --exclude=.pnpm-store --exclude=.git --exclude=.env --exclude=**/.env ./ piet@91.98.87.65:/opt/brol/)",
+      "Bash(ssh piet@91.98.87.65 'cd /opt/brol && docker compose build web && docker compose up -d web')",
+      "Bash(curl -s -o /dev/null -w \"app=%{http_code}\\\\n\" https://app.brol.dev/)",
+      "Bash(ssh piet@91.98.87.65 's3cmd ls s3://brol-storage/photos/ --recursive 2>&1 | awk \"{print \\\\$3, \\\\$4}\" | tail -5')",
+      "Bash(ssh piet@91.98.87.65 's3cmd ls s3://brol-storage/photos/ --recursive 2>&1 | awk \"{printf \\\\\"%-12s %s\\\\\\\\n\\\\\", \\\\$3, \\\\$4}\"')",
+      "Bash(ssh piet@91.98.87.65 'sudo -u postgres psql -d brol -c \"SELECT id, email, \\\\\"postalCode\\\\\", country, lat, lng FROM users;\"')",
+      "Bash(/bin/ls /home/piet/Projets/webDev/BROL/packages/api/src/routers/__tests__/)",
+      "Bash(rm /home/piet/Projets/webDev/BROL/apps/web/src/app/qr/\\\\[code\\\\]/qr-public-content.tsx *)",
+      "Bash(git mv *)",
+      "Bash(rtk proxy *)",
+      "Bash(cd /home/piet/Projets/webDev/BROL; echo \"=== messages router registered? ===\"; rtk proxy grep -n \"messages\" packages/api/src/routers/_app.ts packages/api/src/root.ts packages/api/src/index.ts 2>/dev/null | rtk proxy grep -i \"messagesRouter\\\\|messages:\" | head; echo \"=== shared tsc ===\"; cd packages/shared && rtk proxy npx tsc --noEmit 2>&1 | rtk proxy grep -c \"error TS\"; echo \"=== api tsc \\(messages/request-messages\\) ===\"; cd ../api && rtk proxy npx tsc --noEmit 2>&1 | rtk proxy grep \"messages.ts\\\\|request-messages\"; echo \"--- api new-file errors above \\(empty=clean\\) ---\")",
+      "Read(//home/piet/Projets/webDev/**)",
+      "Bash(cd /home/piet/Projets/webDev/BROL/packages/api && echo \"=== API ===\"; rtk proxy npx tsc --noEmit 2>&1 | rtk proxy grep -c \"error TS\"; cd ../../apps/web && echo \"=== WEB ===\"; rtk proxy npx tsc --noEmit 2>&1 | rtk proxy grep -c \"error TS\")",
+      "Read(//home/piet/Projets/apps/**)"
+    ],
+    "additionalDirectories": [
+      "/home/piet/Projets/webDev/BROL/apps/web/src/app/qr/[code]"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f graphify-out/graph.json ] && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"graphify: Knowledge graph exists. Read graphify-out/GRAPH_REPORT.md for god nodes and community structure before searching raw files.\"}}' || true"
+          }
+        ]
+      }
+    ]
+  }
+}
