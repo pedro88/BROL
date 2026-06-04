@@ -8,7 +8,7 @@ interface ReviewCardProps {
     id: string;
     rating: number;
     comment?: string | null;
-    createdAt: string;
+    createdAt: Date | string;
     author: {
       id: string;
       name?: string | null;
@@ -17,7 +17,7 @@ interface ReviewCardProps {
   };
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: Date | string): string {
   return new Intl.DateTimeFormat("fr", {
     day: "numeric",
     month: "short",

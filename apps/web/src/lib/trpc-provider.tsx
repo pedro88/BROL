@@ -7,7 +7,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
-import type { AppRouter } from "@brol/api";
+import superjson from "superjson";
 import { useEffect, useState } from "react";
 import { getSessionToken, sessionTokenStore } from "./auth-store";
 import { trpc } from "./trpc";
@@ -35,6 +35,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
     trpc.createClient({
       links: [
         httpBatchLink({
+          transformer: superjson,
           url: process.env.NEXT_PUBLIC_API_URL
             ? `${process.env.NEXT_PUBLIC_API_URL}/api/trpc`
             : "http://localhost:3001/api/trpc",

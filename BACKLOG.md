@@ -42,19 +42,19 @@
   `contacts.addFromScan`), QR code (scan profil Brol). Wire dans
   `/contacts/page.tsx`. Edit reste sur l'ancien `ContactDialog`.
 
-- [ ] **Tech (dette)** — Ajouter le transformer **superjson** au lien tRPC
-  (api + web + mobile). Aujourd'hui aucun transformer → les `Date`
-  Prisma arrivent en `string` côté client alors que les types annoncent
-  `Date`. Piège latent : tout `.toISOString()` / manipulation de date
-  crashe au render (cf. bug 404 collection réglé le 2026-06-04 en
-  contournement avec `new Date(...)`). Fix propre :
-  - `packages/api` : `initTRPC.context().create({ transformer: superjson })`.
-  - `apps/web` + `apps/mobile` : `transformer: superjson` sur le
-    `httpBatchLink` (les deux `trpc-provider.tsx`).
-  - Retirer les contournements `new Date(...)` devenus inutiles + vérifier
-    les pages qui sérialisent des dates (`/objects/[id]`, `/loans`,
-    `/collections/[id]`, notifications).
-  - Tester : un round-trip date doit revenir en `Date` côté client.
+- [x] **Tech (dette)** — ~~Ajouter le transformer **superjson** au lien tRPC.~~
+  livré 2026-06-04 (api + web). Les `Date` traversent maintenant le fil en
+  `Date` (plus de string). `transformer: superjson` posé dans
+  `initTRPC...create()` (api) + `httpBatchLink` (web). Types frontend
+  corrigés là où superjson révélait l'hypothèse string (NotifData,
+  ReviewCard, RequestCard, profil `formatMemberSince` → `Date | string`).
+  Contournements `new Date(...)` laissés en place (inoffensifs, tolèrent
+  Date). Tests api OK (createCaller non affecté).
+  - **Reste mobile** : `transformer: superjson` + dep ajoutés dans le
+    working tree mais **non commités** (entremêlés avec le chantier mobile
+    WIP : expo-clipboard/image-picker dans `pnpm-lock`). À commiter avec ce
+    chantier. ⚠️ Le mobile commité reste désynchronisé du serveur superjson
+    tant que ce n'est pas fait (mobile non déployé → impact théorique).
 
 ## 🟡 P2 — Produit / mobile
 

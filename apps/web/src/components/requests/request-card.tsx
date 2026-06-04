@@ -9,7 +9,7 @@ interface RequestCardProps {
     description?: string | null;
     zone?: string | null;
     status: string;
-    createdAt: string;
+    createdAt: Date | string;
     author: {
       id: string;
       name?: string | null;
@@ -20,7 +20,7 @@ interface RequestCardProps {
   showFulfillButton?: boolean;
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: Date | string): string {
   return new Intl.DateTimeFormat("fr", {
     day: "numeric",
     month: "short",

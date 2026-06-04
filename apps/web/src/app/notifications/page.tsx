@@ -13,7 +13,7 @@ type NotifData = {
   message?: string | null;
   type: string;
   isRead: boolean;
-  createdAt: string;
+  createdAt: Date | string;
   relatedType?: string | null;
   relatedId?: string | null;
 };

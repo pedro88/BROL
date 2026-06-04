@@ -5,6 +5,7 @@
 
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import superjson from "superjson";
 import { prisma } from "@brol/db";
 import { getSession } from "../auth";
 import {
@@ -60,6 +61,10 @@ export async function createContext(opts: FetchCreateContextFnOptions): Promise<
  * Initialisation de tRPC avec les plugins nécessaires.
  */
 const t = initTRPC.context<Context>().create({
+  // superjson : préserve Date/Map/Set/etc. sur le fil. Sans lui, les Date
+  // Prisma arrivaient en string côté client (cf. bug 404 collection).
+  // Le transformer doit être identique sur les liens client (web + mobile).
+  transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
       ...shape,

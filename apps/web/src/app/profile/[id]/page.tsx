@@ -16,7 +16,7 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-function formatMemberSince(dateStr: string): string {
+function formatMemberSince(dateStr: Date | string): string {
   return new Intl.DateTimeFormat("fr", {
     month: "long",
     year: "numeric",
