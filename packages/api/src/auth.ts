@@ -16,6 +16,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@brol/db";
 import { generateHandle } from "./lib/handle";
 import { logger } from "./lib/logger";
+import { logAudit, getClientIp } from "./lib/audit";
 
 const log = logger.child("auth");
 
@@ -139,6 +140,34 @@ function baseAuthConfig(overrides?: {
         },
       },
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    on: {
+      signIn: async ({ user, request }: { user: { id: string; email: string }; request: Request }) => {
+        const ip = getClientIp(
+          Object.fromEntries(request.headers.entries())
+        );
+        const userAgent = request.headers.get("user-agent") ?? null;
+        await logAudit(prisma, {
+          userId: user.id,
+          action: "sign_in",
+          ipAddress: ip,
+          userAgent,
+          metadata: { email: user.email },
+        });
+      },
+      signOut: async ({ session, request }: { session: { userId: string }; request: Request }) => {
+        const ip = getClientIp(
+          Object.fromEntries(request.headers.entries())
+        );
+        const userAgent = request.headers.get("user-agent") ?? null;
+        await logAudit(prisma, {
+          userId: session.userId,
+          action: "sign_out",
+          ipAddress: ip,
+          userAgent,
+        });
+      },
+    } as any,
     // OAuth providers — commented out for future use
     // socialProviders: {
     //   google: google({

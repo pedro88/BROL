@@ -23,6 +23,7 @@ import { syncUserBadges } from "../lib/badge-service";
 import { logger } from "../lib/logger";
 import { withComputedStatuses } from "../lib/loan-status";
 import { assertObjectOwned } from "../lib/owned-objects";
+import { enforceQuota } from "../lib/quota";
 import { cursorOf } from "../lib/pagination";
 import { haversineKm } from "../lib/geo";
 
@@ -212,6 +213,8 @@ export const loansRouter = router({
   create: protectedProcedure
     .input(createLoanSchema)
     .mutation(async ({ ctx, input }) => {
+      await enforceQuota(ctx, "activeLoans");
+
       // Vérifier que l'objet appartient à l'utilisateur
       await assertObjectOwned(ctx.prisma, ctx.userId, input.objectId);
 

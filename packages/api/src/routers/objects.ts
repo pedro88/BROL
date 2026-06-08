@@ -11,6 +11,8 @@ import { logger } from "../lib/logger";
 import { assertObjectOwned, getOwnedObject } from "../lib/owned-objects";
 import { cursorOf } from "../lib/pagination";
 import { withComputedStatuses } from "../lib/loan-status";
+import { enforceQuota } from "../lib/quota";
+import { logAudit } from "../lib/audit";
 import {
   createObjectSchema,
   updateObjectSchema,
@@ -475,6 +477,8 @@ export const objectsRouter = router({
   create: protectedProcedure
     .input(createObjectSchema)
     .mutation(async ({ ctx, input }) => {
+      await enforceQuota(ctx, "objects");
+
       // Vérifier que la collection appartient à l'utilisateur
       const collection = await ctx.prisma.collection.findFirst({
         where: { id: input.collectionId, userId: ctx.userId },
@@ -547,10 +551,19 @@ export const objectsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
-      await assertObjectOwned(ctx.prisma, ctx.userId, input.id);
+      const object = await getOwnedObject(ctx.prisma, ctx.userId!, input.id);
+      if (!object) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Objet non trouvé" });
+      }
 
       await ctx.prisma.object.delete({
         where: { id: input.id },
+      });
+
+      await logAudit(ctx.prisma, {
+        userId: ctx.userId,
+        action: "object_delete",
+        metadata: { objectId: input.id, objectName: object.name },
       });
 
       return { success: true };

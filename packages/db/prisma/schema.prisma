@@ -545,3 +545,18 @@ model Message {
   @@index([createdAt])
   @@map("messages")
 }
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

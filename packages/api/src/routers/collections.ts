@@ -11,6 +11,8 @@ import {
   translate,
 } from "@brol/shared";
 import { cursorOf } from "../lib/pagination";
+import { enforceQuota } from "../lib/quota";
+import { logAudit } from "../lib/audit";
 
 const OBJECT_TYPES = [
   "BOOK",
@@ -204,24 +206,7 @@ export const collectionsRouter = router({
   create: protectedProcedure
     .input(createCollectionSchema)
     .mutation(async ({ ctx, input }) => {
-      // Vérifier les limites de tier avant création
-      const profile = await ctx.prisma.profile.findUnique({
-        where: { userId: ctx.userId },
-      });
-      const tier = profile?.tier ?? "FREE";
-      const tierLimits = { FREE: { collections: 5 }, TIER_2: { collections: 10 }, TIER_3: { collections: null } };
-      const limits = tierLimits[tier as keyof typeof tierLimits] ?? tierLimits.FREE;
-      const maxCollections = limits.collections;
-
-      if (maxCollections !== null) {
-        const count = await ctx.prisma.collection.count({ where: { userId: ctx.userId } });
-        if (count >= maxCollections) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: translate(ctx.locale, "errors.collectionLimitReached", { maxCollections }),
-          });
-        }
-      }
+      await enforceQuota(ctx, "collections");
 
       // Force type from input (do not default here — let the DB default handle it)
       const data: Record<string, unknown> = {
@@ -287,9 +272,14 @@ export const collectionsRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.collectionNotFound") });
       }
 
-      // Cascade delete des objets et prêts associés
       await ctx.prisma.collection.delete({
         where: { id: input.id },
+      });
+
+      await logAudit(ctx.prisma, {
+        userId: ctx.userId,
+        action: "collection_delete",
+        metadata: { collectionId: input.id, collectionName: collection.name },
       });
 
       return { success: true };
