@@ -389,14 +389,19 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 ### Sécurité applicative
 
-- [ ] **Tech** — Rate limiting sur les routes auth (`sign-in`,
-  `sign-up`, `reset-password`). Middleware tRPC ou nginx.
-- [ ] **Tech** — Quota enforcement par tier (FREE/T2/T3). Actuellement
-  `packages/api/src/routers/tier.ts` lit les limites mais ne bloque
-  pas. Ajouter une middleware procedure qui throw `FORBIDDEN` si quota
-  dépassé.
-- [ ] **Tech** — Audit trail sur actions sensibles (sign-in/out, delete
-  account, password change). Table `AuditLog` simple.
+- [x] **Tech** — ~~Rate limiting sur les routes auth (`sign-in`,
+  `sign-up`).~~ livré 2026-06-08. Wrapper HTTP dans `server.ts` :
+  5/min/IP sur `/api/auth/sign-in/*` et `/api/auth/sign-up/*`. tRPC :
+  60/min/read + 20/min/mutation par user.
+- [x] **Tech** — ~~Quota enforcement par tier (FREE/T2/T3).~~ livré
+  2026-06-08. Helper `enforceQuota(ctx, resource)` dans `lib/quota.ts`.
+  Centralise les limites (plus de duplication inline). Appliqué à
+  `collections.create`, `objects.create`, `loans.create`.
+- [x] **Tech** — ~~Audit trail sur actions sensibles (sign-in/out,
+  collection_delete, object_delete).~~ livré 2026-06-08. Table
+  `AuditLog` + helper `logAudit()` dans `lib/audit.ts`. Hooks
+  BetterAuth `signIn`/`signOut` dans `auth.ts`. Audit sur
+  `collections.delete` et `objects.delete`.
 - [x] **Tech** — ~~Backup Postgres automatique~~ — `scripts/db-backup.sh`
   livré 2026-05-29. À déployer sur VPS via crontab (cf. MAINTENANCE §3).
 
