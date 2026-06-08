@@ -13,6 +13,7 @@ import {
 import {
   createLoanSchema,
   returnLoanSchema,
+  selfBorrowSchema,
   paginationSchema,
   translate,
   type Locale,
@@ -23,6 +24,7 @@ import { logger } from "../lib/logger";
 import { withComputedStatuses } from "../lib/loan-status";
 import { assertObjectOwned } from "../lib/owned-objects";
 import { cursorOf } from "../lib/pagination";
+import { haversineKm } from "../lib/geo";
 
 const log = logger.child("loans.remind");
 
@@ -327,6 +329,171 @@ export const loansRouter = router({
       }
 
       // Sync badges pour le prêteur
+      syncUserBadges(ctx.prisma, ctx.userId).catch(() => {});
+
+      return loan;
+    }),
+
+  /**
+   * Auto-emprunt (self-borrow).
+   * Permet à un utilisateur d'emprunter un objet sans validation du propriétaire,
+   * si le mode self-service est activé sur l'objet ou sa collection.
+   */
+  selfBorrow: protectedProcedure
+    .input(selfBorrowSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Récupérer l'objet avec son owner et sa collection
+      const object = await ctx.prisma.object.findFirst({
+        where: { id: input.objectId },
+        include: {
+          collection: {
+            select: { id: true, userId: true, selfServiceMode: true },
+          },
+        },
+      });
+
+      if (!object) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: translate(ctx.locale, "errors.objectNotFound"),
+        });
+      }
+
+      // Le caller ne peut pas s'auto-emprunter son propre objet
+      if (object.collection.userId === ctx.userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: translate(ctx.locale, "errors.cannotBorrowOwnObject"),
+        });
+      }
+
+      // Vérifier qu'il n'y a pas déjà un prêt actif
+      const existingLoan = await ctx.prisma.loan.findFirst({
+        where: {
+          objectId: input.objectId,
+          status: { in: ["ACTIVE", "OVERDUE"] },
+        },
+      });
+
+      if (existingLoan) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: translate(ctx.locale, "errors.objectAlreadyLent"),
+        });
+      }
+
+      // Déterminer le mode self-service (objet > collection)
+      const effectiveMode =
+        object.selfServiceMode !== "OFF"
+          ? object.selfServiceMode
+          : object.collection.selfServiceMode;
+
+      if (effectiveMode === "OFF") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: translate(ctx.locale, "errors.selfServiceNotEnabled"),
+        });
+      }
+
+      // Vérifier l'éligibilité selon le mode
+      const caller = await ctx.prisma.user.findUnique({
+        where: { id: ctx.userId },
+        select: { id: true, lat: true, lng: true, maxSelfBorrowPerWeek: true },
+      });
+
+      if (!caller) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
+
+      const owner = await ctx.prisma.user.findUnique({
+        where: { id: object.collection.userId },
+        select: { id: true, lat: true, lng: true, selfServiceRadiusKm: true },
+      });
+
+      if (effectiveMode === "CONTACTS") {
+        // Vérifier que le caller est un contact de l'owner
+        const contact = await ctx.prisma.contact.findFirst({
+          where: { userId: object.collection.userId, borrowerId: ctx.userId },
+        });
+        if (!contact) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: translate(ctx.locale, "errors.selfServiceNotAllowed"),
+          });
+        }
+      } else if (effectiveMode === "RADIUS") {
+        // Vérifier que le caller est dans le rayon de l'owner
+        if (!caller.lat || !caller.lng || !owner?.lat || !owner?.lng) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: translate(ctx.locale, "errors.selfServiceLocationRequired"),
+          });
+        }
+        const radiusKm = owner.selfServiceRadiusKm ?? 25;
+        const distance = haversineKm(caller.lat, caller.lng, owner.lat, owner.lng);
+        if (distance > radiusKm) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: translate(ctx.locale, "errors.selfServiceOutOfRadius"),
+          });
+        }
+      }
+      // PUBLIC: tout utilisateur Brol peut s'auto-emprunter — pas de vérification supplémentaire.
+
+      // Vérifier la limite hebdomadaire d'auto-emprunts
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const recentSelfBorrows = await ctx.prisma.loan.count({
+        where: {
+          borrowerId: ctx.userId,
+          createdAt: { gte: oneWeekAgo },
+        },
+      });
+
+      if (recentSelfBorrows >= (caller.maxSelfBorrowPerWeek ?? 3)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: translate(ctx.locale, "errors.selfServiceWeeklyLimitReached"),
+        });
+      }
+
+      // Créer le prêt
+      const loan = await ctx.prisma.loan.create({
+        data: {
+          objectId: input.objectId,
+          ownerId: object.collection.userId,
+          borrowerId: ctx.userId,
+          returnDueDate: input.returnDueDate,
+          notes: input.notes,
+          status: "ACTIVE",
+        },
+        include: {
+          object: {
+            select: { id: true, name: true, coverImage: true },
+          },
+          owner: {
+            select: { id: true, name: true, image: true },
+          },
+        },
+      });
+
+      // Notification à l'owner (info only, pas de validation requise)
+      await ctx.prisma.notification.create({
+        data: {
+          userId: object.collection.userId,
+          type: "SELF_BORROW",
+          title: translate(ctx.locale, "notifications.selfBorrowTitle"),
+          message: translate(ctx.locale, "notifications.selfBorrowMessage", {
+            objectName: loan.object.name,
+            borrowerName: loan.borrower?.name ?? "Un utilisateur",
+          }),
+          relatedId: loan.id,
+          relatedType: "loan",
+        },
+      });
+
+      // Sync badges pour l'emprunteur
       syncUserBadges(ctx.prisma, ctx.userId).catch(() => {});
 
       return loan;

@@ -99,6 +99,9 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   const [selectedQrId, setSelectedQrId] = useState<string>("");
   const [creatingQr, setCreatingQr] = useState(false);
 
+  // Self-service mode
+  const [selfServiceEnabled, setSelfServiceEnabled] = useState(false);
+
   // Photo state for creation-time upload
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -193,6 +196,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
         ...formData,
         objectType,
         qrStockId,
+        selfServiceMode: selfServiceEnabled ? "CONTACTS" : "OFF",
       });
 
       // 2. Assigner le QR scanné après création
@@ -907,6 +911,23 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
           }}
         />
       )}
+
+      {/* Self-service toggle */}
+      <div className="flex items-center justify-between pt-4 mt-4">
+        <div className="space-y-1">
+          <Label htmlFor="selfService" className="font-mono text-xs uppercase">
+            Auto-prêt par contacts
+          </Label>
+          <p className="font-mono text-xs text-muted-foreground">
+            Permet à vos contacts de s'auto-emprunter cet objet.
+          </p>
+        </div>
+        <Switch
+          id="selfService"
+          checked={selfServiceEnabled}
+          onCheckedChange={setSelfServiceEnabled}
+        />
+      </div>
 
       {/* Submit */}
       <Button

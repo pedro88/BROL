@@ -62,6 +62,8 @@ interface EditObjectDialogProps {
     rentalPriceWeek?: number | null;
     rentalPriceKm?: number | null;
     hasPricing?: boolean;
+    // Self-service
+    selfServiceMode?: "OFF" | "CONTACTS" | "RADIUS" | "PUBLIC" | null;
   };
   onSuccess?: () => void;
 }
@@ -91,6 +93,12 @@ export function EditObjectDialog({
   const showIsbn = type === "BOOK" || type === "FILM";
   // Tarification: disponible pour tous les types, mais désactivée par défaut
   const [pricingEnabled, setPricingEnabled] = useState(initialData?.hasPricing ?? false);
+  // Self-service mode selector
+  const [selfServiceEnabled, setSelfServiceEnabled] = useState(
+    initialData?.selfServiceMode && initialData.selfServiceMode !== "OFF"
+      ? true
+      : false
+  );
 
   const {
     register,
@@ -162,6 +170,7 @@ export function EditObjectDialog({
         rentalPriceWeek: initialData?.rentalPriceWeek ?? null,
         rentalPriceKm: initialData?.rentalPriceKm ?? null,
       });
+      setSelfServiceEnabled(initialData?.selfServiceMode && initialData.selfServiceMode !== "OFF" ? true : false);
     }
   }, [open, initialData, reset]);
 
@@ -176,7 +185,11 @@ export function EditObjectDialog({
 
   const onSubmit = async (data: UpdateObjectInput) => {
     try {
-      await updateMutation.mutateAsync({ id: objectId, data });
+      const submitData = {
+        ...data,
+        selfServiceMode: selfServiceEnabled ? "CONTACTS" : "OFF",
+      };
+      await updateMutation.mutateAsync({ id: objectId, data: submitData });
     } catch (error) {
       console.error("Failed to update object:", error);
     }
@@ -217,395 +230,24 @@ export function EditObjectDialog({
                 placeholder="Auteur ou marque"
                 {...register("author")}
               />
-            </div>
+</div>
           )}
 
-          {/* Edition */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-edition" className="font-mono text-xs uppercase">
-              {t("objects.editionOrModel")}
-            </Label>
-            <Input
-              id="edit-edition"
-              placeholder="Gallimard, 1943"
-              {...register("edition")}
+          {/* Self-service toggle */}
+          <div className="flex items-center justify-between pt-4 mt-4">
+            <div className="space-y-1">
+              <Label htmlFor="selfService" className="font-mono text-xs uppercase">
+                Auto-prêt par contacts
+              </Label>
+              <p className="font-mono text-xs text-muted-foreground">
+                Permet à vos contacts de s'auto-emprunter cet objet.
+              </p>
+            </div>
+            <Switch
+              id="selfService"
+              checked={selfServiceEnabled}
+              onCheckedChange={setSelfServiceEnabled}
             />
-          </div>
-
-          {/* Condition */}
-          <div className="space-y-2">
-            <Label className="font-mono text-xs uppercase">État</Label>
-            <div className="grid grid-cols-5 gap-2">
-              {OBJECT_CONDITIONS.map((condition) => (
-                <label
-                  key={condition}
-                  className={`
-                    flex flex-col items-center gap-1 p-2 border-2 border-border cursor-pointer
-                    hover:border-primary/50 transition-colors text-center
-                    ${watch("condition") === condition ? "border-primary bg-primary/10" : ""}
-                  `}
-                >
-                  <input
-                    type="radio"
-                    value={condition}
-                    {...register("condition")}
-                    className="sr-only"
-                  />
-                  <span className="font-mono text-xs">{t(`objects.conditions.${condition}`)}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* BOOK / FILM — ISBN */}
-          {showIsbn && (
-            <div className="space-y-2">
-              <Label htmlFor="edit-isbn" className="font-mono text-xs uppercase">
-                ISBN
-              </Label>
-              <Input
-                id="edit-isbn"
-                placeholder="978-2-07-040850-4"
-                {...register("isbn")}
-              />
-            </div>
-          )}
-
-          {/* BOARD_GAME specific fields */}
-          {showBoardGameFields && (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-playersMin" className="font-mono text-xs uppercase">
-                    Joueurs min.
-                  </Label>
-                  <Input
-                    id="edit-playersMin"
-                    type="number"
-                    min={1}
-                    placeholder="2"
-                    {...register("playersMin", { valueAsNumber: true })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-playersMax" className="font-mono text-xs uppercase">
-                    Joueurs max.
-                  </Label>
-                  <Input
-                    id="edit-playersMax"
-                    type="number"
-                    min={1}
-                    placeholder="6"
-                    {...register("playersMax", { valueAsNumber: true })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-playingTimeMinutes" className="font-mono text-xs uppercase">
-                    Durée (min.)
-                  </Label>
-                  <Input
-                    id="edit-playingTimeMinutes"
-                    type="number"
-                    min={1}
-                    placeholder="60"
-                    {...register("playingTimeMinutes", { valueAsNumber: true })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-ageMin" className="font-mono text-xs uppercase">
-                    Âge min.
-                  </Label>
-                  <Input
-                    id="edit-ageMin"
-                    type="number"
-                    min={0}
-                    placeholder="8"
-                    {...register("ageMin", { valueAsNumber: true })}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* ELECTRIC specific fields */}
-          {showElectricFields && (
-            <div className="space-y-2">
-              <Label htmlFor="edit-powerWatts" className="font-mono text-xs uppercase">
-                Puissance (W)
-              </Label>
-              <Input
-                id="edit-powerWatts"
-                type="number"
-                min={1}
-                placeholder="500"
-                {...register("powerWatts", { valueAsNumber: true })}
-              />
-            </div>
-          )}
-
-          {/* CLOTHING specific fields */}
-          {showClothingFields && (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-clothingSize" className="font-mono text-xs uppercase">
-                    Taille
-                  </Label>
-                  <select
-                    id="edit-clothingSize"
-                    {...register("clothingSize")}
-                    className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
-                  >
-                    <option value="">Sélectionner</option>
-                    <option value="XS">XS</option>
-                    <option value="S">S</option>
-                    <option value="M">M</option>
-                    <option value="L">L</option>
-                    <option value="XL">XL</option>
-                    <option value="XXL">XXL</option>
-                    <option value="34">34</option>
-                    <option value="36">36</option>
-                    <option value="38">38</option>
-                    <option value="40">40</option>
-                    <option value="42">42</option>
-                    <option value="44">44</option>
-                    <option value="46">46</option>
-                    <option value="48">48</option>
-                    <option value="50">50</option>
-                    <option value="52">52</option>
-                    <option value="54">54</option>
-                    <option value="56">56</option>
-                    <option value="Enfant">Enfant</option>
-                    <option value="Autre">Autre</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-clothingGender" className="font-mono text-xs uppercase">
-                    Genre
-                  </Label>
-                  <select
-                    id="edit-clothingGender"
-                    {...register("clothingGender")}
-                    className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
-                  >
-                    <option value="">Sélectionner</option>
-                    <option value="Homme">Homme</option>
-                    <option value="Femme">Femme</option>
-                    <option value="Unisexe">Unisexe</option>
-                    <option value="Enfant">Enfant</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-clothingColor" className="font-mono text-xs uppercase">
-                    Couleur
-                  </Label>
-                  <Input
-                    id="edit-clothingColor"
-                    placeholder="Noir, bleu..."
-                    {...register("clothingColor")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-clothingMaterial" className="font-mono text-xs uppercase">
-                    Matière
-                  </Label>
-                  <Input
-                    id="edit-clothingMaterial"
-                    placeholder="Coton, cuir..."
-                    {...register("clothingMaterial")}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-brand-clothing" className="font-mono text-xs uppercase">
-                  Marque
-                </Label>
-                <Input
-                  id="edit-brand-clothing"
-                  placeholder="Nike, Levi's..."
-                  {...register("brand")}
-                />
-              </div>
-            </>
-          )}
-
-          {/* TOOL specific fields */}
-          {showToolFields && (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-toolSector" className="font-mono text-xs uppercase">
-                    Secteur / Usage
-                  </Label>
-                  <select
-                    id="edit-toolSector"
-                    {...register("toolSector")}
-                    className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
-                  >
-                    <option value="">Sélectionner</option>
-                    <option value="Bricolage">Bricolage</option>
-                    <option value="Jardinage">Jardinage</option>
-                    <option value="Automobile">Automobile</option>
-                    <option value="Plomberie">Plomberie</option>
-                    <option value="Électricité">Électricité</option>
-                    <option value="Construction">Construction</option>
-                    <option value="Menuiserie">Menuiserie</option>
-                    <option value="Peinture">Peinture</option>
-                    <option value="Autre">Autre</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-toolPowerSource" className="font-mono text-xs uppercase">
-                    Alimentation
-                  </Label>
-                  <select
-                    id="edit-toolPowerSource"
-                    {...register("toolPowerSource")}
-                    className="flex h-10 w-full bg-input border-2 border-border px-4 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
-                  >
-                    <option value="">Sélectionner</option>
-                    <option value="MANUAL">Manuel (non alimenté)</option>
-                    <option value="MAINS">Secteur (filaire)</option>
-                    <option value="BATTERY">Sur batterie</option>
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-brand-tool" className="font-mono text-xs uppercase">
-                  Marque
-                </Label>
-                <Input
-                  id="edit-brand-tool"
-                  placeholder="Bosch, Makita..."
-                  {...register("brand")}
-                />
-              </div>
-            </>
-          )}
-
-          {/* CUSTOM specific fields */}
-          {showCustomFields && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="edit-customField1" className="font-mono text-xs uppercase">
-                  Champ libre 1
-                </Label>
-                <Input
-                  id="edit-customField1"
-                  placeholder="Valeur..."
-                  {...register("customField1")}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-customField2" className="font-mono text-xs uppercase">
-                  Champ libre 2
-                </Label>
-                <Input
-                  id="edit-customField2"
-                  placeholder="Valeur..."
-                  {...register("customField2")}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Pricing toggle — available for all object types */}
-          <div className="border-t-2 border-border pt-4 mt-4">
-            <button
-              type="button"
-              onClick={() => setPricingEnabled(!pricingEnabled)}
-              className={`
-                w-full flex items-center justify-between px-4 py-3 border-2 border-border
-                hover:border-primary/50 transition-colors
-                ${pricingEnabled ? "border-primary bg-primary/10" : ""}
-              `}
-            >
-              <span className="font-mono text-xs uppercase">
-                {pricingEnabled ? "▼ Tarification activée" : "▶ Activer la tarification"}
-              </span>
-              <span className="font-mono text-xs text-muted-foreground">
-                {pricingEnabled ? "Désactiver" : "Optionnel"}
-              </span>
-            </button>
-
-            {/* Pricing fields */}
-            {pricingEnabled && (
-              <div className="mt-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-cautionAmount" className="font-mono text-xs uppercase">
-                      Caution (€)
-                    </Label>
-                    <Input
-                      id="edit-cautionAmount"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="50.00"
-                      {...register("cautionAmount", { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-rentalPriceDay" className="font-mono text-xs uppercase">
-                      Prix / jour (€)
-                    </Label>
-                    <Input
-                      id="edit-rentalPriceDay"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="5.00"
-                      {...register("rentalPriceDay", { valueAsNumber: true })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-rentalPriceHour" className="font-mono text-xs uppercase">
-                      Prix / heure (€)
-                    </Label>
-                    <Input
-                      id="edit-rentalPriceHour"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="1.00"
-                      {...register("rentalPriceHour", { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-rentalPriceWeek" className="font-mono text-xs uppercase">
-                      Prix / semaine (€)
-                    </Label>
-                    <Input
-                      id="edit-rentalPriceWeek"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="25.00"
-                      {...register("rentalPriceWeek", { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-rentalPriceKm" className="font-mono text-xs uppercase">
-                      Prix / km (€)
-                    </Label>
-                    <Input
-                      id="edit-rentalPriceKm"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="0.50"
-                      {...register("rentalPriceKm", { valueAsNumber: true })}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Notes */}

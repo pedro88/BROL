@@ -493,7 +493,7 @@ export const loans = {
   emptyBorrowed: { fr: "Aucun objet emprunté", nl: "Geen objecten geleend", en: "Nothing borrowed" },
 
   // Ajouts
-  returnDueDateLabel: { fr: "Retour prévu le {returnDueDate}", nl: "Terugbrenging verwacht op {returnDueDate}", en: "Return due by {returnDueDate}" },
+  returnDueDateLabel: { fr: "Date de retour prévue", nl: "Verwachte terugbrengdatum", en: "Expected return date" },
   markReturned: { fr: "Marquer rendu", nl: "Markeer als teruggebracht", en: "Mark returned" },
   closedSuccess: { fr: "Prêt clôturé", nl: "Lening gesloten", en: "Loan closed" },
   closeError: { fr: "Impossible de clôturer le prêt", nl: "Kan lening niet sluiten", en: "Unable to close loan" },
@@ -731,6 +731,11 @@ export const qrCodes = {
   retryButton: { fr: "Réessayer", nl: "Opnieuw proberen", en: "Retry" },
   scannerDistanceHint: { fr: "Tenez le QR code à une distance de 15-30 cm de la caméra", nl: "Houd de QR-code 15-30 cm van de camera verwijderd", en: "Hold the QR code 15-30 cm away from the camera" },
   popupAllowanceRequired: { fr: "Veuillez autoriser les popups pour l'impression.", nl: "Sta pop-ups toe voor afdrukken.", en: "Please allow popups for printing." },
+  filterByName: { fr: "Rechercher par nom", nl: "Zoeken op naam", en: "Search by name" },
+  searchPlaceholder: { fr: "Nom de l'objet...", nl: "Objectnaam...", en: "Object name..." },
+  filterByCollection: { fr: "Collection", nl: "Collectie", en: "Collection" },
+  allCollections: { fr: "Toutes les collections", nl: "Alle collecties", en: "All collections" },
+  clearFilters: { fr: "Effacer les filtres", nl: "Filters wissen", en: "Clear filters" },
 };
 
 /**
@@ -801,6 +806,13 @@ export const errors = {
   fileTypeNotAllowed: { fr: "Type de fichier non autorisé: {contentType}. Types acceptés: {allowedTypes}", nl: "Bestandstype niet toegestaan: {contentType}. Toegestane types: {allowedTypes}", en: "File type not allowed: {contentType}. Allowed types: {allowedTypes}" },
   fileTooLarge: { fr: "Fichier trop volumineux. Maximum: {maxSizeMB}MB", nl: "Bestand te groot. Maximum: {maxSizeMB}MB", en: "File too large. Maximum: {maxSizeMB}MB" },
   s3EndpointNotConfigured: { fr: "S3_ENDPOINT non configuré", nl: "S3_ENDPOINT niet geconfigureerd", en: "S3_ENDPOINT not configured" },
+  // Self-service errors
+  selfServiceNotEnabled: { fr: "L'auto-prêt n'est pas activé pour cet objet.", nl: "Zelf-uitlenen is niet ingeschakeld voor dit object.", en: "Self-borrowing is not enabled for this item." },
+  selfServiceNotAllowed: { fr: "Vous n'êtes pas autorisé à vous auto-emprunter cet objet.", nl: "U mag dit object niet zelf lenen.", en: "You are not allowed to self-borrow this item." },
+  selfServiceLocationRequired: { fr: "Vous devez avoir une localisation configurée pour utiliser l'auto-prêt en mode rayon.", nl: "U moet een locatie hebben geconfigureerd om zelf te lenen in radius-modus.", en: "You need to have a location configured to self-borrow in radius mode." },
+  selfServiceOutOfRadius: { fr: "Vous êtes en dehors du rayon autorisé pour cet objet.", nl: "U bent buiten de toegestane straal voor dit object.", en: "You are outside the allowed radius for this item." },
+  selfServiceWeeklyLimitReached: { fr: "Vous avez atteint votre limite d'auto-emprunts pour cette semaine.", nl: "U heeft uw limiet voor zelf-lenen deze week bereikt.", en: "You have reached your weekly self-borrow limit." },
+  cannotBorrowOwnObject: { fr: "Vous ne pouvez pas empruntez votre propre objet.", nl: "U kunt niet uzelf lenen.", en: "You cannot borrow your own object." },
 };
 
 /**
@@ -938,6 +950,8 @@ export const notifications = {
   requestFulfilledMessage: { fr: "Quelqu'un a répondu à votre demande: \"{requestTitle}\"", nl: "Iemand heeft op uw verzoek geantwoord: \"{requestTitle}\"", en: "Someone has responded to your request: \"{requestTitle}\"" },
   newLoanTitle: { fr: "Nouvel emprunt", nl: "Nieuwe uitlening", en: "New loan" },
   newLoanMessage: { fr: "{objectName} vous a été prêté. Retour prévu: {returnDueDate}.", nl: "{objectName} is u uitgeleend. Terugbrengen voorzien: {returnDueDate}.", en: "{objectName} has been lent to you. Return expected: {returnDueDate}." },
+  selfBorrowTitle: { fr: "Auto-emprunt", nl: "Zelf-uitlening", en: "Self-borrow" },
+  selfBorrowMessage: { fr: "{borrowerName} s'est auto-emprunté \"{objectName}\".", nl: "{borrowerName} heeft zichzelf \"{objectName}\" geleend.", en: "{borrowerName} has self-borrowed \"{objectName}\"." },
   reviewReceivedTitle: { fr: "Nouvel avis de {reviewerName}", nl: "Nieuwe recensie van {reviewerName}", en: "New review from {reviewerName}" },
   reviewReceivedMessageWithComment: { fr: "\"{comment}\"", nl: "\"{comment}\"", en: "\"{comment}\"" },
   reviewReceivedMessageWithoutComment: { fr: "{rating}/5 étoiles", nl: "{rating}/5 sterren", en: "{rating}/5 stars" },

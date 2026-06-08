@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { BookOpen, Clock, User } from "lucide-react";
+import { BookOpen, Clock, User, Zap } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 import type { ObjectCondition } from "@brol/shared";
 
@@ -25,6 +25,7 @@ interface ObjectCardProps {
     borrower: { id: string; name: string | null };
     returnDueDate?: string | null;
   } | null;
+  selfServiceMode?: string | null;
 }
 
 /**
@@ -37,9 +38,11 @@ export function ObjectCard({
   condition,
   coverImage,
   currentLoan,
+  selfServiceMode,
 }: ObjectCardProps) {
   const t = useTranslations();
   const isLoaned = !!currentLoan;
+  const isSelfService = !isLoaned && selfServiceMode && selfServiceMode !== "OFF";
 
   return (
     <Link href={`/objects/${id}`} className="block">
@@ -83,6 +86,14 @@ export function ObjectCard({
                 </span>
               </div>
 
+              {/* Self-service banner */}
+              {isSelfService && (
+                <div className="mt-2 flex items-center gap-2 text-primary">
+                  <Zap className="w-3 h-3" />
+                  <span className="font-mono text-xs">Auto-prêt</span>
+                </div>
+              )}
+
               {/* Loan status */}
               {currentLoan?.borrower && (
                 <div className="mt-2 flex items-center gap-2 text-secondary">
@@ -93,7 +104,7 @@ export function ObjectCard({
                 </div>
               )}
 
-              {!currentLoan && (
+              {!currentLoan && !isSelfService && (
                 <div className="mt-2 flex items-center gap-2 text-muted-foreground/50">
                   <Clock className="w-3 h-3" />
                   <span className="font-mono text-xs">{t("objects.available")}</span>

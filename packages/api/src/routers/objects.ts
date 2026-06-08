@@ -99,6 +99,7 @@ export const objectsRouter = router({
             rentalPriceHour: obj.rentalPriceHour ? Number(obj.rentalPriceHour) : null,
             rentalPriceWeek: obj.rentalPriceWeek ? Number(obj.rentalPriceWeek) : null,
             rentalPriceKm: obj.rentalPriceKm ? Number(obj.rentalPriceKm) : null,
+            selfServiceMode: obj.selfServiceMode,
             currentLoan: {
               id: loan.id,
               status: loan.status,
@@ -177,6 +178,7 @@ export const objectsRouter = router({
           rentalPriceHour: obj.rentalPriceHour ? Number(obj.rentalPriceHour) : null,
           rentalPriceWeek: obj.rentalPriceWeek ? Number(obj.rentalPriceWeek) : null,
           rentalPriceKm: obj.rentalPriceKm ? Number(obj.rentalPriceKm) : null,
+          selfServiceMode: obj.selfServiceMode,
           currentLoan: obj.loans[0]
             ? {
                 id: obj.loans[0].id,
@@ -485,7 +487,8 @@ export const objectsRouter = router({
       // objectType defaults to BOOK via Zod schema, override from collection type if not set by client
       const objectType = input.objectType ?? collection.type ?? "BOOK";
 
-      // Si un QR stock est fourni, vérifier qu'il appartient à l'utilisateur
+      let qrStockId: string | null = null;
+
       if (input.qrStockId) {
         const qrStock = await ctx.prisma.qrStock.findFirst({
           where: { id: input.qrStockId, userId: ctx.userId, used: false },
@@ -495,27 +498,33 @@ export const objectsRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.qrCodeNotAvailable") });
         }
 
-        // Marquer le QR comme utilisé
-        await ctx.prisma.qrStock.update({
-          where: { id: input.qrStockId },
-          data: { used: true, usedAt: new Date() },
-        });
+        qrStockId = qrStock.id;
       }
 
-      return ctx.prisma.object.create({
-        data: {
-          ...input,
-          objectType,
-          qrStockId: input.qrStockId ?? null,
-        },
-        include: {
-          qrStock: true,
-        },
-      }).then((obj) => {
-        // Sync badges pour le propriétaire de la collection
-        syncUserBadges(ctx.prisma, ctx.userId).catch(() => {});
-        return obj;
-      });
+      const [object] = await ctx.prisma.$transaction([
+        ctx.prisma.object.create({
+          data: {
+            ...input,
+            objectType,
+            qrStockId,
+          },
+          include: {
+            qrStock: true,
+          },
+        }),
+        ...(qrStockId
+          ? [
+              ctx.prisma.qrStock.update({
+                where: { id: qrStockId },
+                data: { used: true, usedAt: new Date() },
+              }),
+            ]
+          : []),
+      ]);
+
+      syncUserBadges(ctx.prisma, ctx.userId).catch(() => {});
+
+      return object;
     }),
 
   /**

@@ -24,6 +24,7 @@ function transformPrivateObject(obj: {
   author: string | null;
   coverImage: string | null;
   condition: "NEW" | "LIKE_NEW" | "GOOD" | "FAIR" | "POOR";
+  selfServiceMode?: string | null;
   loans?: {
     id: string;
     status: string;
@@ -39,6 +40,7 @@ function transformPrivateObject(obj: {
     author: obj.author,
     coverImage: obj.coverImage,
     condition: obj.condition,
+    selfServiceMode: obj.selfServiceMode,
     currentLoan: activeLoan
       ? {
           id: activeLoan.id,
@@ -60,6 +62,7 @@ function transformPublicObject(obj: {
   author: string | null;
   coverImage: string | null;
   condition: "NEW" | "LIKE_NEW" | "GOOD" | "FAIR" | "POOR";
+  selfServiceMode?: string | null;
 }) {
   return {
     id: obj.id,
@@ -67,6 +70,7 @@ function transformPublicObject(obj: {
     author: obj.author,
     coverImage: obj.coverImage,
     condition: obj.condition,
+    selfServiceMode: obj.selfServiceMode,
     currentLoan: null,
   };
 }
@@ -319,6 +323,7 @@ export default function CollectionDetailPage() {
                     coverImage={object.coverImage}
                     condition={object.condition}
                     currentLoan={object.currentLoan}
+                    selfServiceMode={object.selfServiceMode}
                   />
                 ))}
               </div>

@@ -37,12 +37,13 @@ const createCollectionSchema = z.object({
 
 const updateCollectionSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  description: z.string().max(500).optional(),
-  coverImage: z.string().url().optional(),
+  description: z.string().max(500).optional().nullable(),
+  coverImage: z.string().url().optional().nullable(),
   isPublic: z.boolean().optional(),
   type: z.enum(OBJECT_TYPES).optional(),
-  customField1Label: z.string().max(50).optional(),
-  customField2Label: z.string().max(50).optional(),
+  customField1Label: z.string().max(50).optional().nullable(),
+  customField2Label: z.string().max(50).optional().nullable(),
+  selfServiceMode: z.enum(["OFF", "CONTACTS", "RADIUS", "PUBLIC"]).optional(),
 });
 
 /**
@@ -231,6 +232,7 @@ export const collectionsRouter = router({
         customField1Label: input.customField1Label,
         customField2Label: input.customField2Label,
         userId: ctx.userId,
+        selfServiceMode: input.selfServiceMode ?? "OFF",
       };
       if (input.type !== undefined) {
         data.type = input.type;
@@ -238,7 +240,7 @@ export const collectionsRouter = router({
       return ctx.prisma.collection.create({ data: data as Parameters<typeof ctx.prisma.collection.create>[0]["data"] });
     }),
 
-  /**
+/**
    * Met à jour une collection existante.
    */
   update: protectedProcedure
@@ -252,20 +254,22 @@ export const collectionsRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: translate(ctx.locale, "errors.collectionNotFound") });
       }
 
-      // Build update data, excluding undefined fields. Typed via Prisma's
-      // own update-input shape so we don't need an `as any` escape hatch.
-      const updateData: Prisma.CollectionUpdateInput = {};
-      if (input.data.name !== undefined) updateData.name = input.data.name;
-      if (input.data.description !== undefined) updateData.description = input.data.description;
-      if (input.data.coverImage !== undefined) updateData.coverImage = input.data.coverImage;
-      if (input.data.isPublic !== undefined) updateData.isPublic = input.data.isPublic;
-      if (input.data.type !== undefined) updateData.type = input.data.type;
-      if (input.data.customField1Label !== undefined) updateData.customField1Label = input.data.customField1Label;
-      if (input.data.customField2Label !== undefined) updateData.customField2Label = input.data.customField2Label;
+      // Cascade selfServiceMode to child objects that still have OFF
+      if (input.data.selfServiceMode !== undefined) {
+        await ctx.prisma.object.updateMany({
+          where: {
+            collectionId: input.id,
+            selfServiceMode: "OFF",
+          },
+          data: {
+            selfServiceMode: input.data.selfServiceMode,
+          },
+        });
+      }
 
       return ctx.prisma.collection.update({
         where: { id: input.id },
-        data: updateData,
+        data: input.data as Prisma.CollectionUpdateInput,
       });
     }),
 

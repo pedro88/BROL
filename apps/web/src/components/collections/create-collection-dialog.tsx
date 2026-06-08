@@ -82,6 +82,7 @@ export function CreateCollectionDialog({
   const t = useTranslations();
   const utils = trpc.useUtils();
   const [isPublic, setIsPublic] = useState(false);
+  const [selfServiceEnabled, setSelfServiceEnabled] = useState(false);
 
   const {
     register,
@@ -112,6 +113,7 @@ export function CreateCollectionDialog({
       setIsPublic(false);
       setSelectedType("BOOK");
       setValue("type", "BOOK");
+      setSelfServiceEnabled(false);
     }
   }, [open, reset]);
 
@@ -133,7 +135,10 @@ export function CreateCollectionDialog({
   const onSubmit = async (data: CreateCollectionInput) => {
     setError(null);
     try {
-      await createMutation.mutateAsync(data);
+      await createMutation.mutateAsync({
+        ...data,
+        selfServiceMode: selfServiceEnabled ? "CONTACTS" : "OFF",
+      });
     } catch (err) {
       console.error("Failed to create collection:", err);
       setError(t("collections.createError"));
@@ -193,7 +198,7 @@ export function CreateCollectionDialog({
           {/* Type selector */}
           <div className="space-y-2">
             <Label htmlFor="type" className="font-mono text-xs uppercase">
-              Type d&apos;objets
+              Type d'objets
             </Label>
             <select
               id="type"
@@ -261,6 +266,23 @@ export function CreateCollectionDialog({
               checked={isPublic}
               onChange={handlePublicToggle}
               id="isPublic"
+            />
+          </div>
+
+          {/* Self-service toggle */}
+          <div className="flex items-start justify-between gap-4 pt-2">
+            <div className="flex-1">
+              <Label htmlFor="selfService" className="font-mono text-xs uppercase cursor-pointer">
+                Auto-prêt par contacts
+              </Label>
+              <p className="font-mono text-xs text-muted-foreground mt-1">
+                Permet à vos contacts de s auto-emprunter les objets de cette collection.
+              </p>
+            </div>
+            <Toggle
+              checked={selfServiceEnabled}
+              onChange={setSelfServiceEnabled}
+              id="selfService"
             />
           </div>
 

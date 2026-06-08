@@ -60,6 +60,10 @@
 
 ### Dashboard
 
+- [x] **Feat** — ~~Actions rapides : format carrousel cards (carré)
+  comme les stats, sans le descriptif (titre seul + icône). Supprimer
+  `description` du composant `QuickAction` (`apps/web/src/app/page.tsx`).~~
+  — livré 2026-06-08.
 - [x] **Feat** — ~~Card "Objets" / `/objects` tableau filtrable~~ —
   vérifié 2026-05-30. Colonnes desktop [Nom / Collection / État /
   Status] présentes (`apps/web/src/app/objects/page.tsx:213-219`),
@@ -239,13 +243,22 @@
   CSS (auto-fill + page-break-inside avoid). Pas de dépendance
   jsPDF — utilise le dialog d'impression du navigateur pour générer
   le PDF.
-- [ ] **Bug** — Les QR créés à la création d'un objet n'apparaissent pas
-  sur la page `/qr` → impossible de les imprimer. Vérifier le lien
-  objet↔qrStock à la création (`objects.create` + `qr.listStock`).
-- [ ] **Feat** — Filtrer les QR assignés par collection + recherche par
-  nom d'objet sur `/qr`.
-- [ ] **Feat** — Afficher le nom de l'objet sur le QR assigné (à l'écran
-  + sur le PDF d'impression) pour savoir où coller chaque étiquette.
+- [x] **Bug** — ~~Les QR créés à la création d'un objet n'apparaissent pas
+  sur `/qr` → impossible de les imprimer. Vérifier le lien
+  objet↔qrStock à la création (`objects.create` + `qr.listStock`).~~
+  — fix 2026-06-08. Wrapped QR update + object create dans une même
+  transaction `$transaction` pour garantir l'atomicité. Avant : 2
+  opérations séparées (QR marqué used, puis objet créé) — si create
+  échouait, QR restait `used: true` sans lien objet.
+- [x] **Feat** — ~~Filtrer les QR assignés par collection + recherche par
+  nom d'objet sur `/qr`.~~ — livré 2026-06-08. Ajout `collectionId` +
+  `search` dans `qr.listStock` input + filtre Prisma sur `objects.name`.
+  Frontend : input recherche + select collection + bouton clear.
+- [x] **Feat** — ~~Afficher le nom de l'objet sur le QR assigné (à l'écran
+  + sur le PDF d'impression) pour savoir où coller chaque étiquette.~~
+  — déjà implémenté. Écran : `qr.object.name` dans la card (`qr/page.tsx:406-418`).
+  PDF : `objectName` dans `selectedCodes` + label du template HTML
+  (`qr/page.tsx:79,95`).
 
 Web a 19 pages, mobile a 12 écrans.
 
@@ -422,20 +435,23 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 ### Self-service
 
-- [ ] **Feat** — Mode **self-service** sur objet ou collection. Le
-  propriétaire autorise certains utilisateurs (ou tous ses contacts /
-  voisins dans X km / tous les users Brol) à emprunter sans
-  validation owner.
-  - Schema : `Object.selfServiceMode` enum
-    (`OFF` / `CONTACTS` / `RADIUS` / `PUBLIC`) +
-    `Collection.selfServiceMode` (hérité par défaut sur les enfants).
-  - Flux emprunt : si self-service autorisé pour le caller →
-    `loans.create` peut être appelé par le borrower lui-même (pas
-    seulement par l'owner). Mutation `loans.selfBorrow`.
-  - Notif owner (info only, pas de validation requise).
-  - Garde-fou : limite `maxSelfBorrowPerWeek` configurable par owner.
-  - UI : toggle dans `EditObjectDialog` + bandeau "Self-service"
-    sur la card objet côté borrower.
+- [x] **Feat** — ~~Mode **self-service** sur objet ou collection.~~
+  livré 2026-06-08 (complété 2026-06-08, simplifié 2026-06-08).
+  - Schema : `SelfServiceMode` enum (`OFF`/`CONTACTS`/`RADIUS`/`PUBLIC`)
+    + `Object.selfServiceMode` + `Collection.selfServiceMode`.
+    `User.maxSelfBorrowPerWeek` (défaut 3) + `selfServiceRadiusKm`.
+    NotificationType `SELF_BORROW`.
+  - Backend : `loans.selfBorrow` (protectedProcedure) avec vérification
+    éligibilité (mode CONTACTS → contact check, RADIUS → Haversine km,
+    PUBLIC → any user), limite hebdomadaire, notification owner.
+  - Cascade : `effectiveMode` dans `selfBorrow` = objet > collection
+    (inheritance runtime). `collections.update` cascade vers objets enfants
+    avec `selfServiceMode === "OFF"`.
+  - UI simplifié : toggle unique CONTACTS/OFF dans `EditObjectDialog`,
+    `object-form.tsx`, `create-collection-dialog.tsx`,
+    `collections/[id]/edit/page.tsx`.
+  - UI : bandeau "Auto-prêt" (Zap icon) sur object card et dans la liste
+    `/objects` quand l'objet est disponible en mode self-service.
 
 ### Thème / apparence
 

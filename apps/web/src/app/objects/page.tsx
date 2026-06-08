@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Search, Filter, Package, User, Clock, ChevronRight } from "lucide-react";
+import { Search, Filter, Package, User, Clock, ChevronRight, Zap } from "lucide-react";
 import { Header, Navigation } from "../../components/navigation";
 import { Input } from "../../components/ui/input";
 import { trpc } from "../../lib/trpc";
@@ -218,6 +218,7 @@ function ObjectsContent() {
               const isBorrowedView = !!obj.owner;
               const isLent = !isBorrowedView && !!obj.currentLoan;
               const isOverdue = obj.currentLoan?.isOverdue;
+              const isSelfService = !isBorrowedView && !isLent && obj.selfServiceMode && obj.selfServiceMode !== "OFF";
 
               return (
                 <Link
@@ -272,6 +273,12 @@ function ObjectsContent() {
                               : t("objects.statusLent")
                             : t("objects.statusAvailable")}
                       </span>
+                      {isSelfService && (
+                        <span className="flex items-center gap-1 font-mono text-xs text-primary">
+                          <Zap className="w-3 h-3" />
+                          Auto-prêt
+                        </span>
+                      )}
                       {isBorrowedView && obj.owner ? (
                         <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
                           <User className="w-3 h-3" />

@@ -47,6 +47,7 @@ export const createCollectionSchema = z.object({
   type: z.enum(OBJECT_TYPES),
   customField1Label: z.string().max(50).optional(),
   customField2Label: z.string().max(50).optional(),
+  selfServiceMode: z.enum(["OFF", "CONTACTS", "RADIUS", "PUBLIC"]).default("OFF"),
 });
 
 /**
@@ -60,6 +61,7 @@ export const updateCollectionSchema = z.object({
   type: z.enum(OBJECT_TYPES).optional(),
   customField1Label: z.string().max(50).optional().nullable(),
   customField2Label: z.string().max(50).optional().nullable(),
+  selfServiceMode: z.enum(["OFF", "CONTACTS", "RADIUS", "PUBLIC"]).optional(),
 });
 
 export type CreateCollectionInput = z.infer<typeof createCollectionSchema>;
@@ -158,6 +160,8 @@ const updateObjectBase = {
   // CUSTOM
   customField1: z.string().max(255).optional().nullable(),
   customField2: z.string().max(255).optional().nullable(),
+  // Self-service mode (OFF, CONTACTS, RADIUS, PUBLIC)
+  selfServiceMode: z.enum(["OFF", "CONTACTS", "RADIUS", "PUBLIC"]).optional().nullable(),
 };
 
 export const updateObjectSchema = z.object(updateObjectBase);
@@ -231,9 +235,20 @@ export const addContactFromScanSchema = z.object({
   userCode: z.string().min(1), // Le code scanné depuis le QR profil
 });
 
+/**
+ * Schéma pour l'auto-emprunt (self-borrow).
+ * Permet à un emprunteur de créer un prêt sans validation du propriétaire.
+ */
+export const selfBorrowSchema = z.object({
+  objectId: z.string().cuid(),
+  returnDueDate: z.coerce.date().optional(),
+  notes: z.string().max(1000).optional(),
+});
+
 export type CreateLoanInput = z.infer<typeof createLoanSchema>;
 export type ReturnLoanInput = z.infer<typeof returnLoanSchema>;
 export type RemindLoanInput = z.infer<typeof remindLoanSchema>;
+export type SelfBorrowInput = z.infer<typeof selfBorrowSchema>;
 
 // ============================================
 // QR STOCK

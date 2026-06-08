@@ -32,6 +32,11 @@ model User {
   lat        Float? // cache geocoding (Haversine matching)
   lng        Float?
 
+  // Self-service: limite d'auto-emprunts par semaine
+  maxSelfBorrowPerWeek Int @default(3)
+  // Self-service: rayon km par défaut pour mode RADIUS (null = 25km par défaut)
+  selfServiceRadiusKm  Int?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -130,20 +135,34 @@ enum ToolPowerSource {
   BATTERY // Sur batterie
 }
 
+// Mode self-service pour les objets/collections.
+// OFF: pas d'auto-prêt (validation owner requise).
+// CONTACTS: seuls les contacts de l'owner peuvent s'auto-emprunter.
+// RADIUS: tous les utilisateurs Brol dans un rayon km peuvent s'auto-emprunter.
+// PUBLIC: tout utilisateur Brol peut s'auto-emprunter.
+enum SelfServiceMode {
+  OFF
+  CONTACTS
+  RADIUS
+  PUBLIC
+}
+
 model Collection {
-  id                String      @id @default(cuid())
+  id                String          @id @default(cuid())
   userId            String
   name              String
   description       String?
   coverImage        String?
-  isPublic          Boolean     @default(false)
+  isPublic          Boolean         @default(false)
   // Type determines which Object fields are relevant
-  type              ObjectType? @default(BOOK)
+  type              ObjectType?     @default(BOOK)
   // Labels for custom fields (only used when type = CUSTOM)
-  customField1Label String?     @default("Champ libre 1")
-  customField2Label String?     @default("Champ libre 2")
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  customField1Label String?         @default("Champ libre 1")
+  customField2Label String?         @default("Champ libre 2")
+  // Self-service mode: allows borrowers to self-borrow without owner validation
+  selfServiceMode   SelfServiceMode @default(OFF)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   objects Object[]
@@ -196,6 +215,8 @@ model Object {
   rentalPriceHour    Decimal?         @db.Decimal(10, 2) // Prix location / heure
   rentalPriceWeek    Decimal?         @db.Decimal(10, 2) // Prix location / semaine
   rentalPriceKm      Decimal?         @db.Decimal(10, 2) // Prix location / km
+  // Self-service mode: overrides collection mode if set (OFF = inherit from collection)
+  selfServiceMode    SelfServiceMode  @default(OFF)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
@@ -479,6 +500,7 @@ enum NotificationType {
   COMMUNITY_REQUEST // Nouvelle demande à la communauté
   REVIEW_RECEIVED // Nouveau commentaire/note reçu
   REQUEST_FULFILLED // Votre demande a été traitée
+  SELF_BORROW // Un utilisateur s'est auto-emprunté un de vos objets
 }
 
 // ============================================

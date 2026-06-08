@@ -29,27 +29,35 @@ export default function EditCollectionPage() {
     { id: collectionId },
     { enabled: !!collectionId }
   );
+  const utils = trpc.useUtils();
 
   // Local state for isPublic (initialized from collection data)
   const [isPublic, setIsPublic] = useState(false);
   const [collectionType, setCollectionType] = useState<ObjectType>("BOOK");
-  const [customField1Label, setCustomField1Label] = useState(t("collections.customField1Label"));
-  const [customField2Label, setCustomField2Label] = useState(t("collections.customField2Label"));
+  const [customField1Label, setCustomField1Label] = useState("Champ libre 1");
+  const [customField2Label, setCustomField2Label] = useState("Champ libre 2");
+  const [selfServiceEnabled, setSelfServiceEnabled] = useState(false);
 
   // Sync state when collection loads
   useEffect(() => {
     if (collection) {
+      const ssm = (collection as { selfServiceMode?: string }).selfServiceMode ?? "OFF";
       setIsPublic(collection.isPublic ?? false);
       setCollectionType((collection.type as ObjectType) ?? "BOOK");
-      setCustomField1Label(collection.customField1Label ?? t("collections.customField1Label"));
-      setCustomField2Label(collection.customField2Label ?? t("collections.customField2Label"));
+      setCustomField1Label(collection.customField1Label ?? "Champ libre 1");
+      setCustomField2Label(collection.customField2Label ?? "Champ libre 2");
+      setSelfServiceEnabled(ssm === "CONTACTS");
     }
-  }, [collection, t]);
+  }, [collection]);
 
   // Update mutation
   const updateMutation = trpc.collections.update.useMutation({
     onSuccess: () => {
+      utils.collections.get.invalidate({ id: collectionId });
       router.push(`/collections/${collectionId}`);
+    },
+    onError: (err) => {
+      console.error("Update failed:", err);
     },
   });
 
@@ -65,6 +73,7 @@ export default function EditCollectionPage() {
         type: collectionType,
         customField1Label: collectionType === "CUSTOM" ? customField1Label : undefined,
         customField2Label: collectionType === "CUSTOM" ? customField2Label : undefined,
+        selfServiceMode: selfServiceEnabled ? "CONTACTS" : "OFF",
       },
     });
   };
@@ -189,6 +198,23 @@ export default function EditCollectionPage() {
                 id="isPublic"
                 checked={isPublic}
                 onCheckedChange={setIsPublic}
+              />
+            </div>
+
+            {/* Self-service toggle */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="selfService" className="font-mono text-xs uppercase">
+                  Auto-prêt par contacts
+                </Label>
+                <p className="font-mono text-xs text-muted-foreground">
+                  Permet à vos contacts de s'auto-emprunter les objets.
+                </p>
+              </div>
+              <Switch
+                id="selfService"
+                checked={selfServiceEnabled}
+                onCheckedChange={setSelfServiceEnabled}
               />
             </div>
 
