@@ -620,6 +620,112 @@ export const objectsRouter = router({
         return null;
       }
     }),
+
+  /**
+   * Recherche de jeux de société via BoardGameGeek XML API v2.
+   * Depuis oct. 2025 BGG exige un Bearer token (enregistrement d'app sur
+   * boardgamegeek.com/using_the_xml_api) → env BGG_API_TOKEN. Sans token,
+   * retourne { configured: false } et l'UI masque la recherche.
+   * https://boardgamegeek.com/wiki/page/BGG_XML_API2
+   */
+  searchBgg: protectedProcedure
+    .input(z.object({ query: z.string().min(2).max(100) }))
+    .query(async ({ input }) => {
+      if (!process.env.BGG_API_TOKEN) {
+        return { configured: false as const, items: [] };
+      }
+      try {
+        const url = `https://boardgamegeek.com/xmlapi2/search?type=boardgame&query=${encodeURIComponent(input.query)}`;
+        const response = await fetch(url, {
+          signal: AbortSignal.timeout(8000),
+          headers: bggHeaders(),
+        });
+        if (!response.ok) {
+          throw new Error(`BGG returned ${response.status}`);
+        }
+        const xml = await response.text();
+
+        const items: Array<{ bggId: number; name: string; year: number | null }> = [];
+        for (const m of xml.matchAll(/<item[^>]*type="boardgame"[^>]*id="(\d+)"[^>]*>([\s\S]*?)<\/item>/g)) {
+          const id = Number(m[1]);
+          const body = m[2];
+          const name =
+            body.match(/<name[^>]*type="primary"[^>]*value="([^"]*)"/)?.[1] ??
+            body.match(/<name[^>]*value="([^"]*)"/)?.[1];
+          if (!name) continue;
+          const year = body.match(/<yearpublished[^>]*value="(\d+)"/)?.[1];
+          items.push({ bggId: id, name: decodeXmlEntities(name), year: year ? Number(year) : null });
+          if (items.length >= 10) break;
+        }
+        return { configured: true as const, items };
+      } catch (err) {
+        log.warn("BGG search failed", { query: input.query, err });
+        return { configured: true as const, items: [] };
+      }
+    }),
+
+  /**
+   * Détail d'un jeu BGG (`thing?id=...`) → métadonnées pour préremplir
+   * le formulaire BOARD_GAME (titre, designer, joueurs, durée, cover).
+   */
+  lookupBgg: protectedProcedure
+    .input(z.object({ bggId: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      try {
+        const url = `https://boardgamegeek.com/xmlapi2/thing?id=${input.bggId}&stats=1`;
+        const response = await fetch(url, {
+          signal: AbortSignal.timeout(8000),
+          headers: bggHeaders(),
+        });
+        if (!response.ok) {
+          throw new Error(`BGG returned ${response.status}`);
+        }
+        const xml = await response.text();
+        if (!/<item[^>]*id="/.test(xml)) return null;
+
+        const attr = (tag: string): string | null =>
+          xml.match(new RegExp(`<${tag}[^>]*value="([^"]*)"`))?.[1] ?? null;
+
+        const title =
+          xml.match(/<name[^>]*type="primary"[^>]*value="([^"]*)"/)?.[1] ?? null;
+        const designers = [...xml.matchAll(/<link[^>]*type="boardgamedesigner"[^>]*value="([^"]*)"/g)]
+          .map((m) => decodeXmlEntities(m[1]))
+          .slice(0, 3);
+        const num = (v: string | null) => (v && Number(v) > 0 ? Number(v) : null);
+
+        return {
+          title: title ? decodeXmlEntities(title) : null,
+          designer: designers.length ? designers.join(", ") : null,
+          year: num(attr("yearpublished")),
+          minPlayers: num(attr("minplayers")),
+          maxPlayers: num(attr("maxplayers")),
+          playTime: num(attr("playingtime")),
+          ageMin: num(attr("minage")),
+          coverUrl: xml.match(/<image>([^<]+)<\/image>/)?.[1]?.trim() ?? null,
+        };
+      } catch (err) {
+        log.warn("BGG lookup failed", { bggId: input.bggId, err });
+        return null;
+      }
+    }),
 });
+
+/** Headers BGG : Bearer token requis depuis oct. 2025. */
+function bggHeaders(): Record<string, string> {
+  return process.env.BGG_API_TOKEN
+    ? { Authorization: `Bearer ${process.env.BGG_API_TOKEN}` }
+    : {};
+}
+
+/** Décode les entités XML basiques renvoyées par BGG. */
+function decodeXmlEntities(s: string): string {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;|&#0?39;|&#x27;/gi, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&amp;/g, "&");
+}
 
 export type ObjectsRouter = typeof objectsRouter;

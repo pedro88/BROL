@@ -164,6 +164,54 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
     }, 700); // Debounce 700ms
   }, [isbnForLookup, lookupQuery.data]);
 
+  // BGG search state (BOARD_GAME)
+  const [bggQuery, setBggQuery] = useState("");
+  const [bggSearchTerm, setBggSearchTerm] = useState("");
+  const [selectedBggId, setSelectedBggId] = useState<number | null>(null);
+  const bggDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const bggSearchQuery = trpc.objects.searchBgg.useQuery(
+    { query: bggSearchTerm },
+    {
+      enabled: bggSearchTerm.length >= 2,
+      staleTime: 10 * 60 * 1000,
+      retry: 1,
+    }
+  );
+
+  const bggLookupQuery = trpc.objects.lookupBgg.useQuery(
+    { bggId: selectedBggId ?? 0 },
+    {
+      enabled: selectedBggId !== null,
+      staleTime: 10 * 60 * 1000,
+      retry: 1,
+    }
+  );
+
+  // Auto-fill quand le détail BGG arrive
+  useEffect(() => {
+    const d = bggLookupQuery.data;
+    if (!d || bggLookupQuery.isFetching) return;
+    if (d.title) setValue("name", d.title, { shouldDirty: true });
+    if (d.designer) setValue("author", d.designer, { shouldDirty: true });
+    if (d.minPlayers) setValue("playersMin", d.minPlayers, { shouldDirty: true });
+    if (d.maxPlayers) setValue("playersMax", d.maxPlayers, { shouldDirty: true });
+    if (d.playTime) setValue("playingTimeMinutes", d.playTime, { shouldDirty: true });
+    if (d.ageMin) setValue("ageMin", d.ageMin, { shouldDirty: true });
+    if (d.coverUrl) setValue("coverImage", d.coverUrl, { shouldDirty: true });
+  }, [bggLookupQuery.data, bggLookupQuery.isFetching, setValue]);
+
+  const handleBggChange = useCallback((q: string) => {
+    setBggQuery(q);
+    setSelectedBggId(null);
+    if (bggDebounceRef.current) clearTimeout(bggDebounceRef.current);
+    if (q.trim().length < 2) {
+      setBggSearchTerm("");
+      return;
+    }
+    bggDebounceRef.current = setTimeout(() => setBggSearchTerm(q.trim()), 500);
+  }, []);
+
   const generateQrMutation = trpc.qr.generateStock.useMutation({ retry: 1 });
   const createMutation = trpc.objects.create.useMutation({
     onSuccess: (data) => {
@@ -404,6 +452,75 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       {/* BOARD_GAME specific fields */}
       {showBoardGameFields && (
         <>
+          {/* Recherche BoardGameGeek — préremplit le formulaire */}
+          <div className="space-y-2">
+            <Label htmlFor="bggSearch" className="font-mono text-xs uppercase">
+              {t("objects.bggSearchLabel")}
+            </Label>
+            <div className="relative">
+              <Input
+                id="bggSearch"
+                placeholder={t("objects.bggSearchPlaceholder")}
+                value={bggQuery}
+                onChange={(e) => handleBggChange(e.target.value)}
+                className="pr-10"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {(bggSearchQuery.isFetching || bggLookupQuery.isFetching) && (
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                )}
+                {selectedBggId !== null && bggLookupQuery.data && (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                )}
+              </div>
+            </div>
+            {selectedBggId === null && bggSearchQuery.data && bggSearchQuery.data.items.length > 0 && (
+              <ul className="border-2 border-border divide-y divide-border max-h-48 overflow-y-auto">
+                {bggSearchQuery.data.items.map((item) => (
+                  <li key={item.bggId}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBggId(item.bggId)}
+                      className="w-full text-left px-3 py-2 font-mono text-sm hover:bg-primary hover:text-primary-foreground transition-colors"
+                    >
+                      {item.name}
+                      {item.year ? (
+                        <span className="text-muted-foreground"> ({item.year})</span>
+                      ) : null}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {selectedBggId === null &&
+              bggSearchTerm.length >= 2 &&
+              !bggSearchQuery.isFetching &&
+              bggSearchQuery.data?.configured === false && (
+                <p className="font-mono text-xs text-muted-foreground">
+                  {t("objects.bggNotConfigured")}
+                </p>
+              )}
+            {selectedBggId === null &&
+              bggSearchTerm.length >= 2 &&
+              !bggSearchQuery.isFetching &&
+              bggSearchQuery.data?.configured === true &&
+              bggSearchQuery.data.items.length === 0 && (
+                <p className="font-mono text-xs text-orange-400">
+                  {t("objects.bggNoResults")}
+                </p>
+              )}
+            {selectedBggId !== null && bggLookupQuery.data && (
+              <p className="font-mono text-xs text-green-400">
+                {t("objects.isbnFound")}
+              </p>
+            )}
+            {bggQuery.length === 0 && (
+              <p className="font-mono text-xs text-muted-foreground">
+                {t("objects.bggHint")}
+              </p>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="playersMin" className="font-mono text-xs uppercase">

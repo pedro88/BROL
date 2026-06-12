@@ -339,6 +339,10 @@ S3_SECRET_KEY=...
 S3_BUCKET=brol-storage
 RESEND_API_KEY=...
 RESEND_FROM_EMAIL=Brol <noreply@brol.dev>
+# BoardGameGeek XML API — Bearer token requis depuis oct. 2025.
+# Enregistrer l'app sur https://boardgamegeek.com/using_the_xml_api
+# Sans token, la recherche BGG du formulaire BOARD_GAME est masquée.
+BGG_API_TOKEN=...
 ```
 
 > Pour régénérer le secret Better-auth : `openssl rand -base64 32`
