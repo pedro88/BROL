@@ -24,6 +24,7 @@ const OBJECT_TYPES = [
   "ELECTRIC",
   "CLOTHING",
   "CUSTOM",
+  "VIDEOGAME",
 ] as const;
 
 // Inline schemas to avoid tsx watch workspace dep caching issue

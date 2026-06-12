@@ -15,7 +15,7 @@ export const LOCALES = ["fr", "nl", "en"] as const;
 /** Presets de thème graphique. "magenta" = défaut (aucun attribut data-theme). */
 export const THEMES = ["magenta", "cyan", "crt-amber", "boring"] as const;
 export const TOOL_POWER_SOURCES = ["MANUAL", "MAINS", "BATTERY"] as const;
-export const OBJECT_TYPES = ["BOOK", "BOARD_GAME", "TOOL", "FILM", "MUSIC", "ELECTRONIC", "ELECTRIC", "CLOTHING", "CUSTOM"] as const;
+export const OBJECT_TYPES = ["BOOK", "BOARD_GAME", "TOOL", "FILM", "MUSIC", "ELECTRONIC", "ELECTRIC", "CLOTHING", "CUSTOM", "VIDEOGAME"] as const;
 
 // ============================================
 // USER

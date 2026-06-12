@@ -126,6 +126,7 @@ enum ObjectType {
   ELECTRIC // Outillage électrique
   CLOTHING // Vêtements / Accessoires
   CUSTOM // Personnalisé — champs libres
+  VIDEOGAME // Jeux vidéo / Console / Cartouche
 }
 
 // Source d'alimentation pour les TOOLs (remplace les booléens toolManual + toolBattery).
