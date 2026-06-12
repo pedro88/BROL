@@ -10,13 +10,14 @@
  */
 
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 // OAuth providers — commented out for future use
 // import { google, github, apple } from "better-auth/social-providers";
 import { prisma } from "@brol/db";
 import { generateHandle } from "./lib/handle";
 import { logger } from "./lib/logger";
-import { logAudit, getClientIp } from "./lib/audit";
+import { logAudit } from "./lib/audit";
 
 const log = logger.child("auth");
 
@@ -30,6 +31,10 @@ export interface AuthOptions {
   baseURL: string;
   basePath: "/api/auth";
   trustedOrigins: string[];
+  advanced?: {
+    crossSubDomainCookies?: { enabled: boolean; domain?: string };
+    defaultCookieAttributes?: { sameSite?: string; secure?: boolean };
+  };
   emailAndPassword: {
     enabled: true;
     minPasswordLength: 8;
@@ -45,6 +50,8 @@ export interface AuthOptions {
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   databaseHooks?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  hooks?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   socialProviders?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -139,35 +146,34 @@ function baseAuthConfig(overrides?: {
           },
         },
       },
+      // Audit sign-in : BetterAuth crée une session à chaque sign-in réussi.
+      session: {
+        create: {
+          after: async (session: { userId: string; ipAddress?: string | null; userAgent?: string | null }) => {
+            await logAudit(prisma, {
+              userId: session.userId,
+              action: "sign_in",
+              ipAddress: session.ipAddress ?? null,
+              userAgent: session.userAgent ?? null,
+            });
+          },
+        },
+      },
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    on: {
-      signIn: async ({ user, request }: { user: { id: string; email: string }; request: Request }) => {
-        const ip = getClientIp(
-          Object.fromEntries(request.headers.entries())
-        );
-        const userAgent = request.headers.get("user-agent") ?? null;
+    // Audit sign-out : hook before (la session existe encore à ce moment).
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/sign-out") return;
+        const session = await getSessionFromCtx(ctx);
+        if (!session) return;
         await logAudit(prisma, {
-          userId: user.id,
-          action: "sign_in",
-          ipAddress: ip,
-          userAgent,
-          metadata: { email: user.email },
-        });
-      },
-      signOut: async ({ session, request }: { session: { userId: string }; request: Request }) => {
-        const ip = getClientIp(
-          Object.fromEntries(request.headers.entries())
-        );
-        const userAgent = request.headers.get("user-agent") ?? null;
-        await logAudit(prisma, {
-          userId: session.userId,
+          userId: session.session.userId,
           action: "sign_out",
-          ipAddress: ip,
-          userAgent,
+          ipAddress: session.session.ipAddress ?? null,
+          userAgent: session.session.userAgent ?? null,
         });
-      },
-    } as any,
+      }),
+    },
     // OAuth providers — commented out for future use
     // socialProviders: {
     //   google: google({

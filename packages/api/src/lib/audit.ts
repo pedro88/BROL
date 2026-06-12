@@ -4,7 +4,7 @@
  * @package @brol/api
  */
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 export type AuditAction =
   | "sign_in"
@@ -23,7 +23,7 @@ type AuditLogCreateInput = {
 };
 
 export async function logAudit(
-  prisma: Prisma.Client,
+  prisma: PrismaClient,
   event: AuditLogCreateInput
 ): Promise<void> {
   try {
@@ -33,7 +33,7 @@ export async function logAudit(
         action: event.action,
         ipAddress: event.ipAddress ?? null,
         userAgent: event.userAgent ?? null,
-        metadata: event.metadata ?? null,
+        metadata: event.metadata ?? undefined,
       },
     });
   } catch (err) {

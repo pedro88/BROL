@@ -478,6 +478,9 @@ export const loansRouter = router({
           owner: {
             select: { id: true, name: true, image: true },
           },
+          borrower: {
+            select: { id: true, name: true },
+          },
         },
       });
 
