@@ -106,15 +106,21 @@
   garder que `brand`. Idem dans `edit-object-dialog.tsx`. Migration
   data `author → brand` pour les anciens objets : à faire séparément
   (cf. **Idées non-priorisées**).
-- [ ] **Feat** — Câbler la catégorie **BOARDGAME** avec
-  **BoardGameGeek XML API v2** (`https://boardgamegeek.com/xmlapi2/`)
-  pour preremplir : titre, designer, year, minPlayers/maxPlayers,
-  playTime, cover. Endpoint `search?type=boardgame&query=...` puis
-  `thing?id=...&stats=1`. Pas d'API key, rate limit doux. UI : input
-  "Rechercher sur BGG" → liste résultats → sélection → mapping vers
-  champs du form. Fallback manuel si pas de match. À élargir
-  ensuite : IGDB pour VIDEOGAME, TMDB pour MOVIE (OpenLibrary déjà
-  câblé pour BOOK via `objects.lookupIsbn`).
+- [x] **Feat** — ~~Câbler la catégorie **BOARDGAME** avec
+  **BoardGameGeek XML API v2**~~ — livré 2026-06-12.
+  `objects.searchBgg` (top 10, nom + année) + `objects.lookupBgg`
+  (titre, designers, joueurs min/max, durée, âge min, cover) mappés
+  sur le form BOARD_GAME (UX identique au lookup ISBN : input debounce
+  → liste → click → autofill). Parsing XML par regex, sans dépendance.
+  ⚠️ **La spec "pas d'API key" est périmée** : depuis oct. 2025 BGG
+  exige un Bearer token (enregistrer l'app sur
+  `boardgamegeek.com/using_the_xml_api`) → env `BGG_API_TOKEN`
+  (documenté MAINTENANCE.md). Sans token l'UI affiche "non configuré".
+  **Action requise** : créer le compte/token BGG et le poser dans
+  `/opt/brol/.env`.
+- [ ] **Feat** — Élargir le prefill aux autres types : IGDB pour
+  VIDEOGAME, TMDB pour MOVIE (OpenLibrary déjà câblé pour BOOK via
+  `objects.lookupIsbn`). Les deux demandent une API key.
 - [x] **Tech** — ~~Retirer le champ « Code-barres » du formulaire de
   création d'objet (`object-form.tsx`). Garder en DB (`barcode`) mais
   hors UI de création.~~ livré 2026-06-04. Bloc input retiré ; `barcode`
@@ -662,6 +668,30 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
 
+- **2026-06-12 (après-midi)** — Sprint *VIDEOGAME + BGG + badges polish*.
+  - **VIDEOGAME câblé UI** : typeLabel/authorLabel ("Studio / Éditeur")/
+    placeholders/editionLabel ("Plateforme") fr/nl/en, champs playersMax +
+    ageMin sur le form, unions TS des pickers remplacées par
+    `(typeof OBJECT_TYPES)[number]`. **Bug badge** : VIDEOGAME absent du
+    comptage `objectByType` → tous les badges GAMING indébloquables. Fixé.
+  - **BGG** : recherche + préremplissage BOARD_GAME (cf. item P2).
+    ⚠️ token requis depuis oct. 2025 → `BGG_API_TOKEN` à provisionner.
+  - **Bugs trouvés au typecheck** (web `tsc --noEmit` était rouge, 0 erreur
+    maintenant) :
+    - `selfServiceMode` strippé par zod sur `collections.create` ET
+      `objects.create` → toggle auto-prêt silencieusement ignoré à la
+      création. Schemas corrigés.
+    - Hooks audit sign-in/sign-out **morts** : `on: {...} as any` n'existe
+      pas dans better-auth 1.x → jamais loggés. Remplacés par
+      `databaseHooks.session.create.after` (sign_in) + `hooks.before` sur
+      `/sign-out` (`getSessionFromCtx`).
+    - `edit-object-dialog` : import `Switch` manquant (crash à l'ouverture).
+    - `loans.selfBorrow` : notification owner disait toujours
+      "Un utilisateur" (include `borrower` manquant).
+    - Divers type-debt (Header title, keepPrevious, Prisma.Client...).
+  - **Badges polish** : lien Trophy header (desktop + menu mobile), notif
+    BADGE_UNLOCKED cliquable → `/badges`, BADGES.md à jour.
+  - Tests : 286/286 (+5 BGG, fetch mocké).
 - **2026-06-12** — Découpage du working tree accumulé (~6 chantiers
   entremêlés, +5 900 lignes) en 6 commits propres :
   1. `fix(web)` — `/objects/add` sans collection : empty state + CTA,
