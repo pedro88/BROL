@@ -35,6 +35,38 @@
 
 ## 🟠 P1 — Hygiène en cours
 
+**Issus de l'audit rev 5 (2026-06-12, cf. AUDIT.md)** :
+
+- [ ] **Infra** — **Déployer en prod** : toutes les failles corrigées
+  (badge.award, getById/search email, notification.create, XSS print,
+  photos.reorder, open redirect) + 3 migrations + seed badges attendent
+  sur le VPS. La prod tourne avec les vulnérabilités.
+- [ ] **Tech** — CI : ajouter un job `next build` web (les erreurs de
+  compilation ne sont attrapées qu'au déploiement).
+- [ ] **Perf** — `syncUserBadges` : remplacer les 10 counts
+  `objectByType` par un `groupBy`, fire-and-forget uniforme (+ log),
+  `take: 500` sur les streaks. Aujourd'hui ~50 requêtes par mutation,
+  awaité (bloquant) sur contacts/photos/messages/community-request.
+- [ ] **Perf** — `objects.getPublic` : `take: 20` sur l'historique
+  loans (non borné) ; `messages.inbox` non borné.
+- [ ] **Tech** — Security headers / CSP dans `next.config.js`
+  (X-Frame-Options, Referrer-Policy, CSP stricte).
+- [ ] **Perf** — Indexes composites `Loan(ownerId, status)` +
+  `Loan(status, returnDueDate)` ; pré-filtre `country` avant Haversine
+  dans le matching community-request.
+- [ ] **Feat** — Pass i18n : ~14 strings FR hardcodées dans 9 fichiers
+  (create-collection-dialog, edit-object-dialog, photo-gallery,
+  global-error, star-rating aria-label...).
+- [ ] **Feat** — Pass a11y : aria-labels boutons icône, `alt` covers,
+  `htmlFor` create-request-dialog, `confirm()` natif → ConfirmDialog
+  (QR + objet), onError toasts manquants (2 mutations).
+- [ ] **Tech** — Quota TOCTOU (enforceQuota + create non
+  transactionnels), invalidation cache `objects.*` après
+  `loans.return`, `loans.cancel` doit-il accepter OVERDUE ?
+- [ ] **Tech** — Triage des 6 E2E `.skip` + re-run suite complète.
+- [ ] **Tech** — `.gitignore` les `*.tsbuildinfo` + `git rm --cached`.
+
+
 - [x] **Feat** — ~~Uniformiser l'ajout de contact (`/contacts`
   ↔ flux de prêt)~~ — livré 2026-06-01. Nouveau composant
   `apps/web/src/components/contacts/add-contact-dialog.tsx` avec 3
@@ -702,6 +734,12 @@ Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
     idempotence), matrice complète `selfBorrow` (4 modes + rayon +
     limite hebdo), authz return/cancel, privacy getById.
     **329/329 unit tests.**
+  - **Audit complet rev 5 (après-midi)** : 6 agents parallèles +
+    vérification manuelle. **6 failles de plus corrigées** (XSS print
+    QR ×2, spoofing notification.create, IDOR photos.reorder,
+    énumération email users.search, open redirect callbackUrl) + badge
+    `requests_fulfilled_by_count` global. AUDIT.md rev 5 rédigé (global
+    7.0 → 7.8). 332/332 tests. Reliquat priorisé en P1 ci-dessus.
 - **2026-06-12** — Découpage du working tree accumulé (~6 chantiers
   entremêlés, +5 900 lignes) en 6 commits propres :
   1. `fix(web)` — `/objects/add` sans collection : empty state + CTA,
