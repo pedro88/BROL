@@ -50,11 +50,8 @@
   ReviewCard, RequestCard, profil `formatMemberSince` → `Date | string`).
   Contournements `new Date(...)` laissés en place (inoffensifs, tolèrent
   Date). Tests api OK (createCaller non affecté).
-  - **Reste mobile** : `transformer: superjson` + dep ajoutés dans le
-    working tree mais **non commités** (entremêlés avec le chantier mobile
-    WIP : expo-clipboard/image-picker dans `pnpm-lock`). À commiter avec ce
-    chantier. ⚠️ Le mobile commité reste désynchronisé du serveur superjson
-    tant que ce n'est pas fait (mobile non déployé → impact théorique).
+  - ~~**Reste mobile** : `transformer: superjson` + dep~~ — commité
+    2026-06-12 avec le chantier mobile M1 (cf. Historique).
 
 ## 🟡 P2 — Produit / mobile
 
@@ -125,6 +122,18 @@
 
 ### Flux UX d'ajout d'objet
 
+- [x] **Bug** — ~~Si aucune collection n'existe, l'action rapide
+  "AJOUTER UN OBJET" redirige vers `/objects/add` (sans `collectionId`).
+  Le formulaire tente d'auto-sélectionner la première collection mais
+  échoue silencieusement (0 collection → rien à sélectionner). L'utilisateur
+  peut soumettre un form avec `collectionId` vide → erreur 400/404 du
+  backend.~~ Fix 2026-06-10 :
+  - Page `/objects/add` : vérifie `collections.list` → si vide, affiche
+    empty state avec CTA "Créer une collection" → `/collections/new`.
+  - `object-form.tsx` : bouton submit disabled si `!collectionId && !watchedCollectionId`
+    (empêche submit avant sélection de collection).
+  - Traductions ajoutées (`collections.noCollections`,
+    `objects.addRequiresCollection`) en fr/en/nl.
 - [x] **Feat** — ~~Upload de photo dès la création~~ — vérifié
   2026-05-30. `PhotoPicker` câblé dans `object-form.tsx:372-381`,
   upload via S3 presigned URL après création
@@ -570,7 +579,20 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 ### Badges & gamification
 
-- [ ] **Feat** — Système de badges fonctionnels (déblocage sur
+- [x] **Feat** — ~~Système de badges fonctionnels~~ — **v1 livrée
+  2026-06-12** (commit `feat(badges)`). 109 badges / 8 catégories
+  rétro-geek / 5 tiers de rareté. `BadgeDefinition` enrichi
+  (rarity/category/unlockHint/svgAsset), moteur de critères dans
+  `packages/api/src/lib/badge-service.ts` (`syncUserBadges` hooké dans
+  contacts/messages/photos/community-request + loans/objects),
+  `NotificationType.BADGE_UNLOCKED`, seed 109 définitions, 120 SVG
+  dans `apps/web/public/badges/`, page `/badges` (filtres catégorie +
+  rareté, progress), badges sur profil public. Docs : `BADGES.md` +
+  `BADGE_DESIGN_SPEC.md`.
+  - [ ] **Reste** : cron pour conditions cumulatives (streaks,
+    ancienneté) si les hooks event-based ne suffisent pas ; badges
+    mobile (M2+).
+- Spec d'origine (pour mémoire) : système de badges (déblocage sur
   événements : 1er objet ajouté, 10 prêts honorés, premier QR
   scanné, etc.) + cosmétiques sur thème **rétro geek**.
   Cible : ~100 badges. Pistes de thèmes :
@@ -640,6 +662,22 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
 
+- **2026-06-12** — Découpage du working tree accumulé (~6 chantiers
+  entremêlés, +5 900 lignes) en 6 commits propres :
+  1. `fix(web)` — `/objects/add` sans collection : empty state + CTA,
+     submit disabled, import `Switch` manquant (HEAD ne compilait pas
+     depuis le commit self-service).
+  2. `feat(db)` — type **VIDEOGAME** (enum + migration + OBJECT_TYPES
+     partagé + router collections).
+  3. `feat(badges)` — système de badges v1 (cf. section Badges).
+     1 test ajusté (`badge.syncUser` ne retourne plus `stats` après
+     refactor vers `syncUserBadges`). 281/281 unit tests green.
+  4. `feat(web)` — quick actions dashboard en grille de cards carrées
+     (item P2 marqué livré 06-08 mais jamais commité).
+  5. `feat(qr)` — filtres collection + recherche sur `/qr` (idem,
+     livré 06-08 mais jamais commité).
+  6. `feat(mobile)` — M1 (contacts/notifications/settings + UI kit +
+     superjson + stats dashboard live via `tier.getLimits`).
 - **2026-06-01** — Sprint *branding + S3 + contacts + observabilité*.
   - 6 commits : `716df70` (branding), `d33a5f8` (onboarding redirect),
     `72c5216` (AddContactDialog), `c25b04d` (S3 sequential + IaC +

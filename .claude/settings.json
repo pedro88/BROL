@@ -46,7 +46,8 @@
       "Bash(cd /home/piet/Projets/webDev/BROL; echo \"=== messages router registered? ===\"; rtk proxy grep -n \"messages\" packages/api/src/routers/_app.ts packages/api/src/root.ts packages/api/src/index.ts 2>/dev/null | rtk proxy grep -i \"messagesRouter\\\\|messages:\" | head; echo \"=== shared tsc ===\"; cd packages/shared && rtk proxy npx tsc --noEmit 2>&1 | rtk proxy grep -c \"error TS\"; echo \"=== api tsc \\(messages/request-messages\\) ===\"; cd ../api && rtk proxy npx tsc --noEmit 2>&1 | rtk proxy grep \"messages.ts\\\\|request-messages\"; echo \"--- api new-file errors above \\(empty=clean\\) ---\")",
       "Read(//home/piet/Projets/webDev/**)",
       "Bash(cd /home/piet/Projets/webDev/BROL/packages/api && echo \"=== API ===\"; rtk proxy npx tsc --noEmit 2>&1 | rtk proxy grep -c \"error TS\"; cd ../../apps/web && echo \"=== WEB ===\"; rtk proxy npx tsc --noEmit 2>&1 | rtk proxy grep -c \"error TS\")",
-      "Read(//home/piet/Projets/apps/**)"
+      "Read(//home/piet/Projets/apps/**)",
+      "Bash(ssh piet@91.98.87.65 'cd /opt/brol && docker compose ps --format \"{{.Name}} {{.State}} {{.Status}}\"')"
     ],
     "additionalDirectories": [
       "/home/piet/Projets/webDev/BROL/apps/web/src/app/qr/[code]"
