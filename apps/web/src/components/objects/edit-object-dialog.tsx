@@ -17,6 +17,7 @@ import {
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { Switch } from "../ui/switch";
 import { trpc } from "../../lib/trpc";
 
 
@@ -187,7 +188,7 @@ export function EditObjectDialog({
     try {
       const submitData = {
         ...data,
-        selfServiceMode: selfServiceEnabled ? "CONTACTS" : "OFF",
+        selfServiceMode: selfServiceEnabled ? ("CONTACTS" as const) : ("OFF" as const),
       };
       await updateMutation.mutateAsync({ id: objectId, data: submitData });
     } catch (error) {

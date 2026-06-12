@@ -115,6 +115,8 @@ export const createObjectSchema = z.object({
   // CUSTOM
   customField1: z.string().max(255).optional(),
   customField2: z.string().max(255).optional(),
+  // Self-service mode (OFF, CONTACTS, RADIUS, PUBLIC)
+  selfServiceMode: z.enum(["OFF", "CONTACTS", "RADIUS", "PUBLIC"]).optional(),
 });
 
 /**
@@ -160,8 +162,9 @@ const updateObjectBase = {
   // CUSTOM
   customField1: z.string().max(255).optional().nullable(),
   customField2: z.string().max(255).optional().nullable(),
-  // Self-service mode (OFF, CONTACTS, RADIUS, PUBLIC)
-  selfServiceMode: z.enum(["OFF", "CONTACTS", "RADIUS", "PUBLIC"]).optional().nullable(),
+  // Self-service mode (OFF, CONTACTS, RADIUS, PUBLIC) — pas nullable :
+  // l'enum Prisma ne tolère pas null, "OFF" est la valeur de désactivation.
+  selfServiceMode: z.enum(["OFF", "CONTACTS", "RADIUS", "PUBLIC"]).optional(),
 };
 
 export const updateObjectSchema = z.object(updateObjectBase);

@@ -36,6 +36,7 @@ const createCollectionSchema = z.object({
   type: z.enum(OBJECT_TYPES), // required, no default
   customField1Label: z.string().max(50).optional(),
   customField2Label: z.string().max(50).optional(),
+  selfServiceMode: z.enum(["OFF", "CONTACTS", "RADIUS", "PUBLIC"]).optional(),
 });
 
 const updateCollectionSchema = z.object({
