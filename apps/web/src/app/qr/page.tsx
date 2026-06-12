@@ -36,11 +36,19 @@ export default function QrStockPage() {
   const [generateCount, setGenerateCount] = useState(10);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [printSize, setPrintSize] = useState<QrSize>("30mm");
+  const [search, setSearch] = useState("");
+  const [collectionId, setCollectionId] = useState<string>("");
 
-  // Liste des QR codes
+  const { data: collectionsData } = trpc.collections.list.useQuery(undefined, {
+    staleTime: 60_000,
+  });
+
   const { data, isLoading, isFetching } = trpc.qr.listStock.useQuery(
-    undefined,
-    {}
+    {
+      ...(search && { search }),
+      ...(collectionId && { collectionId }),
+    },
+    { keepPrevious: true }
   );
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -260,6 +268,63 @@ export default function QrStockPage() {
             <p className="font-mono text-[10px] text-muted-foreground">
               {t("qrCodes.printInstructions")}
             </p>
+          </div>
+        )}
+
+        {/* Filtres */}
+        {data && (
+          <div className="card-vhs p-4 mb-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <label
+                  htmlFor="qrSearch"
+                  className="font-mono text-xs text-muted-foreground uppercase block mb-2"
+                >
+                  {t("qrCodes.filterByName")}
+                </label>
+                <Input
+                  id="qrSearch"
+                  type="text"
+                  placeholder={t("qrCodes.searchPlaceholder")}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex-1">
+                <label
+                  htmlFor="qrCollection"
+                  className="font-mono text-xs text-muted-foreground uppercase block mb-2"
+                >
+                  {t("qrCodes.filterByCollection")}
+                </label>
+                <select
+                  id="qrCollection"
+                  value={collectionId}
+                  onChange={(e) => setCollectionId(e.target.value)}
+                  className="flex h-10 w-full bg-input border-2 border-border px-3 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-primary"
+                >
+                  <option value="">{t("qrCodes.allCollections")}</option>
+                  {collectionsData?.items.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {(search || collectionId) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setCollectionId("");
+                }}
+                className="font-mono text-xs text-primary hover:underline"
+              >
+                {t("qrCodes.clearFilters")}
+              </button>
+            )}
           </div>
         )}
 

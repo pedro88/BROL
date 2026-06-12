@@ -72,19 +72,31 @@ export const qrRouter = router({
     .input(
       z.object({
         used: z.boolean().optional(),
+        collectionId: z.string().cuid().optional(),
+        search: z.string().optional(),
         ...paginationSchema.shape,
       }).optional()
     )
     .query(async ({ ctx, input }) => {
-      const where = {
+      const where: Prisma.QrStockWhereInput = {
         userId: ctx.userId,
         ...(input?.used !== undefined && { used: input.used }),
       };
 
+      if (input?.collectionId || input?.search) {
+        where.objects = {
+          some: {
+            ...(input.collectionId && { collectionId: input.collectionId }),
+            ...(input.search && {
+              name: { contains: input.search, mode: "insensitive" },
+            }),
+          },
+        };
+      }
+
       const qrCodes = await ctx.prisma.qrStock.findMany({
         where,
         include: {
-          // 1 QR ↔ 1 Object max (Object.qrStockId est `@unique`)
           objects: {
             select: {
               id: true,
