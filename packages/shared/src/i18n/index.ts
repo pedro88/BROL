@@ -245,6 +245,7 @@ export const collections = {
     ELECTRONIC: { fr: "Électronique", nl: "Elektronica", en: "Electronics" },
     ELECTRIC: { fr: "Outillage électrique", nl: "Elektrisch gereedschap", en: "Power tools" },
     CLOTHING: { fr: "Vêtements", nl: "Kleding", en: "Clothing" },
+    VIDEOGAME: { fr: "Jeux vidéo", nl: "Videogames", en: "Video games" },
     CUSTOM: { fr: "Personnalisé", nl: "Aangepast", en: "Custom" },
   },
   customFieldsHint: { fr: "Définissez les labels pour les champs libres", nl: "Definieer labels voor aangepaste velden", en: "Define labels for custom fields" },
@@ -332,6 +333,7 @@ export const objects = {
     ELECTRONIC: { fr: "Marque", nl: "Merk", en: "Brand" },
     ELECTRIC: { fr: "Marque", nl: "Merk", en: "Brand" },
     CLOTHING: { fr: "Marque", nl: "Merk", en: "Brand" },
+    VIDEOGAME: { fr: "Studio / Éditeur", nl: "Studio / Uitgever", en: "Studio / Publisher" },
     CUSTOM: { fr: "Marque / Auteur", nl: "Merk / Auteur", en: "Brand / Author" },
   },
   authorPlaceholder: {
@@ -343,6 +345,7 @@ export const objects = {
     ELECTRONIC: { fr: "Apple, Sony...", nl: "Apple, Sony...", en: "Apple, Sony..." },
     ELECTRIC: { fr: "Makita, DeWalt...", nl: "Makita, DeWalt...", en: "Makita, DeWalt..." },
     CLOTHING: { fr: "Nike, Zara...", nl: "Nike, Zara...", en: "Nike, Zara..." },
+    VIDEOGAME: { fr: "Nintendo, FromSoftware...", nl: "Nintendo, FromSoftware...", en: "Nintendo, FromSoftware..." },
     CUSTOM: { fr: "Marque ou auteur", nl: "Merk of auteur", en: "Brand or author" },
   },
   namePlaceholder: {
@@ -354,11 +357,13 @@ export const objects = {
     ELECTRONIC: { fr: "iPhone 13", nl: "iPhone 13", en: "iPhone 13" },
     ELECTRIC: { fr: "Perceuse sans fil 18V", nl: "Snoerloze boor 18V", en: "Cordless drill 18V" },
     CLOTHING: { fr: "Veste en cuir", nl: "Lederen jas", en: "Leather jacket" },
+    VIDEOGAME: { fr: "The Legend of Zelda", nl: "The Legend of Zelda", en: "The Legend of Zelda" },
     CUSTOM: { fr: "Mon objet", nl: "Mijn object", en: "My object" },
   },
   editionLabel: {
     fr: "Édition / Modèle", nl: "Editie / Model", en: "Edition / Model",
     ELECTRIC: { fr: "Modèle / Référence", nl: "Model / Referentie", en: "Model / Reference" },
+    VIDEOGAME: { fr: "Plateforme", nl: "Platform", en: "Platform" },
   },
   editionPlaceholder: {
     BOOK: { fr: "Gallimard, 1943", nl: "Gallimard, 1943", en: "Gallimard, 1943" },
@@ -366,6 +371,7 @@ export const objects = {
     FILM: { fr: "Director's Cut", nl: "Director's Cut", en: "Director's Cut" },
     MUSIC: { fr: "Virgin Records, 1997", nl: "Virgin Records, 1997", en: "Virgin Records, 1997" },
     ELECTRIC: { fr: "DFD453, 18V", nl: "DFD453, 18V", en: "DFD453, 18V" },
+    VIDEOGAME: { fr: "Super Nintendo, PS5, Switch...", nl: "Super Nintendo, PS5, Switch...", en: "Super Nintendo, PS5, Switch..." },
     DEFAULT: { fr: "Modèle, référence...", nl: "Model, referentie...", en: "Model, reference..." },
   },
   playersMin: { fr: "Joueurs min.", nl: "Min. spelers", en: "Min. players" },

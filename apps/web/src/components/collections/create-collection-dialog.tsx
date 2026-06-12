@@ -130,7 +130,7 @@ export function CreateCollectionDialog({
   });
 
   const [error, setError] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<"BOOK" | "BOARD_GAME" | "TOOL" | "FILM" | "MUSIC" | "ELECTRONIC" | "ELECTRIC" | "CLOTHING" | "CUSTOM">("BOOK");
+  const [selectedType, setSelectedType] = useState<(typeof OBJECT_TYPES)[number]>("BOOK");
 
   const onSubmit = async (data: CreateCollectionInput) => {
     setError(null);

@@ -284,6 +284,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   const namePlaceholder = t(`objects.namePlaceholder.${objectType}`);
   const showIsbn = objectType === "BOOK" || objectType === "FILM";
   const showBoardGameFields = objectType === "BOARD_GAME";
+  const showVideoGameFields = objectType === "VIDEOGAME";
   const showElectricFields = objectType === "ELECTRIC";
   const showClothingFields = objectType === "CLOTHING";
   const showToolFields = objectType === "TOOL";
@@ -382,7 +383,8 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       <div className="space-y-2">
         <Label htmlFor="edition" className="font-mono text-xs uppercase">
           {objectType === "BOARD_GAME" ? "Édition" :
-           objectType === "ELECTRIC" ? t("objects.editionLabel.ELECTRIC") : t("objects.editionLabel")}
+           objectType === "ELECTRIC" ? t("objects.editionLabel.ELECTRIC") :
+           objectType === "VIDEOGAME" ? t("objects.editionLabel.VIDEOGAME") : t("objects.editionLabel")}
         </Label>
         <Input
           id="edition"
@@ -392,6 +394,7 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             objectType === "FILM" ? t("objects.editionPlaceholder.FILM") :
             objectType === "MUSIC" ? t("objects.editionPlaceholder.MUSIC") :
             objectType === "ELECTRIC" ? t("objects.editionPlaceholder.ELECTRIC") :
+            objectType === "VIDEOGAME" ? t("objects.editionPlaceholder.VIDEOGAME") :
             t("objects.editionPlaceholder.DEFAULT")
           }
           {...register("edition")}
@@ -454,6 +457,36 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
             </div>
           </div>
         </>
+      )}
+
+      {/* VIDEOGAME specific fields */}
+      {showVideoGameFields && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="playersMax" className="font-mono text-xs uppercase">
+              {t("objects.playersMax")}
+            </Label>
+            <Input
+              id="playersMax"
+              type="number"
+              min={1}
+              placeholder="4"
+              {...register("playersMax", { valueAsNumber: true })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ageMin" className="font-mono text-xs uppercase">
+              {t("objects.ageMin")}
+            </Label>
+            <Input
+              id="ageMin"
+              type="number"
+              min={0}
+              placeholder="12"
+              {...register("ageMin", { valueAsNumber: true })}
+            />
+          </div>
+        </div>
       )}
 
       {/* ELECTRIC specific fields */}

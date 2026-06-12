@@ -13,7 +13,7 @@ import { Switch } from "../../../../components/ui/switch";
 import { trpc } from "../../../../lib/trpc";
 import { OBJECT_TYPES } from "@brol/shared";
 
-type ObjectType = "BOOK" | "BOARD_GAME" | "TOOL" | "FILM" | "MUSIC" | "ELECTRONIC" | "ELECTRIC" | "CLOTHING" | "CUSTOM";
+type ObjectType = (typeof OBJECT_TYPES)[number];
 
 /**
  * Page d'édition d'une collection.

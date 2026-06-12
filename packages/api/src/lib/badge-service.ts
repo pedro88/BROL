@@ -484,7 +484,7 @@ async function fetchUserStats(prisma: PrismaClient, userId: string): Promise<Bad
     : 0;
 
   const objectByType: Record<string, number> = {};
-  const objectTypes: ObjectType[] = ["BOOK", "BOARD_GAME", "TOOL", "FILM", "MUSIC", "ELECTRONIC", "ELECTRIC", "CLOTHING", "CUSTOM"];
+  const objectTypes: ObjectType[] = ["BOOK", "BOARD_GAME", "TOOL", "FILM", "MUSIC", "ELECTRONIC", "ELECTRIC", "CLOTHING", "CUSTOM", "VIDEOGAME"];
   const objectByTypePromises = objectTypes.map((t) =>
     prisma.object.count({ where: { collection: { userId }, objectType: t } }).then((count) => {
       if (count > 0) objectByType[t] = count;
