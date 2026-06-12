@@ -12,6 +12,11 @@
   `syncUserBadges` hooké dans les routers), notification `BADGE_UNLOCKED`
   à l'unlock, seed 109 définitions. Livré 2026-06-12.
 - [x] SVG assets (Phase 2) — 120 SVG dans `apps/web/public/badges/`.
+  **Refonte pixel art 2026-06-12** : assets régénérés par
+  `scripts/generate-badge-pixel-art.mjs` (grilles 16×16 ASCII → rects
+  crispEdges, palette par rareté, cadres progressifs + sparkles
+  legendary). Pour retoucher une icône : éditer la grille dans le
+  script et relancer `node scripts/generate-badge-pixel-art.mjs`.
 - [x] UI/UX implementation (Phase 3) — page `/badges` (filtres catégorie/
   rareté + progress), badges sur profil public, lien Trophy dans le header,
   notif cliquable → `/badges`.
