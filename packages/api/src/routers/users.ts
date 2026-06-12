@@ -128,6 +128,7 @@ export const usersRouter = router({
           profile: {
             select: {
               avatarUrl: true,
+              publicEmail: true,
             },
           },
         },
@@ -137,11 +138,16 @@ export const usersRouter = router({
         return null;
       }
 
+      // Privacy : l'email ne sort que si l'utilisateur l'a rendu public
+      // (Profile.publicEmail) ou si on se lookup soi-même. Sinon l'endpoint
+      // permettrait d'énumérer les emails par handle.
+      const emailVisible = user.id === ctx.userId || user.profile?.publicEmail === true;
+
       return {
         id: user.id,
         handle: user.handle,
         name: user.name,
-        email: user.email,
+        email: emailVisible ? user.email : null,
         image: user.image,
         avatarUrl: user.profile?.avatarUrl,
       };
@@ -167,6 +173,7 @@ export const usersRouter = router({
           profile: {
             select: {
               avatarUrl: true,
+              publicEmail: true,
             },
           },
         },
@@ -174,11 +181,16 @@ export const usersRouter = router({
 
       if (!user) return null;
 
+      // Privacy : l'email ne sort que si l'utilisateur l'a rendu public
+      // (Profile.publicEmail) ou si on se lookup soi-même. Sinon l'endpoint
+      // permettrait d'énumérer les emails par handle.
+      const emailVisible = user.id === ctx.userId || user.profile?.publicEmail === true;
+
       return {
         id: user.id,
         handle: user.handle,
         name: user.name,
-        email: user.email,
+        email: emailVisible ? user.email : null,
         image: user.image,
         avatarUrl: user.profile?.avatarUrl,
       };

@@ -1,5 +1,11 @@
 /**
  * Badge router tests.
+ *
+ * Note sécurité : `badge.award` a été retiré du router (n'importe quel
+ * utilisateur connecté pouvait s'attribuer n'importe quel badge) et
+ * `badge.syncUser` ne prend plus de userId — il synchronise le caller.
+ * L'attribution passe exclusivement par `syncUserBadges` (badge-service).
+ *
  * @package @brol/api
  */
 
@@ -16,10 +22,8 @@ function callerFor(userId: string) {
   });
 }
 
-/** Seed badge definitions once before all tests */
 describe("badgeRouter", () => {
   beforeEach(async () => {
-    // Seed badge definitions if not already present
     const badges = [
       { slug: "first-loan", name: "Premier prêt", description: "1er prêt", icon: "🎉", criteria: { type: "loan_count", threshold: 1 } },
       { slug: "lender-5", name: "Prêteur confirmé", description: "5 prêts", icon: "⭐", criteria: { type: "loan_count", threshold: 5 } },
@@ -41,7 +45,7 @@ describe("badgeRouter", () => {
 
   it("definitions returns all badge definitions", async () => {
     const ctx = await createTestContext();
-    const caller = appRouter.createCaller({ prisma, userId: ctx.userId, headers: {}, session: { user: { id: ctx.userId } } });
+    const caller = callerFor(ctx.userId);
 
     const result = await caller.badge.definitions();
 
@@ -51,52 +55,31 @@ describe("badgeRouter", () => {
 
   it("list returns empty for new user", async () => {
     const ctx = await createTestContext();
-    const caller = appRouter.createCaller({ prisma, userId: ctx.userId, headers: {}, session: { user: { id: ctx.userId } } });
+    const caller = callerFor(ctx.userId);
 
     const result = await caller.badge.list({ userId: ctx.userId });
 
     expect(result).toHaveLength(0);
   });
 
-  it("award creates a badge for user", async () => {
-    const ctx = await createTestContext();
-    const caller = appRouter.createCaller({ prisma, userId: ctx.userId, headers: {}, session: { user: { id: ctx.userId } } });
-
-    const result = await caller.badge.award({ userId: ctx.userId, badgeSlug: "first-loan" });
-
-    expect(result.awarded).toBe(true);
-    expect(result.badge.slug).toBe("first-loan");
-
-    const list = await caller.badge.list({ userId: ctx.userId });
-    expect(list).toHaveLength(1);
-    expect(list[0].slug).toBe("first-loan");
+  it("award procedure no longer exists (security: self-award was possible)", () => {
+    // Regression guard : si quelqu'un réintroduit une procédure d'award
+    // exposée au client, ce test doit le signaler.
+    expect((appRouter as Record<string, any>)._def.procedures["badge.award"]).toBeUndefined();
   });
 
-  it("award returns alreadyHas if badge exists", async () => {
+  it("syncUser awards first-loan to the CALLER after first loan", async () => {
     const ctx = await createTestContext();
-    const caller = appRouter.createCaller({ prisma, userId: ctx.userId, headers: {}, session: { user: { id: ctx.userId } } });
+    const caller = callerFor(ctx.userId);
 
-    await caller.badge.award({ userId: ctx.userId, badgeSlug: "first-loan" });
-    const result = await caller.badge.award({ userId: ctx.userId, badgeSlug: "first-loan" });
-
-    expect(result.awarded).toBe(false);
-    expect(result.alreadyHas).toBe(true);
-  });
-
-  it("syncUser awards first-loan after first loan", async () => {
-    const ctx = await createTestContext();
-    const caller = appRouter.createCaller({ prisma, userId: ctx.userId, headers: {}, session: { user: { id: ctx.userId } } });
-
-    // Create a collection and object first
     const coll = await prisma.collection.create({
       data: { userId: ctx.userId, name: "Test", type: "BOOK" },
     });
     const obj = await prisma.object.create({
       data: { collectionId: coll.id, name: "Test Object" },
     });
-    const borrower = await createTestUser({ email: "borrower@example.com" });
+    const borrower = await createTestUser({ email: `borrower-${Date.now()}@example.com` });
 
-    // Create a loan
     await prisma.loan.create({
       data: {
         objectId: obj.id,
@@ -106,11 +89,25 @@ describe("badgeRouter", () => {
       },
     });
 
-    const result = await caller.badge.syncUser({ userId: ctx.userId });
+    const result = await caller.badge.syncUser();
 
     expect(result.awarded).toContain("first-loan");
 
     const badges = await caller.badge.list({ userId: ctx.userId });
     expect(badges.some((b) => b.slug === "first-loan")).toBe(true);
+  });
+
+  it("syncUser cannot grant badges to another user", async () => {
+    // L'ancien syncUser({ userId }) permettait de forcer le recalcul (et
+    // l'attribution) pour n'importe qui. La nouvelle signature ne prend
+    // aucun input : seul le caller est synchronisé.
+    const victim = await createTestUser({ email: `victim-${Date.now()}@example.com` });
+    const ctx = await createTestContext();
+    const caller = callerFor(ctx.userId);
+
+    await caller.badge.syncUser();
+
+    const victimBadges = await prisma.userBadge.findMany({ where: { userId: victim.id } });
+    expect(victimBadges).toHaveLength(0);
   });
 });

@@ -260,15 +260,19 @@ export function AddContactDialog({
                     <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-md">
                       <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-mono">
                         {userById.name?.[0]?.toUpperCase() ??
-                          userById.email[0].toUpperCase()}
+                          userById.email?.[0]?.toUpperCase() ??
+                          userById.handle?.[0]?.toUpperCase() ??
+                          "?"}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-mono text-sm font-medium">
                           {userById.name ?? t("contacts.noNameMessage")}
                         </p>
-                        <p className="font-mono text-xs text-muted-foreground">
-                          {userById.email}
-                        </p>
+                        {userById.email && (
+                          <p className="font-mono text-xs text-muted-foreground">
+                            {userById.email}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <Button

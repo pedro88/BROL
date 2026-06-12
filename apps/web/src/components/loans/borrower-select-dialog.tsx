@@ -126,7 +126,7 @@ export function BorrowerSelectDialog({
 
     const user = await utils.users.getById.fetch({ id: extractedId });
     if (user) {
-      toast.success(t("loans.userFoundToast", { user: user.name ?? user.email }));
+      toast.success(t("loans.userFoundToast", { user: user.name ?? user.handle ?? user.email ?? "" }));
       onSelect({ type: "user", userId: user.id });
       handleClose();
     } else {
@@ -319,11 +319,11 @@ export function BorrowerSelectDialog({
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-md">
                     <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-mono">
-                      {userById.name?.[0]?.toUpperCase() ?? userById.email[0].toUpperCase()}
+                      {userById.name?.[0]?.toUpperCase() ?? userById.email?.[0]?.toUpperCase() ?? userById.handle?.[0]?.toUpperCase() ?? "?"}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-mono text-sm font-medium">{userById.name ?? t("loans.noNameLabel")}</p>
-                      <p className="font-mono text-xs text-muted-foreground">{userById.email}</p>
+                      {userById.email && <p className="font-mono text-xs text-muted-foreground">{userById.email}</p>}
                     </div>
                   </div>
                   <Button

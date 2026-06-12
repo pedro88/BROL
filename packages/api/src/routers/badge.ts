@@ -5,7 +5,6 @@
 
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { syncUserBadges } from "../lib/badge-service";
 
 export const badgeRouter = router({
@@ -43,43 +42,13 @@ export const badgeRouter = router({
     }),
 
   /**
-   * Award un badge à un utilisateur.
-   */
-  award: protectedProcedure
-    .input(z.object({ userId: z.string(), badgeSlug: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const badge = await ctx.prisma.badgeDefinition.findUnique({
-        where: { slug: input.badgeSlug },
-      });
-
-      if (!badge) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Badge not found" });
-      }
-
-      const existing = await ctx.prisma.userBadge.findUnique({
-        where: { userId_badgeId: { userId: input.userId, badgeId: badge.id } },
-      });
-
-      if (existing) {
-        return { awarded: false, alreadyHas: true };
-      }
-
-      const userBadge = await ctx.prisma.userBadge.create({
-        data: { userId: input.userId, badgeId: badge.id },
-        include: { badge: true },
-      });
-
-      return { awarded: true, badge: userBadge.badge };
-    }),
-
-  /**
    * Calcule et met à jour les badges d'un utilisateur.
    * Appelé après chaque prêt, ajout d'objet ou review.
    */
-  syncUser: protectedProcedure
-    .input(z.object({ userId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const awarded = await syncUserBadges(ctx.prisma, input.userId);
-      return { awarded };
-    }),
+  syncUser: protectedProcedure.mutation(async ({ ctx }) => {
+    const awarded = await syncUserBadges(ctx.prisma, ctx.userId);
+    return { awarded };
+  }),
 });
+
+export type BadgeRouter = typeof badgeRouter;
