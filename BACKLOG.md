@@ -692,6 +692,16 @@ Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
   - **Badges polish** : lien Trophy header (desktop + menu mobile), notif
     BADGE_UNLOCKED cliquable → `/badges`, BADGES.md à jour.
   - Tests : 286/286 (+5 BGG, fetch mocké).
+  - **Passe sécurité + tests (soir)** : 2 failles corrigées —
+    `badge.award` (tout user connecté pouvait s'attribuer n'importe quel
+    badge ; procédure supprimée, `syncUser` verrouillé sur le caller) et
+    `users.getById` (retournait l'email de n'importe qui par id/handle,
+    bypass du flag `publicEmail` → énumération d'emails ; email masqué
+    sauf self/opt-in). +43 tests : quota par tier, audit trail,
+    anti-IDOR `owned-objects`, moteur badges (régression VIDEOGAME,
+    idempotence), matrice complète `selfBorrow` (4 modes + rayon +
+    limite hebdo), authz return/cancel, privacy getById.
+    **329/329 unit tests.**
 - **2026-06-12** — Découpage du working tree accumulé (~6 chantiers
   entremêlés, +5 900 lignes) en 6 commits propres :
   1. `fix(web)` — `/objects/add` sans collection : empty state + CTA,
