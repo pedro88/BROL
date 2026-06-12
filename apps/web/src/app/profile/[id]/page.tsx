@@ -9,6 +9,9 @@ import { UserAvatar } from "@/components/profile/user-avatar";
 import { StarRating } from "@/components/profile/star-rating";
 import { ReviewCard } from "@/components/profile/review-card";
 import { LeaveReviewDialog } from "@/components/profile/leave-review-dialog";
+import { BadgeCard } from "@/components/badges/badge-card";
+import { BadgeModal } from "@/components/badges/badge-modal";
+import type { BadgeDefinition } from "@/components/badges/badge-icon";
 import { useState } from "react";
 import { ArrowLeft, Calendar, MessageSquare, MapPin, Phone, Mail, Cake, User as UserIcon } from "lucide-react";
 
@@ -45,6 +48,7 @@ export default function ProfilePage({ params }: PageProps) {
   });
 
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState<BadgeDefinition | null>(null);
 
   if (isLoading) {
     return (
@@ -146,21 +150,47 @@ export default function ProfilePage({ params }: PageProps) {
         {/* Badges */}
         {profile.badges.length > 0 && (
           <div className="mb-6">
-            <h2 className="font-display text-lg vhs-text-glow text-primary mb-3">
-              BADGES
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {profile.badges.map((badge) => (
-                <div
-                  key={badge.slug}
-                  className="card-vhs px-3 py-2 flex items-center gap-2"
-                  title={badge.description}
-                >
-                  <span className="text-lg">{badge.icon}</span>
-                  <span className="text-sm font-medium">{badge.name}</span>
-                </div>
-              ))}
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display text-lg vhs-text-glow text-primary">
+                BADGES
+              </h2>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs text-muted-foreground">
+                  {profile.badges.length} décrochés
+                </span>
+                <ProgressRing progress={profile.badges.length / 108} />
+              </div>
             </div>
+
+            <div className="card-vhs p-4">
+              <div className="flex flex-wrap gap-3">
+                {profile.badges.slice(0, 12).map((badge) => (
+                  <BadgeCard
+                    key={badge.slug}
+                    badge={badge as BadgeDefinition}
+                    earned
+                    onClick={() => setSelectedBadge(badge as BadgeDefinition)}
+                  />
+                ))}
+                {profile.badges.length > 12 && (
+                  <Link
+                    href="/badges"
+                    className="flex items-center text-xs text-primary hover:underline px-2 py-3"
+                  >
+                    +{profile.badges.length - 12}
+                  </Link>
+                )}
+              </div>
+
+              <RarityDistribution badges={profile.badges as BadgeDefinition[]} />
+            </div>
+
+            <Link
+              href="/badges"
+              className="block mt-3 text-xs text-primary hover:underline font-mono uppercase"
+            >
+              Tous mes badges →
+            </Link>
           </div>
         )}
 
@@ -218,6 +248,88 @@ export default function ProfilePage({ params }: PageProps) {
           await createReview.mutateAsync({ targetId: id, ...data });
         }}
       />
+
+      <BadgeModal
+        badge={selectedBadge}
+        earned={!!selectedBadge && profile.badges.some((b) => b.slug === selectedBadge?.slug)}
+        onClose={() => setSelectedBadge(null)}
+      />
+    </div>
+  );
+}
+
+function ProgressRing({ progress }: { progress: number }) {
+  const radius = 12;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - progress * circumference;
+
+  return (
+    <div className="relative w-8 h-8">
+      <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
+        <circle
+          cx="16"
+          cy="16"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          className="text-muted/30"
+        />
+        <circle
+          cx="16"
+          cy="16"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          className="text-primary transition-all duration-500"
+          style={{
+            strokeDasharray: circumference,
+            strokeDashoffset,
+          }}
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] text-primary">
+        {Math.round(progress * 100)}%
+      </span>
+    </div>
+  );
+}
+
+const RARITY_ORDER = ["LEGENDARY", "EPIC", "RARE", "UNCOMMON", "COMMON"];
+
+const RARITY_COLORS: Record<string, string> = {
+  COMMON: "#9CA3AF",
+  UNCOMMON: "#22C55E",
+  RARE: "#3B82F6",
+  EPIC: "#A855F7",
+  LEGENDARY: "#F59E0B",
+};
+
+function RarityDistribution({ badges }: { badges: BadgeDefinition[] }) {
+  const counts = RARITY_ORDER.map((rarity) => ({
+    rarity,
+    count: badges.filter((b) => (b.rarity || "COMMON") === rarity).length,
+  }));
+
+  const total = badges.length;
+  if (total === 0) return null;
+
+  return (
+    <div className="flex gap-1 mt-3">
+      {counts.map(({ rarity, count }) => (
+        <div
+          key={rarity}
+          className="h-1 flex-1 rounded-full transition-all"
+          style={{
+            backgroundColor: count > 0 ? RARITY_COLORS[rarity] : "transparent",
+            opacity: count > 0 ? 1 : 0.15,
+            border: count === 0 ? "1px solid rgba(255,255,255,0.1)" : undefined,
+          }}
+          title={`${rarity}: ${count}`}
+        />
+      ))}
     </div>
   );
 }

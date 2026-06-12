@@ -14,6 +14,7 @@ import {
 import { logger } from "../lib/logger";
 import { assertObjectOwned, getOwnedObject } from "../lib/owned-objects";
 import { translate } from "@brol/shared";
+import { syncUserBadges } from "../lib/badge-service";
 
 const log = logger.child("photos");
 
@@ -101,6 +102,8 @@ export const photosRouter = router({
           data: { coverImage: input.url },
         });
       }
+
+      await syncUserBadges(ctx.prisma, ctx.userId);
 
       return photo;
     }),

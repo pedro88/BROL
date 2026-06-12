@@ -51,5 +51,14 @@
     "title": "My QR codes",
     "generate": "Generate",
     "print": "Print"
+  },
+  "badges": {
+    "title": "Badges",
+    "myBadges": "My badges",
+    "allBadges": "All badges",
+    "earned": "Earned",
+    "locked": "Locked",
+    "noBadges": "No badges yet",
+    "noBadgesDescription": "Keep using Brol to earn some!"
   }
 }

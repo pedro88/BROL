@@ -14,6 +14,7 @@ import {
 } from "@brol/shared";
 import { withComputedStatuses } from "../lib/loan-status";
 import { cursorOf } from "../lib/pagination";
+import { syncUserBadges } from "../lib/badge-service";
 
 /**
  * Router pour les contacts.
@@ -183,13 +184,17 @@ export const contactsRouter = router({
         });
         if (account && account.id !== ctx.userId) borrowerId = account.id;
       }
-      return ctx.prisma.contact.create({
+      const contact = await ctx.prisma.contact.create({
         data: {
           ...input,
           userId: ctx.userId,
           borrowerId,
         },
       });
+
+      await syncUserBadges(ctx.prisma, ctx.userId);
+
+      return contact;
     }),
 
   /**
@@ -274,7 +279,7 @@ export const contactsRouter = router({
       }
 
       // Créer le contact — le profil scanné EST un compte Brol, on le lie.
-      return ctx.prisma.contact.create({
+      const contact = await ctx.prisma.contact.create({
         data: {
           userId: ctx.userId,
           borrowerId: scannedUser.id,
@@ -282,6 +287,10 @@ export const contactsRouter = router({
           email: scannedUser.email,
         },
       });
+
+      await syncUserBadges(ctx.prisma, ctx.userId);
+
+      return contact;
     }),
 
   /**
@@ -321,6 +330,8 @@ export const contactsRouter = router({
           note: "Invitation en attente",
         },
       });
+
+      await syncUserBadges(ctx.prisma, ctx.userId);
 
       // TODO: Envoyer l'email d'invitation
       // await sendInviteEmail(input.email, ctx.userId);

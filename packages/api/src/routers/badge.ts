@@ -6,6 +6,7 @@
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { syncUserBadges } from "../lib/badge-service";
 
 export const badgeRouter = router({
   /**
@@ -35,6 +36,8 @@ export const badgeRouter = router({
         name: ub.badge.name,
         description: ub.badge.description,
         icon: ub.badge.icon,
+        rarity: ub.badge.rarity,
+        category: ub.badge.category,
         awardedAt: ub.awardedAt,
       }));
     }),
@@ -76,61 +79,7 @@ export const badgeRouter = router({
   syncUser: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const userId = input.userId;
-
-      const [loanCount, objectCount, reviewCount, avgRating] = await Promise.all([
-        ctx.prisma.loan.count({
-          where: { OR: [{ ownerId: userId }, { borrowerId: userId }] },
-        }),
-        ctx.prisma.object.count({ where: { collection: { userId } } }),
-        ctx.prisma.review.count({ where: { authorId: userId } }),
-        ctx.prisma.review.aggregate({
-          where: { targetId: userId },
-          _avg: { rating: true },
-        }),
-      ]);
-
-      const stats = {
-        loanCount,
-        objectCount,
-        reviewCount,
-        avgRating: avgRating._avg.rating ?? 0,
-      };
-
-      const definitions = await ctx.prisma.badgeDefinition.findMany();
-      const awarded: string[] = [];
-
-      for (const def of definitions) {
-        const criteria = def.criteria as { type: string; threshold: number };
-        let earned = false;
-
-        switch (criteria.type) {
-          case "loan_count":
-            earned = stats.loanCount >= criteria.threshold;
-            break;
-          case "object_count":
-            earned = stats.objectCount >= criteria.threshold;
-            break;
-          case "review_count":
-            earned = stats.reviewCount >= criteria.threshold;
-            break;
-          case "avg_rating":
-            earned = stats.avgRating >= criteria.threshold;
-            break;
-        }
-
-        if (earned) {
-          try {
-            await ctx.prisma.userBadge.create({
-              data: { userId, badgeId: def.id },
-            });
-            awarded.push(def.slug);
-          } catch {
-            // Déjà présent — ignore
-          }
-        }
-      }
-
-      return { stats, awarded };
+      const awarded = await syncUserBadges(ctx.prisma, input.userId);
+      return { awarded };
     }),
 });

@@ -108,7 +108,6 @@ describe("badgeRouter", () => {
 
     const result = await caller.badge.syncUser({ userId: ctx.userId });
 
-    expect(result.stats.loanCount).toBe(1);
     expect(result.awarded).toContain("first-loan");
 
     const badges = await caller.badge.list({ userId: ctx.userId });

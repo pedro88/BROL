@@ -418,3 +418,116 @@ html[data-theme="boring"] .vhs-glow-cyan,
 html[data-theme="boring"] .input-vhs {
   box-shadow: none;
 }
+
+/* ============================================
+   BADGE GLOW CLASSES - RARITY TIERS
+   ============================================ */
+
+.badge-glow-common {
+  background: rgba(136, 136, 136, 0.1);
+  box-shadow: none;
+}
+
+.badge-glow-uncommon {
+  background: rgba(0, 204, 170, 0.1);
+  box-shadow: 0 0 4px rgba(0, 204, 170, 0.4), 0 0 8px rgba(0, 204, 170, 0.2);
+}
+
+.badge-glow-rare {
+  background: rgba(0, 191, 255, 0.1);
+  box-shadow:
+    0 0 6px rgba(0, 191, 255, 0.5),
+    0 0 12px rgba(0, 191, 255, 0.3),
+    0 0 20px rgba(0, 191, 255, 0.15);
+}
+
+.badge-glow-epic {
+  background: rgba(153, 51, 255, 0.15);
+  box-shadow:
+    0 0 8px rgba(153, 51, 255, 0.6),
+    0 0 16px rgba(153, 51, 255, 0.4),
+    0 0 28px rgba(153, 51, 255, 0.2),
+    inset 0 0 12px rgba(153, 51, 255, 0.1);
+}
+
+.badge-glow-legendary {
+  background: rgba(255, 215, 0, 0.15);
+  animation: legendary-pulse 2s ease-in-out infinite;
+}
+
+@keyframes legendary-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 8px rgba(255, 215, 0, 0.6),
+      0 0 16px rgba(255, 215, 0, 0.4),
+      0 0 28px rgba(255, 215, 0, 0.2),
+      inset 0 0 12px rgba(255, 215, 0, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 12px rgba(255, 215, 0, 0.8),
+      0 0 24px rgba(255, 215, 0, 0.5),
+      0 0 40px rgba(255, 215, 0, 0.3),
+      0 0 60px rgba(255, 180, 0, 0.15),
+      inset 0 0 16px rgba(255, 215, 0, 0.15);
+  }
+}
+
+@keyframes rainbow-shimmer {
+  0% {
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  50% {
+    filter: hue-rotate(30deg) brightness(1.1);
+  }
+  100% {
+    filter: hue-rotate(0deg) brightness(1);
+  }
+}
+
+.badge-glow-legendary::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 0, 0, 0.3),
+    rgba(255, 165, 0, 0.3),
+    rgba(255, 255, 0, 0.3),
+    rgba(0, 255, 0, 0.3),
+    rgba(0, 255, 255, 0.3),
+    rgba(255, 0, 255, 0.3),
+    rgba(255, 0, 0, 0.3)
+  );
+  background-size: 400% 400%;
+  animation: rainbow-shimmer 3s ease infinite;
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.5;
+}
+
+/* Badge modal animations */
+@keyframes badge-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  75% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-badge-pop {
+  animation: badge-pop 400ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-legendary-glow {
+  animation: legendary-pulse 2s ease-in-out infinite;
+}

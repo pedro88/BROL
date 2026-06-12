@@ -51,5 +51,14 @@
     "title": "Mes QR codes",
     "generate": "Generer",
     "print": "Imprimer"
+  },
+  "badges": {
+    "title": "Badges",
+    "myBadges": "Mes badges",
+    "allBadges": "Tous les badges",
+    "earned": "Decroches",
+    "locked": "Verrouilles",
+    "noBadges": "Aucun badge encore",
+    "noBadgesDescription": "Continuez a utiliser Brol pour en decrocher !"
   }
 }

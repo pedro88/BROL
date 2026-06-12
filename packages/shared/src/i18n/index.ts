@@ -959,6 +959,38 @@ export const notifications = {
   reviewReceivedMessageWithoutComment: { fr: "{rating}/5 étoiles", nl: "{rating}/5 sterren", en: "{rating}/5 stars" },
 };
 
+export const badges = {
+  title: { fr: "Badges", nl: "Badges", en: "Badges" },
+  myBadges: { fr: "Mes badges", nl: "Mijn badges", en: "My badges" },
+  allBadges: { fr: "Tous les badges", nl: "Alle badges", en: "All badges" },
+  earned: { fr: "Décroché", nl: "Verdiend", en: "Earned" },
+  locked: { fr: "Verrouillés", nl: "Vergrendeld", en: "Locked" },
+  noBadges: { fr: "Aucun badge encore", nl: "Nog geen badges", en: "No badges yet" },
+  noBadgesDescription: { fr: "Continuez à utiliser Brol pour en décrocher !", nl: "Blijf Brol gebruiken om er te verdienen!", en: "Keep using Brol to earn some!" },
+  myProgress: { fr: "// MON PROGRÈS", nl: "// MIJN VOORUITGANG", en: "// MY PROGRESS" },
+  category: {
+    all: { fr: "Tous", nl: "Alle", en: "All" },
+    CINEMA: { fr: "Cinéma/VHS", nl: "Film/VHS", en: "Cinema/VHS" },
+    LITERATURE: { fr: "Littérature", nl: "Literatuur", en: "Literature" },
+    GAMING: { fr: "Jeux vidéo", nl: "Videogames", en: "Gaming" },
+    TV: { fr: "TV/Séries", nl: "TV/Series", en: "TV/Series" },
+    HARDWARE: { fr: "Hardware", nl: "Hardware", en: "Hardware" },
+    TABLETOP: { fr: "Board games", nl: "Bordspellen", en: "Board games" },
+    ACCOMPLISHMENTS: { fr: "Accomplissements", nl: "Prestaties", en: "Accomplishments" },
+    SPECIAL: { fr: "Spéciaux", nl: "Speciaal", en: "Special" },
+  },
+  rarity: {
+    all: { fr: "Toutes rarités", nl: "Alle zeldzaamheden", en: "All rarities" },
+    COMMON: { fr: "Commun", nl: "Algemeen", en: "Common" },
+    UNCOMMON: { fr: "Peu commun", nl: "Ongewoon", en: "Uncommon" },
+    RARE: { fr: "Rare", nl: "Zeldzaam", en: "Rare" },
+    EPIC: { fr: "Épique", nl: "Episch", en: "Epic" },
+    LEGENDARY: { fr: "Légendaire", nl: "Legendarisch", en: "Legendary" },
+  },
+  howToUnlock: { fr: "Comment débloquer ?", nl: "Hoe te ontgrendelen?", en: "How to unlock?" },
+  earnedOn: { fr: "Décroché le", nl: "Verdiend op", en: "Earned on" },
+};
+
 // ===========================================================================
 // Adapter — source de vérité unique projetée vers next-intl (web), i18next
 // (mobile) et le backend. Chaque feuille du catalogue est un objet
@@ -989,6 +1021,7 @@ export const catalog = {
   photos,
   emails,
   notifications,
+  badges,
 } as const;
 
 /** Valide une string arbitraire comme Locale (fallback défaut sinon). */

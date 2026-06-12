@@ -396,6 +396,10 @@ model BadgeDefinition {
   description String
   icon        String // Emoji ou URL vers l'icône
   criteria    Json // Règles d'attribution automatique (ex: { "type": "loan_count", "threshold": 10 })
+  rarity      String   @default("COMMON") // COMMON, UNCOMMON, RARE, EPIC, LEGENDARY
+  category    String   @default("MILESTONE") // CINEMA, LITERATURE, GAMING, TV, HARDWARE, TABLETOP, ACCOMPLISHMENTS, SPECIAL
+  unlockHint  String? // Hint shown on locked badges
+  svgAsset    String? // Path to SVG asset relative to /public/badges/
   createdAt   DateTime @default(now())
 
   userBadges UserBadge[]
@@ -502,6 +506,7 @@ enum NotificationType {
   REVIEW_RECEIVED // Nouveau commentaire/note reçu
   REQUEST_FULFILLED // Votre demande a été traitée
   SELF_BORROW // Un utilisateur s'est auto-emprunté un de vos objets
+  BADGE_UNLOCKED // Nouveau badge débloqué
 }
 
 // ============================================

@@ -8,6 +8,7 @@ import { translate, type Locale } from "@brol/shared";
 import { router, publicProcedure, protectedProcedure, TRPCError } from "../trpc";
 import { logger } from "../lib/logger";
 import { getResendClient, getResendFromAddress } from "../lib/resend";
+import { syncUserBadges } from "../lib/badge-service";
 
 const log = logger.child("messages.sendOwnerContactEmail");
 
@@ -69,6 +70,8 @@ export const messagesRouter = router({
           content,
         },
       });
+
+      await syncUserBadges(ctx.prisma, ownerId);
 
       // Envoyer l'email au propriétaire (dans SA locale, pas celle du visiteur)
       const locale = (owner.locale ?? "fr") as Locale;

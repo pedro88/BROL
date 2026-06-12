@@ -51,5 +51,14 @@
     "title": "Mijn QR codes",
     "generate": "Genereren",
     "print": "Afdrukken"
+  },
+  "badges": {
+    "title": "Badges",
+    "myBadges": "Mijn badges",
+    "allBadges": "Alle badges",
+    "earned": "Verdiend",
+    "locked": "Vergrendeld",
+    "noBadges": "Nog geen badges",
+    "noBadgesDescription": "Blijf Brol gebruiken om er te verdienen!"
   }
 }

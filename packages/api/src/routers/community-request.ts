@@ -11,6 +11,7 @@ import { Prisma } from "@prisma/client";
 import { haversineSql, haversineKm } from "../lib/geo";
 import { logger } from "../lib/logger";
 import { pageOf } from "../lib/pagination";
+import { syncUserBadges } from "../lib/badge-service";
 
 const log = logger.child("communityRequest");
 
@@ -142,6 +143,8 @@ export const communityRequestRouter = router({
           })),
         });
       }
+
+      await syncUserBadges(ctx.prisma, authorId);
 
       return { request, matchCount: matches.length };
     }),
@@ -304,6 +307,8 @@ export const communityRequestRouter = router({
           },
         });
       }
+
+      await syncUserBadges(ctx.prisma, ctx.session.user.id);
 
       return updated;
     }),
