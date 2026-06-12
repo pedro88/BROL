@@ -110,10 +110,14 @@ export default function SignInPage() {
 
     setLoading(true);
 
-    const callbackUrl =
+    // Open redirect : n'accepter qu'un chemin relatif interne ("/..."),
+    // jamais "//host" ni un schéma ("javascript:", "https://evil").
+    const rawCallback =
       typeof window !== "undefined"
         ? new URL(window.location.href).searchParams.get("callbackUrl") ?? "/"
         : "/";
+    const callbackUrl =
+      rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/";
 
     try {
       if (mode === "signin") {

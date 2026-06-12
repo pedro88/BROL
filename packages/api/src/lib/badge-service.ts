@@ -469,14 +469,16 @@ async function fetchUserStats(prisma: PrismaClient, userId: string): Promise<Bad
     prisma.message.count({ where: { ownerId: userId, read: false } }),
     prisma.communityRequest.count({ where: { authorId: userId } }),
     prisma.communityRequest.count({ where: { authorId: userId, status: "FULFILLED" } }),
-    prisma.communityRequest.count({ where: { fulfillByRequestId: { not: null } } }),
+    prisma.communityRequest.count({ where: { fulfillBy: { authorId: userId } } }),
     prisma.qrStock.count({ where: { userId } }),
     prisma.qrStock.count({ where: { userId, used: true } }),
     prisma.user.findUnique({ where: { id: userId }, select: { createdAt: true } }),
     prisma.loan.count({ where: { OR: [{ ownerId: userId }, { borrowerId: userId }], createdAt: { gte: startOfMonth } } }),
     prisma.object.count({ where: { collection: { userId }, createdAt: { gte: startOfMonth } } }),
     prisma.review.count({ where: { authorId: userId, createdAt: { gte: startOfMonth } } }),
-    prisma.communityRequest.count({ where: { fulfillByRequestId: { not: null } } }),
+    // Retours en retard : returnedAt > returnDueDate (comparaison de colonnes
+    // impossible en Prisma count → raw SQL).
+    prisma.$queryRaw`SELECT COUNT(*)::int AS count FROM "loans" WHERE ("ownerId" = ${userId} OR "borrowerId" = ${userId}) AND "status" = 'RETURNED' AND "returnedAt" IS NOT NULL AND "returnDueDate" IS NOT NULL AND "returnedAt" > "returnDueDate"`,
   ]);
 
   const memberSinceDays = memberCreatedAt?.createdAt

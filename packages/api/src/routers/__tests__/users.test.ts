@@ -45,10 +45,16 @@ describe("usersRouter", () => {
       expect(res[0].id).toBe(alice.id);
     });
 
-    it("finds a user by email substring", async () => {
+    it("does NOT match email substrings (anti-énumération, fix 2026-06-12)", async () => {
       const res = await callerFor(alice.id).users.search({ query: "bob@" });
+      expect(res).toHaveLength(0);
+    });
+
+    it("finds a user by EXACT email, but hides the email without publicEmail opt-in", async () => {
+      const res = await callerFor(alice.id).users.search({ query: "bob@example.com" });
       expect(res).toHaveLength(1);
       expect(res[0].id).toBe(bob.id);
+      expect(res[0].email).toBeNull();
     });
 
     it("finds a user by handle (with or without #)", async () => {

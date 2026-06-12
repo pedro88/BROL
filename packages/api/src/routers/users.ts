@@ -76,7 +76,9 @@ export const usersRouter = router({
         where: {
           OR: [
             { name: { contains: q, mode: "insensitive" } },
-            { email: { contains: q, mode: "insensitive" } },
+            // Email : match EXACT uniquement — un `contains` permettrait
+            // d'énumérer les emails inscrits par substring.
+            { email: { equals: q, mode: "insensitive" } },
             { handle: { contains: q.replace(/^#/, "").toLowerCase(), mode: "insensitive" } },
           ],
         },
@@ -89,17 +91,22 @@ export const usersRouter = router({
           profile: {
             select: {
               avatarUrl: true,
+              publicEmail: true,
             },
           },
         },
         take: 20,
       });
 
+      // Même règle privacy que getById : email visible si self ou opt-in.
       return users.map((user) => ({
         id: user.id,
         handle: user.handle,
         name: user.name,
-        email: user.email,
+        email:
+          user.id === ctx.userId || user.profile?.publicEmail === true
+            ? user.email
+            : null,
         image: user.image,
         avatarUrl: user.profile?.avatarUrl,
       }));

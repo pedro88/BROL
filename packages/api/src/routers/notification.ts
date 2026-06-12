@@ -109,6 +109,15 @@ export const notificationRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Sécurité : un user ne peut créer des notifications QUE pour lui-même.
+      // Les notifications cross-user sont créées server-side par les routers
+      // concernés (loans, community-request, badges...), pas via cette proc.
+      if (input.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: translate(ctx.locale, "errors.notificationAccessDenied"),
+        });
+      }
       return ctx.prisma.notification.create({
         data: {
           userId: input.userId,

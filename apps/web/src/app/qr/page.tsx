@@ -15,6 +15,7 @@ import {
 import { Header, Navigation } from "../../components/navigation";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
+import { escapeHtml } from "../../lib/escape-html";
 import { trpc } from "../../lib/trpc";
 import { QrCodeImage } from "../../components/qr/qr-code-image";
 
@@ -92,8 +93,8 @@ export default function QrStockPage() {
       .map((c) => {
         const url = `${baseUrl}/qr/${c.code}`;
         const qrImg = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=240x240&margin=0`;
-        const label = c.objectName ? `${c.objectName}` : c.code;
-        return `<div class="qr-cell"><img src="${qrImg}" alt="${c.code}"/><span>${label}</span></div>`;
+        const label = escapeHtml(c.objectName ? `${c.objectName}` : c.code);
+        return `<div class="qr-cell"><img src="${qrImg}" alt="${escapeHtml(c.code)}"/><span>${label}</span></div>`;
       })
       .join("");
     win.document.write(`<!doctype html><html><head><title>Brol QR — impression</title>

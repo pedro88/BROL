@@ -44,6 +44,16 @@ describe("notificationRouter", () => {
       expect(res.items[0].isRead).toBe(false);
     });
 
+    it("cannot create a notification for another user (FORBIDDEN, fix 2026-06-12)", async () => {
+      await expect(
+        callerFor(alice.id).notification.create({
+          userId: bob.id,
+          type: "OVERDUE",
+          title: "Spam pour Bob",
+        })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
     it("does not return another user's notifications", async () => {
       await callerFor(bob.id).notification.create({
         userId: bob.id,

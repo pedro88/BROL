@@ -195,14 +195,24 @@ export const photosRouter = router({
     .mutation(async ({ ctx, input }) => {
       await assertObjectOwned(ctx.prisma, ctx.userId, input.objectId);
 
-      // Mettre à jour les positions en transaction
+      // Sécurité : ne réordonner QUE des photos de cet objet — sans ce
+      // filtre, des photoIds arbitraires permettraient d'écrire sur les
+      // photos d'autres utilisateurs (IDOR).
+      const owned = await ctx.prisma.photo.findMany({
+        where: { objectId: input.objectId, id: { in: Object.keys(input.positions) } },
+        select: { id: true },
+      });
+      const ownedIds = new Set(owned.map((p) => p.id));
+
       await ctx.prisma.$transaction(
-        Object.entries(input.positions).map(([photoId, position]) =>
-          ctx.prisma.photo.update({
-            where: { id: photoId },
-            data: { position },
-          })
-        )
+        Object.entries(input.positions)
+          .filter(([photoId]) => ownedIds.has(photoId))
+          .map(([photoId, position]) =>
+            ctx.prisma.photo.update({
+              where: { id: photoId },
+              data: { position },
+            })
+          )
       );
 
       return ctx.prisma.photo.findMany({

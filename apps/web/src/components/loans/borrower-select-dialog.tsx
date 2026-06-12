@@ -222,11 +222,13 @@ export function BorrowerSelectDialog({
                       className="w-full flex items-center gap-2 px-3 py-2 rounded text-left bg-primary/5 hover:bg-primary/10 border border-primary/20 transition-colors"
                     >
                       <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-mono">
-                        {user.name?.[0]?.toUpperCase() ?? user.email[0].toUpperCase()}
+                        {user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? user.handle?.[0]?.toUpperCase() ?? "?"}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-mono text-sm truncate">{user.name ?? user.email}</p>
-                        <p className="font-mono text-xs text-muted-foreground truncate">{user.email}</p>
+                        <p className="font-mono text-sm truncate">{user.name ?? user.email ?? (user.handle ? `#${user.handle}` : "")}</p>
+                        {user.email && (
+                          <p className="font-mono text-xs text-muted-foreground truncate">{user.email}</p>
+                        )}
                       </div>
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </button>

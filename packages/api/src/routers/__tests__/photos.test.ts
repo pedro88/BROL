@@ -11,6 +11,7 @@ import {
   createTestUser,
   createTestCollection,
   createTestObject,
+  createTestContext,
 } from "../../test/setup";
 import type { PresignedUpload } from "../../lib/s3";
 
@@ -228,5 +229,48 @@ describe("photosRouter", () => {
         })
       ).rejects.toThrow();
     });
+  });
+
+  it("reorder cannot touch another user's photos (anti-IDOR, fix 2026-06-12)", async () => {
+    const owner = await createTestContext();
+    const victim = await createTestContext();
+
+    const ownColl = await prisma.collection.create({
+      data: { userId: owner.userId, name: "C", type: "BOOK" },
+    });
+    const ownObj = await prisma.object.create({
+      data: { collectionId: ownColl.id, name: "Mine" },
+    });
+    const ownPhoto = await prisma.photo.create({
+      data: { objectId: ownObj.id, url: "https://x/p1.jpg", position: 0 },
+    });
+
+    const victimColl = await prisma.collection.create({
+      data: { userId: victim.userId, name: "VC", type: "BOOK" },
+    });
+    const victimObj = await prisma.object.create({
+      data: { collectionId: victimColl.id, name: "Theirs" },
+    });
+    const victimPhoto = await prisma.photo.create({
+      data: { objectId: victimObj.id, url: "https://x/p2.jpg", position: 0 },
+    });
+
+    const caller = appRouter.createCaller({
+      prisma,
+      userId: owner.userId,
+      headers: {},
+      session: { user: { id: owner.userId } },
+    });
+
+    await caller.photos.reorder({
+      objectId: ownObj.id,
+      positions: { [ownPhoto.id]: 1, [victimPhoto.id]: 99 },
+    });
+
+    const untouched = await prisma.photo.findUnique({ where: { id: victimPhoto.id } });
+    expect(untouched!.position).toBe(0);
+
+    const moved = await prisma.photo.findUnique({ where: { id: ownPhoto.id } });
+    expect(moved!.position).toBe(1);
   });
 });

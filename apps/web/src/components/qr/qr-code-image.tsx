@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { escapeHtml } from "../../lib/escape-html";
 import QRCode from "qrcode";
 
 interface QrCodeImageProps {
@@ -153,6 +154,8 @@ export function useQrDownload(baseUrl?: string) {
         errorCorrectionLevel: "H" as QrErrorCorrectionLevel,
       });
 
+      const safeName = escapeHtml(objectName);
+      const safeCode = escapeHtml(code);
       const printWindow = window.open("", "_blank");
       if (!printWindow) {
         alert("Veuillez autoriser les popups pour l'impression.");
@@ -163,7 +166,7 @@ export function useQrDownload(baseUrl?: string) {
         <!DOCTYPE html>
         <html>
           <head>
-            <title>QR Code - ${objectName}</title>
+            <title>QR Code - ${safeName}</title>
             <style>
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body {
@@ -186,9 +189,9 @@ export function useQrDownload(baseUrl?: string) {
             </style>
           </head>
           <body>
-            <div class="name">${objectName}</div>
+            <div class="name">${safeName}</div>
             <img src="${dataUrl}" alt="QR Code" />
-            <div class="code">${code}</div>
+            <div class="code">${safeCode}</div>
             <script>window.onload = () => { window.print(); }</script>
           </body>
         </html>
