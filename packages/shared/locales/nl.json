@@ -27,12 +27,14 @@
     "title": "Mijn collecties",
     "create": "Maak een collectie",
     "empty": "Geen collecties",
-    "emptyDescription": "Maak je eerste collectie"
+    "emptyDescription": "Maak je eerste collectie",
+    "noCollections": "Geen collecties"
   },
   "objects": {
     "title": "Mijn objecten",
     "add": "Voeg een object toe",
-    "empty": "Geen objecten"
+    "empty": "Geen objecten",
+    "addRequiresCollection": "U moet eerst een collectie maken om objecten toe te voegen"
   },
   "loans": {
     "title": "Mijn leningen",

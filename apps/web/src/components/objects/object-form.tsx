@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { Switch } from "../ui/switch";
 import { PhotoPicker } from "./photo-picker";
 import { QrScanner } from "../qr/qr-scanner";
 import { trpc } from "../../lib/trpc";
@@ -933,7 +934,13 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       <Button
         type="submit"
         className="w-full"
-        disabled={isSubmitting || createMutation.isPending || creatingQr || uploadingPhoto}
+        disabled={
+          isSubmitting ||
+          createMutation.isPending ||
+          creatingQr ||
+          uploadingPhoto ||
+          (!collectionId && !watchedCollectionId)
+        }
       >
         {createMutation.isPending || creatingQr || uploadingPhoto ? (
           <>

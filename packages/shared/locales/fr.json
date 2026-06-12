@@ -27,12 +27,14 @@
     "title": "Mes collections",
     "create": "Creer une collection",
     "empty": "Aucune collection",
-    "emptyDescription": "Creez votre premiere collection"
+    "emptyDescription": "Creez votre premiere collection",
+    "noCollections": "Aucune collection"
   },
   "objects": {
     "title": "Mes objets",
     "add": "Ajouter un objet",
-    "empty": "Aucun objet"
+    "empty": "Aucun objet",
+    "addRequiresCollection": "Vous devez d'abord creer une collection pour y ajouter des objets"
   },
   "loans": {
     "title": "Mes prets",

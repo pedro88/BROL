@@ -221,6 +221,7 @@ export const collections = {
   lentOut: { fr: "{{count}} prêté", fr_plural: "{{count}} prêtés", nl: "{{count}} uitgeleend", nl_plural: "{{count}} uitgeleend", en: "{{count}} lent out", en_plural: "{{count}} lent out" },
   empty: { fr: "Aucune collection", nl: "Geen collecties", en: "No collections" },
   emptyDescription: { fr: "Créez votre première collection pour commencer", nl: "Maak je eerste collectie om te beginnen", en: "Create your first collection to get started" },
+  noCollections: { fr: "Aucune collection", nl: "Geen collecties", en: "No collections" },
 
   // Ajouts
   new: { fr: "Nouvelle", nl: "Nieuw", en: "New" },
@@ -287,6 +288,7 @@ export const objects = {
   },
   empty: { fr: "Aucun objet", nl: "Geen objecten", en: "No objects" },
   emptyDescription: { fr: "Ajoutez votre premier objet à cette collection", nl: "Voeg je eerste object toe aan deze collectie", en: "Add your first object to this collection" },
+  addRequiresCollection: { fr: "Vous devez d'abord créer une collection pour y ajouter des objets", nl: "U moet eerst een collectie maken om objecten toe te voegen", en: "You must first create a collection to add objects to it" },
 
   // Ajouts
   labelPlural: { fr: "objets", nl: "objecten", en: "objects" },

@@ -27,12 +27,14 @@
     "title": "My collections",
     "create": "Create a collection",
     "empty": "No collections",
-    "emptyDescription": "Create your first collection"
+    "emptyDescription": "Create your first collection",
+    "noCollections": "No collections"
   },
   "objects": {
     "title": "My objects",
     "add": "Add an object",
-    "empty": "No objects"
+    "empty": "No objects",
+    "addRequiresCollection": "You must first create a collection to add objects to it"
   },
   "loans": {
     "title": "My loans",
