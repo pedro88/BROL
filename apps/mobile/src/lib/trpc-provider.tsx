@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
+import superjson from "superjson";
 import { trpc, getApiUrl } from "./trpc";
 import { authAtom } from "./auth-store";
 import i18n from "../i18n";
@@ -44,6 +45,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
     return trpc.createClient({
       links: [
         httpBatchLink({
+          transformer: superjson,
           url: `${getApiUrl()}/api/trpc`,
           headers() {
             const currentToken = authAtom.get().sessionToken;

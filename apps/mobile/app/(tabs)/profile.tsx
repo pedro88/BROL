@@ -3,6 +3,7 @@
  * @package @brol/mobile
  */
 
+import { useRouter } from "expo-router";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useAuth } from "../../src/lib/use-auth";
 import { signOut } from "../../src/lib/sign-out";
@@ -10,6 +11,7 @@ import { colors, spacing, typography } from "../../src/theme";
 
 export default function ProfileScreen() {
   const { user } = useAuth();
+  const router = useRouter();
 
   return (
     <View style={styles.container}>
@@ -28,16 +30,28 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>// COMPTE</Text>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push("/settings" as never)}
+          activeOpacity={0.7}
+        >
           <Text style={styles.menuText}>Paramètres</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push("/notifications" as never)}
+          activeOpacity={0.7}
+        >
           <Text style={styles.menuText}>Notifications</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>Aide</Text>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push("/contacts" as never)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.menuText}>Contacts</Text>
         </TouchableOpacity>
       </View>
 

@@ -104,6 +104,11 @@ export default function RootLayout() {
         <Stack.Screen name="loans/new" options={{ title: "Nouveau prêt" }} />
         <Stack.Screen name="objects/add" options={{ title: "Ajouter un objet" }} />
         <Stack.Screen name="collections/new" options={{ title: "Nouvelle collection" }} />
+
+        {/* Stack screens du Milestone 1 mobile */}
+        <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
+        <Stack.Screen name="settings" options={{ title: "Paramètres" }} />
+        <Stack.Screen name="contacts" options={{ title: "Contacts" }} />
       </Stack>
     </TRPCProvider>
   );

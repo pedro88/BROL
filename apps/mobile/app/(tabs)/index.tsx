@@ -4,19 +4,25 @@
  * @package @brol/mobile
  */
 
-import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { colors, spacing, typography } from "../../src/theme";
-import { useAuth } from "../../src/lib/use-auth";
+import { useAuth, useIsAuthenticated } from "../../src/lib/use-auth";
+import { trpc } from "../../src/lib/trpc";
+import { Spinner } from "../../src/components/ui/spinner";
 
 /**
  * Dashboard screen.
  * Shows: nb objets, prêts actifs, contacts, actions rapides.
- * Data will come from tRPC queries in M016.
+ * Stats fetched via tRPC `tier.getLimits` (single batched count query).
  */
 export default function HomeScreen() {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
+  const isAuthenticated = useIsAuthenticated();
+
+  const stats = trpc.tier.getLimits.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
 
   return (
     <ScrollView style={styles.container}>
@@ -31,10 +37,30 @@ export default function HomeScreen() {
 
       {/* Stats */}
       <View style={styles.stats}>
-        <StatBox label="Objets" value="--" variant="default" />
-        <StatBox label="Pretes" value="--" variant="warning" />
-        <StatBox label="Contacts" value="--" />
+        <StatBox
+          label="Objets"
+          value={stats.data?.limits.objects.current}
+          loading={stats.isLoading}
+          variant="default"
+        />
+        <StatBox
+          label="Pretes"
+          value={stats.data?.limits.activeLoans.current}
+          loading={stats.isLoading}
+          variant="warning"
+        />
+        <StatBox
+          label="Contacts"
+          value={stats.data?.contactCount}
+          loading={stats.isLoading}
+        />
       </View>
+
+      {stats.isError && (
+        <Text style={styles.errorText}>
+          Erreur de chargement des stats
+        </Text>
+      )}
 
       {/* Actions rapides */}
       <View style={styles.section}>
@@ -82,10 +108,12 @@ export default function HomeScreen() {
 function StatBox({
   label,
   value,
+  loading = false,
   variant = "default",
 }: {
   label: string;
-  value: string;
+  value?: number;
+  loading?: boolean;
   variant?: "default" | "warning" | "success";
 }) {
   const valueColor =
@@ -97,7 +125,15 @@ function StatBox({
 
   return (
     <View style={styles.statBox}>
-      <Text style={[styles.statValue, { color: valueColor }]}>{value}</Text>
+      {loading ? (
+        <View style={styles.statSpinner}>
+          <Spinner size="small" />
+        </View>
+      ) : (
+        <Text style={[styles.statValue, { color: valueColor }]}>
+          {value ?? "--"}
+        </Text>
+      )}
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -149,6 +185,17 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: typography.fontFamilyDisplay,
     fontSize: 32,
+  },
+  statSpinner: {
+    height: 38,
+    justifyContent: "center",
+  },
+  errorText: {
+    fontFamily: typography.fontFamily,
+    fontSize: 12,
+    color: colors.accent,
+    textAlign: "center",
+    marginBottom: spacing.lg,
   },
   statLabel: {
     fontFamily: typography.fontFamily,
