@@ -8,9 +8,15 @@
 
 - [x] Design spec: `BADGE_DESIGN_SPEC.md`
 - [x] UI/UX plan: `/tmp/badge-uiux-plan.md`
-- [ ] Backend refactor (Phase 1)
-- [ ] SVG assets (Phase 2)
-- [ ] UI/UX implementation (Phase 3)
+- [x] Backend refactor (Phase 1) — `badge-service.ts` (moteur de critères,
+  `syncUserBadges` hooké dans les routers), notification `BADGE_UNLOCKED`
+  à l'unlock, seed 109 définitions. Livré 2026-06-12.
+- [x] SVG assets (Phase 2) — 120 SVG dans `apps/web/public/badges/`.
+- [x] UI/UX implementation (Phase 3) — page `/badges` (filtres catégorie/
+  rareté + progress), badges sur profil public, lien Trophy dans le header,
+  notif cliquable → `/badges`.
+- [ ] Reste : badges écrans mobile (M2+), cron pour conditions cumulatives
+  si les hooks event-based ne suffisent pas (streaks, ancienneté).
 
 ---
 

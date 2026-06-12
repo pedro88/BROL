@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut, Bell, Mail, Menu } from "lucide-react";
+import { Home, BookOpen, Repeat, Users, QrCode, Settings, LogIn, LogOut, Bell, Mail, Menu, Trophy } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { signOut } from "@/lib/auth-client";
 import { setSessionToken, sessionTokenStore, getSessionToken } from "@/lib/auth-store";
@@ -172,6 +172,12 @@ export function Header() {
                       {t("nav.messages")}
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/badges" className="flex items-center gap-2">
+                      <Trophy className="w-4 h-4" />
+                      {t("nav.badges")}
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
               )}
@@ -229,6 +235,16 @@ export function Header() {
             >
               <Mail className="w-5 h-5" strokeWidth={1.5} />
               <NotifBadge count={messagesUnread} />
+            </Link>
+          )}
+
+          {isAuthenticated && (
+            <Link
+              href="/badges"
+              className="p-2 text-muted-foreground hover:text-primary transition-colors"
+              aria-label={t("nav.badges")}
+            >
+              <Trophy className="w-5 h-5" strokeWidth={1.5} />
             </Link>
           )}
 

@@ -31,6 +31,8 @@ function notificationHref(n: NotifData): string | null {
       return `/loans`;
     case "review":
       return `/profile/${n.relatedId}`;
+    case "badge":
+      return `/badges`;
     default:
       return null;
   }

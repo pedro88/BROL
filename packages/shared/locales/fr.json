@@ -15,7 +15,8 @@
     "collections": "Collections",
     "objects": "Objets",
     "loans": "Prets",
-    "contacts": "Contacts"
+    "contacts": "Contacts",
+    "badges": "Badges"
   },
   "auth": {
     "signIn": "Connexion",

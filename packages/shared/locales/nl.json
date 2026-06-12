@@ -15,7 +15,8 @@
     "collections": "Collecties",
     "objects": "Objecten",
     "loans": "Leningen",
-    "contacts": "Contacten"
+    "contacts": "Contacten",
+    "badges": "Badges"
   },
   "auth": {
     "signIn": "Aanmelden",

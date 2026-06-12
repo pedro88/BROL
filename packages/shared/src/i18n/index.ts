@@ -74,6 +74,7 @@ export const nav = {
   qrCodes: { fr: "QR Codes", nl: "QR Codes", en: "QR Codes" },
   notifications: { fr: "Notifications", nl: "Meldingen", en: "Notifications" },
   messages: { fr: "Messages", nl: "Berichten", en: "Messages" },
+  badges: { fr: "Badges", nl: "Badges", en: "Badges" },
 };
 
 /**
