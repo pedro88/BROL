@@ -128,48 +128,55 @@ export default function HomePage() {
         </section>
 
         {/* Actions rapides */}
-        <section className="space-y-3">
+        <section className="mb-8">
           <h2 className="font-mono text-sm text-muted-foreground mb-3">
             {t("quickActions")}
           </h2>
 
-          <QuickAction
-            href="/loans"
-            title={t("newLoan")}
-            description={t("newLoanDesc")}
-            variant="primary"
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              href="/loans"
+              className="card-vhs p-4 text-center hover:scale-[1.02] active:scale-[0.98] transition-all border-l-4 border-primary"
+            >
+              <div className="flex justify-center mb-2">
+                <Repeat className="w-5 h-5 text-primary" />
+              </div>
+              <p className="font-display text-base">{t("newLoan")}</p>
+            </Link>
 
-          <QuickAction
-            href="/objects/add"
-            title={t("addObject")}
-            description={t("addObjectDesc")}
-            variant="secondary"
-          />
+            <Link
+              href="/objects/add"
+              className="card-vhs p-4 text-center hover:scale-[1.02] active:scale-[0.98] transition-all border-l-4 border-secondary"
+            >
+              <div className="flex justify-center mb-2">
+                <Package className="w-5 h-5 text-primary" />
+              </div>
+              <p className="font-display text-base">{t("addObject")}</p>
+            </Link>
 
-          <button
-            type="button"
-            onClick={() => setRequestOpen(true)}
-            className="card-vhs p-4 w-full text-left hover:border-primary/50 transition-colors flex items-center gap-3"
-          >
-            <MessagesSquare className="w-5 h-5 text-primary" />
-            <div>
+            <button
+              type="button"
+              onClick={() => setRequestOpen(true)}
+              className="card-vhs p-4 text-center hover:scale-[1.02] active:scale-[0.98] transition-all border-l-4 border-primary"
+            >
+              <div className="flex justify-center mb-2">
+                <MessagesSquare className="w-5 h-5 text-primary" />
+              </div>
               <p className="font-display text-base">{t("askCommunity")}</p>
-              <p className="font-mono text-xs text-muted-foreground">
-                {t("askCommunityDesc")}
-              </p>
-            </div>
-          </button>
+            </button>
 
-          {/* Scanner uniquement sur mobile */}
-          {isMobile && (
-            <QuickAction
-              href="/scan"
-              title={t("scan")}
-              description={t("scanDesc")}
-              variant="accent"
-            />
-          )}
+            {isMobile && (
+              <Link
+                href="/scan"
+                className="card-vhs p-4 text-center hover:scale-[1.02] active:scale-[0.98] transition-all border-l-4 border-accent"
+              >
+                <div className="flex justify-center mb-2">
+                  <Download className="w-5 h-5 text-accent" />
+                </div>
+                <p className="font-display text-base">{t("scan")}</p>
+              </Link>
+            )}
+          </div>
         </section>
 
         <CreateRequestDialog
@@ -302,38 +309,6 @@ function StatCard({
   }
 
   return content;
-}
-
-/**
- * Bouton d'action rapide stylisé VHS.
- */
-function QuickAction({
-  href,
-  title,
-  description,
-  variant,
-}: {
-  href: string;
-  title: string;
-  description: string;
-  variant: "primary" | "secondary" | "accent";
-}) {
-  const variantStyles = {
-    primary: "border-primary hover:bg-primary hover:text-primary-foreground",
-    secondary:
-      "border-secondary hover:bg-secondary hover:text-secondary-foreground",
-    accent: "border-accent hover:bg-accent hover:text-accent-foreground",
-  };
-
-  return (
-    <Link
-      href={href}
-      className={`card-vhs block p-4 border-l-4 ${variantStyles[variant]} transition-all hover:scale-[1.02] active:scale-[0.98]`}
-    >
-      <h3 className="font-display text-xl mb-1">{title}</h3>
-      <p className="font-mono text-xs text-muted-foreground">{description}</p>
-    </Link>
-  );
 }
 
 /**
