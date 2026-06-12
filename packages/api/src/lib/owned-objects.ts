@@ -37,7 +37,7 @@ export async function getOwnedObject<S extends Prisma.ObjectSelect | undefined, 
   if (!object) {
     throw new TRPCError({ code: "NOT_FOUND", message: translate(locale, "errors.objectNotFoundOwned") });
   }
-  return object as NonNullable<typeof object>;
+  return object as unknown as NonNullable<Awaited<ReturnType<typeof runObjectQuery<S, I>>>>;
 }
 
 /**

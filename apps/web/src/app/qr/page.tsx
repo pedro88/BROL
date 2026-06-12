@@ -48,7 +48,7 @@ export default function QrStockPage() {
       ...(search && { search }),
       ...(collectionId && { collectionId }),
     },
-    { keepPrevious: true }
+    { placeholderData: (prev) => prev }
   );
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";

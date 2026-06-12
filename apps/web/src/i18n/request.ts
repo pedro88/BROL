@@ -44,5 +44,5 @@ export default getRequestConfig(async () => {
   // Garde-fou : ne jamais renvoyer une locale non supportée.
   if (!LOCALES.includes(locale)) locale = DEFAULT_LOCALE;
 
-  return { locale, messages: getMessages(locale) };
+  return { locale, messages: getMessages(locale) as unknown as import("next-intl").AbstractIntlMessages };
 });

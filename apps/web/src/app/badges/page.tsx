@@ -127,7 +127,7 @@ export default function BadgesPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen pb-20">
-        <Header title={t("title")} />
+        <Header />
         <main className="p-4">
           <div className="spinner-vhs w-8 h-8 mx-auto mt-8" />
         </main>
@@ -138,8 +138,11 @@ export default function BadgesPage() {
 
   return (
     <div className="min-h-screen pb-20">
-      <Header title={t("title")} />
+      <Header />
       <main className="p-4 space-y-6">
+        <h1 className="font-display text-3xl vhs-text-glow text-primary uppercase">
+          {t("title")}
+        </h1>
         {userId && myBadges && myBadges.length > 0 && (
           <section className="card-vhs p-4">
             <div className="flex items-center justify-between mb-4">

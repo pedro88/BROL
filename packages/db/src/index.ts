@@ -11,6 +11,8 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 import { PrismaClient } from "@prisma/client";
 
+export type { PrismaClient };
+
 // Singleton pour éviter d'instancier plusieurs clients en développement
 declare global {
   // eslint-disable-next-line no-var

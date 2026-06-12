@@ -7,7 +7,7 @@ export type BadgeRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
 export type BadgeSize = "sm" | "md" | "lg" | "xl";
 
 export interface BadgeDefinition {
-  id: string;
+  id?: string;
   slug: string;
   name: string;
   description: string;
