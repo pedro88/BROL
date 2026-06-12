@@ -1058,6 +1058,31 @@ const ALL_BADGE_DEFINITIONS: BadgeDef[] = [
 // SEED FUNCTION
 // ===========================================
 
+
+// ===========================================
+// SVG ASSETS — pixel art généré par scripts/generate-badge-pixel-art.mjs
+// 3 designs par catégorie × 5 raretés. Assignation déterministe par slug.
+// ===========================================
+
+const CATEGORY_DESIGNS: Record<BadgeCategory, { folder: string; designs: string[] }> = {
+  CINEMA: { folder: "cinema", designs: ["cinema-vhs-tape", "cinema-clapperboard", "cinema-film-reel"] },
+  LITERATURE: { folder: "literature", designs: ["literature-book", "literature-quill", "literature-typewriter"] },
+  GAMING: { folder: "gaming", designs: ["gaming-nes-controller", "gaming-cartridge", "gaming-arcade-cabinet"] },
+  TV: { folder: "television", designs: ["television-old-tv", "television-antenna", "television-remote"] },
+  HARDWARE: { folder: "hardware", designs: ["hardware-floppy-disk", "hardware-cpu", "hardware-circuit"] },
+  TABLETOP: { folder: "tabletop", designs: ["tabletop-dice", "tabletop-meeple", "tabletop-scroll"] },
+  ACCOMPLISHMENTS: { folder: "accomplishments", designs: ["accomplishments-trophy", "accomplishments-medal", "accomplishments-crown"] },
+  SPECIAL: { folder: "special", designs: ["special-crystal", "special-lightning", "special-rainbow"] },
+};
+
+/** Chemin SVG (relatif à /public) pour un badge — déterministe par slug. */
+function svgAssetFor(badge: BadgeDef): string {
+  const { folder, designs } = CATEGORY_DESIGNS[badge.category];
+  const hash = [...badge.slug].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const design = designs[hash % designs.length];
+  return `/badges/${folder}/${design}-${badge.rarity.toLowerCase()}.svg`;
+}
+
 async function main() {
   console.log("🌱 Seeding badge definitions...");
 
@@ -1073,10 +1098,11 @@ async function main() {
   };
 
   for (const badge of ALL_BADGE_DEFINITIONS) {
+    const data = { ...badge, svgAsset: svgAssetFor(badge) };
     await prisma.badgeDefinition.upsert({
       where: { slug: badge.slug },
-      update: badge,
-      create: badge,
+      update: data,
+      create: data,
     });
     countMap[badge.category]++;
     console.log(`  ✓ ${badge.name} (${badge.rarity})`);
