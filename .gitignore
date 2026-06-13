@@ -43,6 +43,7 @@ coverage/
 tmp/
 
 # ── Build outputs in packages ──
+*.tsbuildinfo
 packages/*/dist/
 packages/*/src/**/*.js
 packages/*/src/**/*.js.map

@@ -64,7 +64,8 @@
   transactionnels), invalidation cache `objects.*` après
   `loans.return`, `loans.cancel` doit-il accepter OVERDUE ?
 - [ ] **Tech** — Triage des 6 E2E `.skip` + re-run suite complète.
-- [ ] **Tech** — `.gitignore` les `*.tsbuildinfo` + `git rm --cached`.
+- [x] **Tech** — ~~`.gitignore` les `*.tsbuildinfo` + `git rm --cached`.~~
+  livré 2026-06-13.
 
 
 - [x] **Feat** — ~~Uniformiser l'ajout de contact (`/contacts`
