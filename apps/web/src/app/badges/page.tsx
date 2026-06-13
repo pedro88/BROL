@@ -15,7 +15,6 @@ const CATEGORIES = [
   { key: "CINEMA", label: "Cinéma/VHS" },
   { key: "LITERATURE", label: "Littérature" },
   { key: "GAMING", label: "Jeux vidéo" },
-  { key: "TV", label: "TV/Séries" },
   { key: "HARDWARE", label: "Hardware" },
   { key: "TABLETOP", label: "Board games" },
   { key: "ACCOMPLISHMENTS", label: "Accomplissements" },

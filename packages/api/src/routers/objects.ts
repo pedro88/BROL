@@ -447,6 +447,8 @@ export const objectsRouter = router({
         toolBattery: object.toolBattery,
         toolPowerSource: object.toolPowerSource,
         brand: object.brand,
+        genre: object.genre,
+        series: object.series,
         // CUSTOM
         customField1: object.customField1,
         customField2: object.customField2,

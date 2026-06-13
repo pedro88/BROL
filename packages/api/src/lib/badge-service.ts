@@ -84,7 +84,22 @@ interface AvgRatingCriteria extends BaseCriteria {
 
 interface LoansWithinDaysCriteria extends BaseCriteria {
   type: "loans_within_days";
-  params: { days: number };
+  params: { days: number; objectType?: ObjectType | string };
+}
+
+interface ObjectMaxByFieldCriteria extends BaseCriteria {
+  type: "object_max_by_field";
+  params: { objectType: ObjectType | string; field: "genre" | "series" };
+}
+
+interface ObjectByGenreValueCriteria extends BaseCriteria {
+  type: "object_by_genre_value";
+  params: { objectType: ObjectType | string; value: string };
+}
+
+interface ObjectByEditionMatchCriteria extends BaseCriteria {
+  type: "object_by_edition_match";
+  params: { objectType: ObjectType | string; contains: string };
 }
 
 interface OnTimeReturnsCountCriteria extends BaseCriteria {
@@ -313,7 +328,10 @@ type BadgeCriteria =
   | HasAllObjectTypesCriteria
   | BorrowedFromCountCriteria
   | LentToCountCriteria
-  | CategoriesRepresentedCriteria;
+  | CategoriesRepresentedCriteria
+  | ObjectMaxByFieldCriteria
+  | ObjectByGenreValueCriteria
+  | ObjectByEditionMatchCriteria;
 
 interface BadgeStats {
   loanCount: number;
@@ -365,6 +383,18 @@ interface BadgeStats {
   objectWithPhotosByType: Record<string, number>;
   objectWithIsbnByType: Record<string, number>;
   objectByTypeWithPhotos: Record<string, number>;
+  // type → { valueLower → count } pour genre / série / édition (plateforme)
+  objectGenreCountsByType: Record<string, Record<string, number>>;
+  objectSeriesCountsByType: Record<string, Record<string, number>>;
+  objectEditionCountsByType: Record<string, Record<string, number>>;
+  // type → taille du plus gros groupe partageant la même valeur
+  objectMaxSameGenreByType: Record<string, number>;
+  objectMaxSameSeriesByType: Record<string, number>;
+  // prêts empruntés sur les 30 derniers jours (fenêtre glissante)
+  recentBorrowedLoans: Array<{ createdAt: Date; objectType: string | null }>;
+  // prêts par type d'objet (propriétaire / emprunteur)
+  loansAsOwnerByType: Record<string, number>;
+  loansAsBorrowerByType: Record<string, number>;
 }
 
 // ===========================================
@@ -465,7 +495,9 @@ async function fetchUserStats(prisma: PrismaClient, userId: string): Promise<Bad
     prisma.contact.count({ where: { userId } }),
     prisma.contact.count({ where: { userId, borrowerId: { not: null } } }),
     prisma.contact.count({ where: { userId, createdAt: { gte: startOfMonth } } }),
-    prisma.message.count({ where: { ownerId: userId } }),
+    // "Messages envoyés" = RequestMessage dont l'utilisateur est l'auteur
+    // (les Message QR ont ownerId = destinataire, pas l'expéditeur).
+    prisma.requestMessage.count({ where: { fromUserId: userId } }),
     prisma.message.count({ where: { ownerId: userId, read: false } }),
     prisma.communityRequest.count({ where: { authorId: userId } }),
     prisma.communityRequest.count({ where: { authorId: userId, status: "FULFILLED" } }),
@@ -553,6 +585,99 @@ async function fetchUserStats(prisma: PrismaClient, userId: string): Promise<Bad
     if (row.objectType) objectByTypeWithPhotos[row.objectType] = row._count._all;
   }
 
+  // Retours en retard (returnedAt > returnDueDate) — raw SQL, déjà calculé
+  // ci-dessus. Les "à temps" en sont le complément des retours effectués.
+  const lateReturnsCount = Array.isArray(requestsFulfilledByResult)
+    ? ((requestsFulfilledByResult as Array<{ count: number }>)[0]?.count ?? 0)
+    : 0;
+  const onTimeReturnsRealCount = Math.max(0, returnedLoansCount - lateReturnsCount);
+
+  // Genre / série / édition groupés par type d'objet — alimente les badges
+  // "N d'un même genre/série", "N d'un genre précis", "plateforme jeu".
+  const [genreGroups, seriesGroups, editionGroups, recentBorrowed, ownerLoanTypes, borrowerLoanTypes] = await Promise.all([
+    prisma.object.groupBy({
+      by: ["objectType", "genre"],
+      where: { collection: { userId }, genre: { not: null } },
+      _count: { _all: true },
+    }),
+    prisma.object.groupBy({
+      by: ["objectType", "series"],
+      where: { collection: { userId }, series: { not: null } },
+      _count: { _all: true },
+    }),
+    prisma.object.groupBy({
+      by: ["objectType", "edition"],
+      where: { collection: { userId }, edition: { not: null } },
+      _count: { _all: true },
+    }),
+    prisma.loan.findMany({
+      where: { borrowerId: userId, createdAt: { gte: thirtyDaysAgo } },
+      select: { createdAt: true, object: { select: { objectType: true } } },
+    }),
+    // Prêts par type d'objet (côté propriétaire / emprunteur) — pour les badges
+    // "N <type> prêtés/empruntés" qui sinon comptaient tous types confondus.
+    prisma.loan.findMany({
+      where: { ownerId: userId },
+      select: { object: { select: { objectType: true } } },
+    }),
+    prisma.loan.findMany({
+      where: { borrowerId: userId },
+      select: { object: { select: { objectType: true } } },
+    }),
+  ]);
+
+  const tallyByType = (rows: Array<{ object: { objectType: string | null } | null }>) => {
+    const m: Record<string, number> = {};
+    for (const r of rows) {
+      const t = r.object?.objectType;
+      if (t) m[t] = (m[t] ?? 0) + 1;
+    }
+    return m;
+  };
+  const loansAsOwnerByType = tallyByType(ownerLoanTypes as never);
+  const loansAsBorrowerByType = tallyByType(borrowerLoanTypes as never);
+
+  // type → { valueLower → count }
+  const objectGenreCountsByType: Record<string, Record<string, number>> = {};
+  const objectSeriesCountsByType: Record<string, Record<string, number>> = {};
+  const objectEditionCountsByType: Record<string, Record<string, number>> = {};
+  const fillMap = (
+    rows: Array<{ objectType: string | null; _count: { _all: number } }>,
+    key: "genre" | "series" | "edition",
+    target: Record<string, Record<string, number>>,
+  ) => {
+    for (const row of rows) {
+      const t = row.objectType ?? "";
+      const value = (row as Record<string, unknown>)[key] as string | null;
+      if (!t || !value) continue;
+      // Somme (et non écrasement) : deux casses différentes ("Manga"/"manga")
+      // groupées séparément par SQL retombent sur la même clé normalisée.
+      const k = value.toLowerCase();
+      const bucket = (target[t] ??= {});
+      bucket[k] = (bucket[k] ?? 0) + row._count._all;
+    }
+  };
+  fillMap(genreGroups as never, "genre", objectGenreCountsByType);
+  fillMap(seriesGroups as never, "series", objectSeriesCountsByType);
+  fillMap(editionGroups as never, "edition", objectEditionCountsByType);
+
+  // Plus gros groupe (même valeur) par type, pour "N d'un même genre/série".
+  const maxOf = (m: Record<string, number> | undefined) =>
+    m ? Math.max(0, ...Object.values(m)) : 0;
+  const objectMaxSameGenreByType: Record<string, number> = {};
+  const objectMaxSameSeriesByType: Record<string, number> = {};
+  for (const t of Object.keys(objectGenreCountsByType)) {
+    objectMaxSameGenreByType[t] = maxOf(objectGenreCountsByType[t]);
+  }
+  for (const t of Object.keys(objectSeriesCountsByType)) {
+    objectMaxSameSeriesByType[t] = maxOf(objectSeriesCountsByType[t]);
+  }
+
+  const recentBorrowedLoans = recentBorrowed.map((l) => ({
+    createdAt: l.createdAt,
+    objectType: l.object?.objectType ?? null,
+  }));
+
   const loanStreak = await calculateLoanStreak(prisma, userId);
   const borrowingStreak = await calculateBorrowingStreak(prisma, userId);
 
@@ -566,8 +691,8 @@ async function fetchUserStats(prisma: PrismaClient, userId: string): Promise<Bad
     activeLoansCount,
     returnedLoansCount,
     overdueLoansCount,
-    onTimeReturnsCount,
-    lateReturnsCountCount: lateReturnsCountResult,
+    onTimeReturnsCount: onTimeReturnsRealCount,
+    lateReturnsCountCount: lateReturnsCount,
     collectionCount,
     publicCollectionsCount,
     privateCollectionsCount,
@@ -606,6 +731,14 @@ async function fetchUserStats(prisma: PrismaClient, userId: string): Promise<Bad
     objectWithPhotosByType,
     objectWithIsbnByType,
     objectByTypeWithPhotos,
+    objectGenreCountsByType,
+    objectSeriesCountsByType,
+    objectEditionCountsByType,
+    objectMaxSameGenreByType,
+    objectMaxSameSeriesByType,
+    recentBorrowedLoans,
+    loansAsOwnerByType,
+    loansAsBorrowerByType,
   };
 
   setCachedStats(userId, stats);
@@ -765,12 +898,16 @@ const criteriaHandlers: Record<string, CriteriaHandler> = {
 
   loan_as_owner_count: (stats, criteria) => {
     const c = criteria as LoanAsOwnerCountCriteria;
-    return compare(stats.loanAsOwnerCount, c.threshold ?? 1, c.operator);
+    const t = c.params?.objectType as string | undefined;
+    const value = t ? stats.loansAsOwnerByType[t] ?? 0 : stats.loanAsOwnerCount;
+    return compare(value, c.threshold ?? 1, c.operator);
   },
 
   loan_as_borrower_count: (stats, criteria) => {
     const c = criteria as LoanAsBorrowerCountCriteria;
-    return compare(stats.loanAsBorrowerCount, c.threshold ?? 1, c.operator);
+    const t = c.params?.objectType as string | undefined;
+    const value = t ? stats.loansAsBorrowerByType[t] ?? 0 : stats.loanAsBorrowerCount;
+    return compare(value, c.threshold ?? 1, c.operator);
   },
 
   active_loans_count: (stats, criteria) => {
@@ -790,7 +927,45 @@ const criteriaHandlers: Record<string, CriteriaHandler> = {
 
   loans_within_days: (stats, criteria) => {
     const c = criteria as LoansWithinDaysCriteria;
-    return compare(stats.loanCount, c.threshold ?? 1, c.operator);
+    const days = c.params?.days ?? 30;
+    const objectType = c.params?.objectType as string | undefined;
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    const count = stats.recentBorrowedLoans.filter(
+      (l) =>
+        l.createdAt.getTime() >= cutoff &&
+        (!objectType || l.objectType === objectType),
+    ).length;
+    return compare(count, c.threshold ?? 1, c.operator);
+  },
+
+  object_max_by_field: (stats, criteria) => {
+    const c = criteria as ObjectMaxByFieldCriteria;
+    const t = c.params?.objectType as string;
+    const max =
+      c.params?.field === "series"
+        ? stats.objectMaxSameSeriesByType[t] ?? 0
+        : stats.objectMaxSameGenreByType[t] ?? 0;
+    return compare(max, c.threshold ?? 1, c.operator);
+  },
+
+  object_by_genre_value: (stats, criteria) => {
+    const c = criteria as ObjectByGenreValueCriteria;
+    const t = c.params?.objectType as string;
+    const value = (c.params?.value ?? "").toLowerCase();
+    const count = stats.objectGenreCountsByType[t]?.[value] ?? 0;
+    return compare(count, c.threshold ?? 1, c.operator);
+  },
+
+  object_by_edition_match: (stats, criteria) => {
+    const c = criteria as ObjectByEditionMatchCriteria;
+    const t = c.params?.objectType as string;
+    const needle = (c.params?.contains ?? "").toLowerCase();
+    const map = stats.objectEditionCountsByType[t] ?? {};
+    let count = 0;
+    for (const [k, v] of Object.entries(map)) {
+      if (k.includes(needle)) count += v;
+    }
+    return compare(count, c.threshold ?? 1, c.operator);
   },
 
   on_time_returns_count: (stats, criteria) => {

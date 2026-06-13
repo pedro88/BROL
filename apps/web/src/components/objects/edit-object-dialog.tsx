@@ -53,6 +53,9 @@ interface EditObjectDialogProps {
     toolPowerSource?: "MANUAL" | "MAINS" | "BATTERY" | null;
     // Marque (CLOTHING + TOOL)
     brand?: string | null;
+    // Genre / série (BOOK, FILM, BOARD_GAME)
+    genre?: string | null;
+    series?: string | null;
     // CUSTOM
     customField1?: string | null;
     customField2?: string | null;
@@ -92,6 +95,7 @@ export function EditObjectDialog({
   const showToolFields = type === "TOOL";
   const showCustomFields = type === "CUSTOM";
   const showIsbn = type === "BOOK" || type === "FILM";
+  const showGenreSeries = type === "BOOK" || type === "FILM" || type === "BOARD_GAME";
   // Tarification: disponible pour tous les types, mais désactivée par défaut
   const [pricingEnabled, setPricingEnabled] = useState(initialData?.hasPricing ?? false);
   // Self-service mode selector
@@ -130,6 +134,8 @@ export function EditObjectDialog({
       toolBattery: initialData?.toolBattery ?? null,
       toolPowerSource: initialData?.toolPowerSource ?? null,
       brand: initialData?.brand ?? null,
+      genre: initialData?.genre ?? null,
+      series: initialData?.series ?? null,
       customField1: initialData?.customField1 ?? null,
       customField2: initialData?.customField2 ?? null,
       cautionAmount: initialData?.cautionAmount ?? null,
@@ -163,6 +169,8 @@ export function EditObjectDialog({
         toolManual: initialData?.toolManual ?? null,
         toolSector: initialData?.toolSector ?? null,
         toolBattery: initialData?.toolBattery ?? null,
+        genre: initialData?.genre ?? null,
+        series: initialData?.series ?? null,
         customField1: initialData?.customField1 ?? null,
         customField2: initialData?.customField2 ?? null,
         cautionAmount: initialData?.cautionAmount ?? null,
@@ -250,6 +258,32 @@ export function EditObjectDialog({
               onCheckedChange={setSelfServiceEnabled}
             />
           </div>
+
+          {/* Genre / Série — BOOK, FILM, BOARD_GAME (alimentent les badges) */}
+          {showGenreSeries && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-genre" className="font-mono text-xs uppercase">
+                  {t("objects.genreLabel")}
+                </Label>
+                <Input
+                  id="edit-genre"
+                  placeholder={t("objects.genrePlaceholder")}
+                  {...register("genre")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-series" className="font-mono text-xs uppercase">
+                  {t("objects.seriesLabel")}
+                </Label>
+                <Input
+                  id="edit-series"
+                  placeholder={t("objects.seriesPlaceholder")}
+                  {...register("series")}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-2">

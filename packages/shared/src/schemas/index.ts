@@ -106,6 +106,9 @@ export const createObjectSchema = z.object({
   toolPowerSource: z.enum(TOOL_POWER_SOURCES).optional(),
   // Marque (CLOTHING + TOOL principalement)
   brand: z.string().max(80).optional(),
+  // Genre / série (BOOK, FILM, BOARD_GAME) — alimente les badges thématiques
+  genre: z.string().max(60).optional(),
+  series: z.string().max(120).optional(),
   // Caution et tarification
   cautionAmount: z.number().min(0).optional(),
   rentalPriceDay: z.number().min(0).optional(),
@@ -153,6 +156,9 @@ const updateObjectBase = {
   toolPowerSource: z.enum(TOOL_POWER_SOURCES).optional().nullable(),
   // Marque
   brand: z.string().max(80).optional().nullable(),
+  // Genre / série (BOOK, FILM, BOARD_GAME)
+  genre: z.string().max(60).optional().nullable(),
+  series: z.string().max(120).optional().nullable(),
   // Caution et tarification
   cautionAmount: z.number().min(0).optional().nullable(),
   rentalPriceDay: z.number().min(0).optional().nullable(),

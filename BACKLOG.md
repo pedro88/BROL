@@ -716,6 +716,29 @@ Pipeline de paiement via **Mollie** (PSP belge, SEPA/Bancontact/cartes).
 
 Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
 
+- **2026-06-13 (soir)** — Sprint *cohérence des badges (3 niveaux)*.
+  Revue des 109 définitions : ~40 incohérentes. Corrigé :
+  - **L1 moteur** (`badge-service.ts`) : retours « à temps » vs « en retard »
+    étaient deux requêtes identiques (le vrai calcul SQL était jeté) → on-time =
+    retours − retards ; `loans_within_days` ignorait la fenêtre `days` et le
+    type → vraie fenêtre glissante + filtre type ; `messages_sent_count`
+    comptait les messages REÇUS → compte les `RequestMessage` envoyés ;
+    `loan_as_owner/borrower_count` ignoraient `params.objectType` → filtrés par
+    type (stats prêts par type).
+  - **L2 cohérence** : seed réécrit (107 badges), descriptions alignées sur les
+    critères réels, seuils rendus distincts (fin des déblocages simultanés en
+    masse), badges cassés retypés (cult-master ISBN→palier, retro-cinema
+    member_since→photo, complete-collection collections→jeux, variety-collection
+    → `categories_represented`). **Catégorie TV fusionnée dans CINEMA** (les
+    DVD/séries sont des FILM) → CINEMA passe à 27 badges, TV retiré du filtre UI.
+  - **L3 données** : champs `Object.genre` + `Object.series` (+ migration, forms
+    create/edit, i18n) ; nouveaux critères `object_max_by_field` (même
+    genre/série), `object_by_genre_value` (genre précis), `object_by_edition_match`
+    (plateforme jeu via `edition`). Genre/série/manga/SF/plateformes sont
+    désormais réels.
+  - Tests : +7 (genre/série/plateforme, fenêtre, on-time vs retard, prêt par
+    type). **361/361 unit tests.** Seed ré-appliqué (107 défs).
+
 - **2026-06-13** — Sprint *abonnements Mollie (web)*.
   - **Pipe tiers payants** FREE/T2(3€)/T3(20€) de bout en bout, web only :
     - `lib/mollie.ts` — client REST fetch sans dépendance (Bearer auth),

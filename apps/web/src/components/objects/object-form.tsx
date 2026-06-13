@@ -49,6 +49,8 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
       barcode: "",
       condition: "GOOD",
       notes: "",
+      genre: "",
+      series: "",
       collectionId: collectionId ?? "",
     },
   });
@@ -337,6 +339,10 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
   const showClothingFields = objectType === "CLOTHING";
   const showToolFields = objectType === "TOOL";
   const showCustomFields = objectType === "CUSTOM";
+  // Genre / série : pertinents pour livres, films et jeux de société.
+  // Alimentent les badges thématiques (même genre / même série / genre précis).
+  const showGenreSeries =
+    objectType === "BOOK" || objectType === "FILM" || objectType === "BOARD_GAME";
   // Tarification: disponible pour tous les types, mais désactivée par défaut
   const [pricingEnabled, setPricingEnabled] = useState(false);
 
@@ -663,6 +669,32 @@ export function ObjectForm({ collectionId, objectId, onSuccess }: ObjectFormProp
               {t("objects.isbnAutoFill")}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Genre / Série — BOOK, FILM, BOARD_GAME. Alimentent les badges. */}
+      {showGenreSeries && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="genre" className="font-mono text-xs uppercase">
+              {t("objects.genreLabel")}
+            </Label>
+            <Input
+              id="genre"
+              placeholder={t("objects.genrePlaceholder")}
+              {...register("genre")}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="series" className="font-mono text-xs uppercase">
+              {t("objects.seriesLabel")}
+            </Label>
+            <Input
+              id="series"
+              placeholder={t("objects.seriesPlaceholder")}
+              {...register("series")}
+            />
+          </div>
         </div>
       )}
 

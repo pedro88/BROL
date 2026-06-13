@@ -208,6 +208,12 @@ model Object {
   toolPowerSource    ToolPowerSource? // Source d'alimentation (MANUAL/MAINS/BATTERY)
   // Marque (CLOTHING + TOOL ; usable par n'importe quel type)
   brand              String?
+  // Genre / catégorie thématique (BOOK: SF/manga/BD… ; FILM: comédie/drame…).
+  // Texte libre, partagé tous types. Alimente les badges "même genre" / "N d'un genre".
+  genre              String?
+  // Série / saga / franchise (BOOK: trilogie ; FILM: saga). Texte libre.
+  // Alimente les badges "N d'une même série".
+  series             String?
   // CUSTOM fields (only used when type = CUSTOM)
   customField1       String?
   customField2       String?

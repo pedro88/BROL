@@ -134,6 +134,9 @@ export default function EditObjectPage() {
               toolPowerSource: object.toolPowerSource,
               // Marque (CLOTHING + TOOL)
               brand: object.brand,
+              // Genre / série (BOOK, FILM, BOARD_GAME)
+              genre: object.genre,
+              series: object.series,
               // CUSTOM
               customField1: object.customField1,
               customField2: object.customField2,
