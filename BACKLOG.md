@@ -737,7 +737,13 @@ Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
     (plateforme jeu via `edition`). Genre/série/manga/SF/plateformes sont
     désormais réels.
   - Tests : +7 (genre/série/plateforme, fenêtre, on-time vs retard, prêt par
-    type). **361/361 unit tests.** Seed ré-appliqué (107 défs).
+    type). Seed ré-appliqué (107 défs).
+  - **Test exhaustif** : 1 test par badge (fixtures minimales → sync → doit
+    être attribué) → garantit qu'aucun badge n'est mort. Définitions extraites
+    dans `@brol/db` (`badge-definitions.ts`, réutilisé par seed + tests). A
+    débusqué un bug : `calculateLoanStreak` divisait l'écart par 30 jours → un
+    mois de 31 jours cassait le streak ; corrigé en différence d'index de mois.
+    **469/469 unit tests** (+108 exhaustifs +1 streak).
 
 - **2026-06-13** — Sprint *abonnements Mollie (web)*.
   - **Pipe tiers payants** FREE/T2(3€)/T3(20€) de bout en bout, web only :

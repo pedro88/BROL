@@ -771,11 +771,10 @@ async function calculateLoanStreak(prisma: PrismaClient, userId: string): Promis
     const prevYear = Number(prevParts[0]);
     const prevMonth = Number(prevParts[1]);
 
-    const currDate = new Date(year, month, 1);
-    const prevDate = new Date(prevYear, prevMonth, 1);
-
-    const diffMonths = (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
-    if (diffMonths <= 1) {
+    // Écart en nombre de mois calendaires (et non en jours : un mois de 31
+    // jours / 30 cassait à tort le streak).
+    const monthsApart = (year * 12 + month) - (prevYear * 12 + prevMonth);
+    if (monthsApart === 1) {
       streak++;
     } else {
       break;
@@ -811,11 +810,10 @@ async function calculateBorrowingStreak(prisma: PrismaClient, userId: string): P
     const prevYear = Number(prevParts[0]);
     const prevMonth = Number(prevParts[1]);
 
-    const currDate = new Date(year, month, 1);
-    const prevDate = new Date(prevYear, prevMonth, 1);
-
-    const diffMonths = (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
-    if (diffMonths <= 1) {
+    // Écart en nombre de mois calendaires (et non en jours : un mois de 31
+    // jours / 30 cassait à tort le streak).
+    const monthsApart = (year * 12 + month) - (prevYear * 12 + prevMonth);
+    if (monthsApart === 1) {
       streak++;
     } else {
       break;

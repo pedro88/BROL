@@ -13,6 +13,16 @@ import { PrismaClient } from "@prisma/client";
 
 export type { PrismaClient };
 
+// Définitions de badges (source unique pour seed + tests).
+export {
+  ALL_BADGE_DEFINITIONS,
+  CATEGORY_DESIGNS,
+  svgAssetFor,
+  type BadgeDef,
+  type BadgeRarity,
+  type BadgeCategory,
+} from "./badge-definitions";
+
 // Singleton pour éviter d'instancier plusieurs clients en développement
 declare global {
   // eslint-disable-next-line no-var
