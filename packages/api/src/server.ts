@@ -14,6 +14,7 @@ import { createContext } from "./trpc";
 import { prisma } from "@brol/db";
 import { logger } from "./lib/logger";
 import { signInLimiter, getClientIp } from "./lib/rate-limit";
+import { processMolliePayment } from "./lib/billing";
 
 const log = logger.child("server");
 
@@ -201,6 +202,41 @@ function handleBetterAuth(req: IncomingMessage, res: Res) {
 }
 
 /**
+ * Mollie webhook — POST `application/x-www-form-urlencoded` with `id=tr_xxx`.
+ *
+ * Mollie ne transmet QUE l'id : on refetch le paiement côté Mollie (source de
+ * vérité, pas de signature à valider) puis on crédite le tier de façon
+ * idempotente. On répond 200 si traité, 500 sinon — Mollie retente sur non-2xx.
+ */
+function handleMollieWebhook(req: IncomingMessage, res: Res) {
+  collectBody(req)
+    .then(async (buf) => {
+      const params = new URLSearchParams(buf.toString("utf-8"));
+      const id = params.get("id");
+      if (!id || !/^tr_[A-Za-z0-9]+$/.test(id)) {
+        res.statusCode = 400;
+        res.end();
+        log.warn("mollie webhook: missing/invalid id");
+        return;
+      }
+      try {
+        await processMolliePayment(prisma, id);
+        res.statusCode = 200;
+        res.end();
+      } catch (e) {
+        // 500 → Mollie retentera le webhook plus tard.
+        log.error("mollie webhook processing failed", { id, error: String(e) });
+        res.statusCode = 500;
+        res.end();
+      }
+    })
+    .catch(() => {
+      res.statusCode = 500;
+      res.end();
+    });
+}
+
+/**
  * Get the most recent session token for a user email.
  */
 async function handleGetToken(email: string): Promise<{ token: string | null }> {
@@ -241,6 +277,12 @@ function handler(req: IncomingMessage, res: Res) {
   // BetterAuth handles /api/auth/*
   if (pathname.startsWith("/api/auth")) {
     handleBetterAuth(req, res);
+    return;
+  }
+
+  // Mollie payment webhook (public — Mollie POSTs the payment id, we refetch).
+  if (pathname === "/api/webhooks/mollie" && req.method === "POST") {
+    handleMollieWebhook(req, res);
     return;
   }
 

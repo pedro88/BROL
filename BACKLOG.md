@@ -598,22 +598,36 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 
 ### Paiements (Mollie)
 
-- [ ] **Feat** — Pipeline de paiement complet via **Mollie**
-  (PSP belge, SEPA/Bancontact/cartes). 3 flux distincts :
-  1. **Abonnements** — tiers FREE/T2/T3 (cf. section pricing
-     ci-dessous). Mollie subscriptions API, webhook pour upgrade/
-     downgrade/expiration. Mapping `User.tier` + `User.tierExpiresAt`.
-  2. **Cautions** — bloquer le montant `Object.cautionAmount` au
-     moment du prêt (autorisation Mollie sans capture), libérer
-     au retour OK, capturer si non-retour / dégât. Modèle
-     `LoanDeposit` (status: HELD / RELEASED / CAPTURED).
-  3. **Locations** — paiement `rentalPriceDay/Hour/Week` à la
-     création du prêt, redistribution au propriétaire (Mollie
-     Connect / split payments). Commission Brol configurable.
-  Tech : nouvelles tables `Payment`, `PaymentEvent`, `Payout`.
-  Webhook signé Mollie. UI : page `/billing` pour abonnement,
-  flux d'autorisation caution + facture sur création de prêt.
-  Compliance : KYC vendeurs si redistribution Mollie Connect.
+Pipeline de paiement via **Mollie** (PSP belge, SEPA/Bancontact/cartes).
+3 flux prévus à l'origine :
+
+- [x] **Feat** — ~~**Abonnements** — tiers FREE/T2/T3 (web).~~ — livré
+  2026-06-13. `lib/mollie.ts` (client fetch sans dep : customer / 1er
+  paiement `sequenceType:"first"` / subscription / cancel),
+  `lib/billing.ts` (`processMolliePayment` idempotent + `resolveEffectiveTier`
+  + `computeTierExpiry`), router `billing` (`status` / `createCheckout` /
+  `cancelSubscription`), webhook `POST /api/webhooks/mollie` dans `server.ts`,
+  schema `Profile.mollieCustomerId/mollieSubscriptionId` + modèle `Payment`
+  (audit + idempotence via `molliePaymentId` unique) + migration. Pages web
+  `/billing` + `/billing/return` (poll status), boutons settings câblés.
+  **Downgrade auto** sans cron : `tierExpiresAt` dépassé → FREE via
+  `resolveEffectiveTier` dans `enforceQuota` + `tier.getLimits`.
+  **Sécu** : `tier.upgrade` (bascule sans paiement) bloqué en prod. i18n
+  fr/nl/en, env `MOLLIE_API_KEY`/`MOLLIE_WEBHOOK_URL` documentés
+  (MAINTENANCE §10). 22 tests (mollie + billing + idempotence + récurrent).
+  ⚠️ **Action requise** : créer le compte Mollie + poser `MOLLIE_API_KEY`
+  dans `/opt/brol/.env`. Sans clé, `/billing` affiche « non configuré ».
+  Webhook : Mollie refuse localhost → tunnel en dev.
+- [ ] **Feat** — **Cautions** — bloquer le montant `Object.cautionAmount` au
+  moment du prêt (autorisation Mollie sans capture), libérer au retour OK,
+  capturer si non-retour / dégât. Modèle `LoanDeposit` (status: HELD /
+  RELEASED / CAPTURED). Non implémenté.
+- [ ] **Feat** — **Locations** — paiement `rentalPriceDay/Hour/Week` à la
+  création du prêt, redistribution au propriétaire (Mollie Connect / split
+  payments). Commission Brol configurable. Compliance : KYC vendeurs.
+  Non implémenté.
+- [ ] **Feat mobile** — Flux abonnement sur mobile (hors scope du sprint web
+  2026-06-13).
 
 ### Badges & gamification
 
@@ -689,7 +703,8 @@ community-request.ts`) mais l'UX et le matching sont à construire.
   "Idées" → P2 ci-dessous (`### Community requests`).
 - [ ] **Feat** — Système de notifications complet [rappel retour,
   rappel retard, demande communauté, commentaire et note laissés].
-- [ ] **Feat** — Tier d'utilisation pricing :
+- [x] **Feat** — ~~Tier d'utilisation pricing~~ — quotas livrés avant
+  (enforceQuota), **paiement câblé 2026-06-13** (cf. Paiements/Mollie) :
   - FREE : 5 collections / 50 objets / 10 prêts simultanés
   - T2 (3€/mois) : 10 / 500 / 50
   - T3 (20€/mois) : illimité
@@ -699,6 +714,34 @@ community-request.ts`) mais l'UX et le matching sont à construire.
 ## 📊 Historique des sprints
 
 Tenir un journal par milestone fermée pour ne pas balloner ce fichier.
+
+- **2026-06-13** — Sprint *abonnements Mollie (web)*.
+  - **Pipe tiers payants** FREE/T2(3€)/T3(20€) de bout en bout, web only :
+    - `lib/mollie.ts` — client REST fetch sans dépendance (Bearer auth),
+      `isMollieConfigured()` (pattern resend), URLs webhook/redirect dérivées.
+    - `lib/billing.ts` — `processMolliePayment` (idempotent : crédit à la
+      transition vers PAID + garde `mollieSubscriptionId == null`),
+      `resolveEffectiveTier` (downgrade auto si `tierExpiresAt` dépassé, pas
+      de cron), `computeTierExpiry` (1 mois + 3j grâce).
+    - Router `billing` : `status` / `createCheckout` (1er paiement
+      `sequenceType:"first"` → checkout URL) / `cancelSubscription`.
+    - Webhook `POST /api/webhooks/mollie` (server.ts) : refetch du paiement
+      (pas de signature — l'id seul ne prouve rien), 200/500 pour retries.
+    - Schema : `Profile.mollieCustomerId/mollieSubscriptionId` + modèle
+      `Payment` (kind/status/tier/amount, `molliePaymentId` @unique) +
+      migration `20260613000000_add_mollie_payments`.
+    - Web : `/billing` (plans + checkout + annulation) + `/billing/return`
+      (poll `billing.status`), 3 boutons morts de settings câblés.
+    - i18n `billing.*` fr/nl/en. `.env.example` + MAINTENANCE §10.
+  - **Sécu** : `tier.upgrade` (bascule sans paiement, trou existant) bloqué
+    en prod (`NODE_ENV === "production"` → FORBIDDEN). Seul
+    `billing.createCheckout` change de tier en prod.
+  - Tests : +22 (mollie client mocké, billing pur + intégration :
+    1er paiement→subscription, idempotence double-webhook, récurrent,
+    open sans crédit, metadata absente). **354/354 unit tests.**
+  - **Action requise** : compte Mollie + `MOLLIE_API_KEY` dans
+    `/opt/brol/.env` ; tunnel webhook en dev (Mollie refuse localhost).
+  - Cautions + locations (split Mollie Connect / KYC) : toujours backlog.
 
 - **2026-06-12 (après-midi)** — Sprint *VIDEOGAME + BGG + badges polish*.
   - **VIDEOGAME câblé UI** : typeLabel/authorLabel ("Studio / Éditeur")/

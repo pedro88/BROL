@@ -234,10 +234,10 @@ export default function SettingsPage() {
             </div>
             {currentTier === "FREE" && (
               <Button size="sm" asChild>
-                <a href="#" className="flex items-center gap-1">
+                <Link href="/billing" className="flex items-center gap-1">
                   <Zap className="w-4 h-4" />
                   {t("settings.upgradeButton")}
-                </a>
+                </Link>
               </Button>
             )}
           </div>
@@ -283,9 +283,11 @@ export default function SettingsPage() {
                       </li>
                     ))}
                   </ul>
-                  <Button size="sm" className="w-full" variant="outline">
-                    <Zap className="w-4 h-4 mr-1" />
-                    {t("settings.chooseTier2Button")}
+                  <Button size="sm" className="w-full" variant="outline" asChild>
+                    <Link href="/billing">
+                      <Zap className="w-4 h-4 mr-1" />
+                      {t("settings.chooseTier2Button")}
+                    </Link>
                   </Button>
                 </div>
               )}
@@ -302,9 +304,11 @@ export default function SettingsPage() {
                       </li>
                     ))}
                   </ul>
-                  <Button size="sm" className="w-full" variant="outline">
-                    <Zap className="w-4 h-4 mr-1" />
-                    {t("settings.chooseTier3Button")}
+                  <Button size="sm" className="w-full" variant="outline" asChild>
+                    <Link href="/billing">
+                      <Zap className="w-4 h-4 mr-1" />
+                      {t("settings.chooseTier3Button")}
+                    </Link>
                   </Button>
                 </div>
               )}

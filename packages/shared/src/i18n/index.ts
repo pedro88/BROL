@@ -1003,6 +1003,55 @@ export const badges = {
   earnedOn: { fr: "Décroché le", nl: "Verdiend op", en: "Earned on" },
 };
 
+/**
+ * Abonnements / facturation (page `/billing`, web).
+ */
+export const billing = {
+  title: { fr: "ABONNEMENT", nl: "ABONNEMENT", en: "SUBSCRIPTION" },
+  currentPlan: { fr: "Plan actuel", nl: "Huidig plan", en: "Current plan" },
+  choosePlan: { fr: "CHOISIR UN PLAN", nl: "KIES EEN PLAN", en: "CHOOSE A PLAN" },
+  subscribe: { fr: "S'abonner", nl: "Abonneren", en: "Subscribe" },
+  cancelSubscription: { fr: "Annuler l'abonnement", nl: "Abonnement opzeggen", en: "Cancel subscription" },
+  cancelConfirm: {
+    fr: "Annuler l'abonnement ? Votre plan reste actif jusqu'à la fin de la période payée.",
+    nl: "Abonnement opzeggen? Uw plan blijft actief tot het einde van de betaalde periode.",
+    en: "Cancel the subscription? Your plan stays active until the end of the paid period.",
+  },
+  canceled: { fr: "Abonnement annulé", nl: "Abonnement opgezegd", en: "Subscription canceled" },
+  activeUntil: { fr: "Actif jusqu'au {date}", nl: "Actief tot {date}", en: "Active until {date}" },
+  checkoutError: {
+    fr: "Impossible de démarrer le paiement.",
+    nl: "Kan de betaling niet starten.",
+    en: "Unable to start the payment.",
+  },
+  notConfigured: {
+    fr: "Le paiement n'est pas encore activé sur ce serveur. Réessayez plus tard.",
+    nl: "Betaling is nog niet ingeschakeld op deze server. Probeer het later opnieuw.",
+    en: "Payment is not yet enabled on this server. Please try again later.",
+  },
+  return: {
+    processing: { fr: "Paiement en cours…", nl: "Betaling wordt verwerkt…", en: "Processing payment…" },
+    processingDetail: {
+      fr: "Confirmation de votre paiement, un instant.",
+      nl: "Uw betaling wordt bevestigd, een ogenblik.",
+      en: "Confirming your payment, one moment.",
+    },
+    stillProcessing: {
+      fr: "Ça prend un peu plus longtemps que prévu. Vous pouvez fermer cette page — votre plan sera mis à jour dès confirmation.",
+      nl: "Dit duurt iets langer dan verwacht. U kunt deze pagina sluiten — uw plan wordt bijgewerkt zodra het bevestigd is.",
+      en: "This is taking a bit longer than expected. You can close this page — your plan will update once confirmed.",
+    },
+    success: { fr: "Abonnement actif !", nl: "Abonnement actief!", en: "Subscription active!" },
+    successDetail: {
+      fr: "Vous êtes maintenant en {tier}.",
+      nl: "U zit nu op {tier}.",
+      en: "You are now on {tier}.",
+    },
+    backToSettings: { fr: "Retour aux paramètres", nl: "Terug naar instellingen", en: "Back to settings" },
+    backToBilling: { fr: "Retour à l'abonnement", nl: "Terug naar abonnement", en: "Back to subscription" },
+  },
+};
+
 // ===========================================================================
 // Adapter — source de vérité unique projetée vers next-intl (web), i18next
 // (mobile) et le backend. Chaque feuille du catalogue est un objet
@@ -1030,6 +1079,7 @@ export const catalog = {
   publicScan,
   errors,
   settings,
+  billing,
   photos,
   emails,
   notifications,

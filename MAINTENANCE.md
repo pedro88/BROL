@@ -343,6 +343,10 @@ RESEND_FROM_EMAIL=Brol <noreply@brol.dev>
 # Enregistrer l'app sur https://boardgamegeek.com/using_the_xml_api
 # Sans token, la recherche BGG du formulaire BOARD_GAME est masquée.
 BGG_API_TOKEN=...
+# Mollie — abonnements tiers payants (cf. §10). Vide = paiement désactivé.
+MOLLIE_API_KEY=live_...
+# Webhook dérivé de API_URL si absent ; override possible :
+# MOLLIE_WEBHOOK_URL=https://api.brol.dev/api/webhooks/mollie
 ```
 
 > Pour régénérer le secret Better-auth : `openssl rand -base64 32`
@@ -554,3 +558,60 @@ sudo systemctl status certbot.timer
 - [ ] Setup CI/CD avec git push au lieu de rsync manuel
 - [ ] Compléter les credentials OAuth (Google/GitHub/Apple) et Resend dans `.env`
 - [ ] Typer correctement le `collections.map((collection: ...))` pour pouvoir réactiver `typescript.ignoreBuildErrors: false`
+
+---
+
+## 10. Paiements (Mollie — abonnements tiers)
+
+Pipe d'abonnement web pour les tiers payants (FREE / TIER_2 3€ / TIER_3 20€).
+Cautions et locations (split payment) **pas** implémentés — voir BACKLOG §Paiements.
+
+### Provisionnement
+
+1. Créer un compte Mollie (PSP belge) → activer Bancontact/SEPA/cartes.
+2. Récupérer la clé API : `my.mollie.com/dashboard/developers/api-keys`
+   (`test_xxx` pour tester, `live_xxx` en prod).
+3. Poser `MOLLIE_API_KEY` dans `/opt/brol/.env` + redéployer l'API.
+   Sans clé : `/billing` affiche « non configuré » et `billing.createCheckout`
+   refuse (pattern identique à BGG/Resend).
+
+### Webhook
+
+- Mollie appelle `POST /api/webhooks/mollie` à chaque changement d'état d'un
+  paiement (corps `id=tr_xxx`). On **refetch** le paiement côté Mollie (pas de
+  signature à valider — l'id seul ne prouve rien, la source de vérité est l'API).
+- L'URL est dérivée de `API_URL` (`https://api.brol.dev/api/webhooks/mollie`)
+  ou forcée par `MOLLIE_WEBHOOK_URL`.
+- ⚠️ **Mollie refuse `localhost`.** En dev, exposer l'API via un tunnel
+  (`cloudflared tunnel --url http://localhost:3001`) et mettre l'URL publique
+  dans `MOLLIE_WEBHOOK_URL`. Sans ça, le webhook n'arrive jamais : le tier
+  n'est pas crédité (le retour `/billing/return` poll `billing.status` et reste
+  sur « en cours »).
+
+### Flux
+
+1. `/billing` → `billing.createCheckout` crée un customer Mollie (1×, persisté
+   sur `Profile.mollieCustomerId`) + un 1er paiement `sequenceType:"first"`,
+   renvoie l'URL de checkout. Ligne `Payment` créée en `OPEN`.
+2. L'utilisateur paie → Mollie ping le webhook → `processMolliePayment` :
+   le 1er paiement payé **établit le mandate**, on crée la **subscription**
+   Mollie (prélèvement mensuel auto) et on crédite `tier` + `tierExpiresAt`.
+3. Chaque mois Mollie prélève et re-ping le webhook → `tierExpiresAt` repoussé.
+4. **Downgrade auto** : `resolveEffectiveTier` (lib/billing.ts) retombe en FREE
+   si `tierExpiresAt` est dépassé — pas de cron. Lecture appliquée par
+   `quota.enforceQuota` et `tier.getLimits`.
+5. Annulation : `billing.cancelSubscription` stoppe les prélèvements ;
+   le tier reste actif jusqu'à `tierExpiresAt`.
+
+### Idempotence
+
+- `Payment.molliePaymentId` est `@unique`. Le crédit n'est appliqué qu'à la
+  **transition** vers `PAID` (ligne pas encore PAID) et la création de
+  subscription est gardée par `Profile.mollieSubscriptionId == null`. Les pings
+  répétés de Mollie ne re-créditent jamais.
+
+### Sécurité
+
+- `tier.upgrade` (bascule sans paiement) est **bloqué en prod** (`NODE_ENV ===
+  "production"` → FORBIDDEN) : réservé au dev/tests. En prod, seul
+  `billing.createCheckout` change de tier.

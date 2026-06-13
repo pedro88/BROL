@@ -6,6 +6,7 @@
 
 import { TRPCError } from "@trpc/server";
 import type { Context } from "../trpc";
+import { resolveEffectiveTier } from "./billing";
 
 /** Limites par tier — synchronisé avec tier.ts TIER_LIMITS */
 const QUOTA_LIMITS = {
@@ -20,9 +21,15 @@ type Resource = "collections" | "objects" | "activeLoans";
 async function getUserTier(prisma: Context["prisma"], userId: string): Promise<Tier> {
   const profile = await prisma.profile.findUnique({
     where: { userId },
-    select: { tier: true },
+    select: { tier: true, tierExpiresAt: true },
   });
-  return (profile?.tier as Tier) ?? "FREE";
+  // Tier effectif : un abonnement expiré (tierExpiresAt dépassé) retombe en
+  // FREE, donc les quotas FREE s'appliquent à nouveau sans intervention.
+  const effective = resolveEffectiveTier(
+    profile?.tier ?? "FREE",
+    profile?.tierExpiresAt ?? null,
+  );
+  return effective as Tier;
 }
 
 async function getCurrentCount(

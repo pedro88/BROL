@@ -6,6 +6,7 @@
 import { router, protectedProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { resolveEffectiveTier } from "../lib/billing";
 
 /** Limites par tier */
 export const TIER_LIMITS = {
@@ -27,7 +28,10 @@ export const tierRouter = router({
       where: { userId },
     });
 
-    const tier = profile?.tier ?? "FREE";
+    const tier = resolveEffectiveTier(
+      profile?.tier ?? "FREE",
+      profile?.tierExpiresAt ?? null,
+    );
     const limits = TIER_LIMITS[tier as Tier] ?? TIER_LIMITS.FREE;
 
     const [collectionCount, objectCount, activeLoanCount] = await Promise.all([
@@ -57,7 +61,10 @@ export const tierRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
       const profile = await ctx.prisma.profile.findUnique({ where: { userId } });
-      const tier = profile?.tier ?? "FREE";
+      const tier = resolveEffectiveTier(
+        profile?.tier ?? "FREE",
+        profile?.tierExpiresAt ?? null,
+      );
       const limits = TIER_LIMITS[tier as Tier] ?? TIER_LIMITS.FREE;
 
       const key = input.type === "collection" ? "collections"
@@ -97,6 +104,16 @@ export const tierRouter = router({
   upgrade: protectedProcedure
     .input(z.object({ tier: z.enum(["TIER_2", "TIER_3"]) }))
     .mutation(async ({ ctx, input }) => {
+      // Bascule de tier SANS paiement — réservée au dev/tests. En prod, le
+      // seul chemin d'upgrade est `billing.createCheckout` (Mollie). Sinon
+      // n'importe quel utilisateur connecté pourrait se hisser en TIER_3.
+      if (process.env.NODE_ENV === "production") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Utilisez le paiement pour changer de plan.",
+        });
+      }
+
       const userId = ctx.session.user.id;
 
       await ctx.prisma.profile.upsert({

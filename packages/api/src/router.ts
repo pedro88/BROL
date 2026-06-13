@@ -16,6 +16,7 @@ import { badgeRouter } from "./routers/badge";
 import { communityRequestRouter } from "./routers/community-request";
 import { notificationRouter } from "./routers/notification";
 import { tierRouter } from "./routers/tier";
+import { billingRouter } from "./routers/billing";
 import { messagesRouter } from "./routers/messages";
 import { requestMessagesRouter } from "./routers/request-messages";
 import { usersRouter } from "./routers/users";
@@ -60,6 +61,7 @@ export const appRouter = router({
   communityRequest: communityRequestRouter,
   notification: notificationRouter,
   tier: tierRouter,
+  billing: billingRouter,
   messages: messagesRouter,
   requestMessages: requestMessagesRouter,
   users: usersRouter,

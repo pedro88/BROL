@@ -61,6 +61,7 @@ model User {
   messages                Message[]
   requestMessagesSent     RequestMessage[]   @relation("RequestMessageSent")
   requestMessagesReceived RequestMessage[]   @relation("RequestMessageReceived")
+  payments                Payment[]
 
   @@index([country, postalCode])
   @@map("users")
@@ -340,7 +341,11 @@ model Profile {
   bio           String?
   avatarUrl     String?
   tier          UserTier  @default(FREE)
-  tierExpiresAt DateTime? // null = jamais (ou déjà payé pour TIER_2/3)
+  tierExpiresAt DateTime? // null = jamais (FREE) ; sinon échéance du tier payant
+
+  // Paiements (Mollie) — abonnements tiers. Voir model Payment + lib/mollie.ts.
+  mollieCustomerId     String? // cus_xxx — créé au 1er checkout, réutilisé ensuite
+  mollieSubscriptionId String? // sub_xxx — null tant qu'aucun abonnement actif
 
   // Informations personnelles (toutes optionnelles)
   birthYear Int? // ex: 1985 (préféré à age, stable)
@@ -360,6 +365,45 @@ model Profile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
+}
+
+// ============================================
+// PAIEMENTS (Mollie — abonnements tiers)
+// ============================================
+
+enum PaymentKind {
+  SUBSCRIPTION_FIRST // 1er paiement (sequenceType "first") — établit le mandate SEPA/carte
+  SUBSCRIPTION_RECURRING // prélèvement récurrent déclenché par la subscription Mollie
+}
+
+enum PaymentStatus {
+  OPEN // créé, en attente de redirect/checkout
+  PENDING // autorisation en cours (ex: virement)
+  PAID // capturé — tier crédité
+  FAILED // échec définitif
+  CANCELED // annulé par l'utilisateur
+  EXPIRED // checkout abandonné / délai dépassé
+}
+
+/// Journal des paiements Mollie. Sert l'audit ET l'idempotence du webhook
+/// (`molliePaymentId` unique → on ne crédite jamais deux fois le même paiement).
+model Payment {
+  id              String        @id @default(cuid())
+  userId          String
+  molliePaymentId String        @unique // tr_xxx
+  kind            PaymentKind
+  status          PaymentStatus @default(OPEN)
+  tier            UserTier // tier visé par ce paiement
+  amount          String // valeur Mollie en string, ex "3.00"
+  currency        String        @default("EUR")
+  createdAt       DateTime      @default(now())
+  paidAt          DateTime?
+  updatedAt       DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("payments")
 }
 
 // ============================================
