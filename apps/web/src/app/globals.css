@@ -451,6 +451,11 @@ html[data-theme="boring"] .input-vhs {
 }
 
 .badge-glow-legendary {
+  /* relative + overflow-hidden confinent le ::before rainbow à l'icône.
+     Sans ça, le ::before (position:absolute) s'accroche au viewport et
+     peint un dégradé animé plein écran. */
+  position: relative;
+  overflow: hidden;
   background: rgba(255, 215, 0, 0.15);
   animation: legendary-pulse 2s ease-in-out infinite;
 }

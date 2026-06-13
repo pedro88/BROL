@@ -139,7 +139,7 @@ export default function BadgesPage() {
   return (
     <div className="min-h-screen pb-20">
       <Header />
-      <main className="p-4 space-y-6">
+      <main className="p-4 space-y-6 max-w-lg mx-auto">
         <h1 className="font-display text-3xl vhs-text-glow text-primary uppercase">
           {t("title")}
         </h1>

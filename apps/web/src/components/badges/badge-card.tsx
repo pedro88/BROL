@@ -19,14 +19,6 @@ const RARITY_BORDER_COLORS: Record<string, string> = {
   LEGENDARY: "border-amber-500/50",
 };
 
-const RARITY_GLOW_CLASSES: Record<string, string> = {
-  COMMON: "",
-  UNCOMMON: "shadow-[0_0_4px_rgba(34,197,94,0.3)]",
-  RARE: "shadow-[0_0_6px_rgba(59,130,246,0.4)]",
-  EPIC: "shadow-[0_0_8px_rgba(168,85,247,0.5)]",
-  LEGENDARY: "shadow-[0_0_12px_rgba(245,158,11,0.6)]",
-};
-
 export function BadgeCard({
   badge,
   earned = false,
@@ -35,18 +27,16 @@ export function BadgeCard({
 }: BadgeCardProps) {
   const rarity = badge.rarity || "COMMON";
   const borderColor = RARITY_BORDER_COLORS[rarity] || RARITY_BORDER_COLORS.COMMON;
-  const glowClass = RARITY_GLOW_CLASSES[rarity] || "";
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        "text-left transition-all duration-200 min-w-[200px] max-w-[200px]",
+        "text-left w-full transition-colors duration-200",
         "bg-card border-2 border-border rounded-sm",
-        "hover:border-primary/50 hover:scale-[1.02]",
+        "hover:border-primary",
         "focus:outline-none focus:ring-2 focus:ring-primary",
         borderColor,
-        glowClass,
         !earned && "opacity-60"
       )}
       type="button"
